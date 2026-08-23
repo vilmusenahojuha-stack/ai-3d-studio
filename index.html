@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#111827">
   <title>AI 3D Studio</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=0.4.1">
 </head>
 <body>
-<header class="topbar"><div><h1>AI 3D Studio</h1><p>Parametrinen 3D-suunnittelu ja STL-vienti</p></div><span class="badge">v0.4</span></header>
+<header class="topbar"><div><h1>AI 3D Studio</h1><p>Parametrinen 3D-suunnittelu ja STL-vienti</p></div><span class="badge">v0.4.1</span></header>
 <main class="layout">
 <section class="panel controls">
 <h2>Piikkimutterinsuojus</h2><p class="hint">Kuorma-auton 33 mm pyöränmutterille. Malli, puristuslukitus, materiaaliprofiilit ja mittanäkymä.</p>
@@ -30,11 +30,11 @@
 <section class="panel preview-panel">
 <div class="preview-head"><div><h2>3D-esikatselu</h2><p class="hint">Vedä sormella tai hiirellä pyörittääksesi.</p></div><div class="dimensions" id="dimensions">–</div></div>
 <div class="view-tools"><button id="btnMeasure" class="tool active">MITTANÄKYMÄ: PÄÄLLÄ</button><button id="btnFront" class="tool">ETUNÄKYMÄ</button><button id="btnIso" class="tool">3D-NÄKYMÄ</button></div>
-<canvas id="preview" width="900" height="700" aria-label="3D-esikatselu"></canvas>
-<div class="measure-help">Mittaviivat näyttävät mallin suunnittelumitat. Sisä- ja lukitus-AF ovat kuusikulmion vastakkaisten sivujen välisiä mittoja.</div>
+<div class="canvas-wrap"><canvas id="preview" width="900" height="700" aria-label="3D-esikatselu"></canvas><div id="measureOverlay" class="measure-overlay"></div></div>
+<div class="measure-help">Keltaiset mittaviivat ja mittalaatikot näyttävät mallin suunnittelumitat. Sisä- ja lukitus-AF ovat kuusikulmion vastakkaisten sivujen välisiä mittoja.</div>
 <div class="legend" id="legend"></div>
 </section>
 </main>
-<footer><p>AI 3D Studio v0.4 — mittanäkymä, mesh-tarkistus, sovitustesti ja materiaaliprofiilit.</p></footer>
-<script src="app.js"></script>
+<footer><p>AI 3D Studio v0.4.1 — korjattu mobiilin mittanäkymä.</p></footer>
+<script src="app.js?v=0.4.1"></script>
 </body></html>
