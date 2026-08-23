@@ -1,10 +1,14 @@
 {
   "schemaVersion": 1,
-  "status": "empty",
-  "projectName": "",
-  "partType": "",
+  "status": "ready",
+  "projectName": "Holkki 20x3x50",
+  "partType": "sleeve",
   "material": "PETG",
-  "values": {},
-  "summary": "Ei vielä hyväksyttyä ChatGPT-suunnitelmaa.",
-  "updatedAt": "2026-08-23T20:40:00+03:00"
+  "values": {
+    "sleeveID": 20,
+    "sleeveWall": 3,
+    "sleeveLength": 50
+  },
+  "summary": "Testisuunnitelma: holkki, sisähalkaisija 20 mm, seinämä 3 mm, pituus 50 mm, PETG.",
+  "updatedAt": "2026-08-23T20:45:00+03:00"
 }
