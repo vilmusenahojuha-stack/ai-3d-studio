@@ -7,18 +7,37 @@ let currentMesh = null;
 let currentFitMesh = null;
 let drag = false, lastX = 0, lastY = 0, yaw = -0.55, pitch = 0.32;
 
-const defaults = {nutAf:33,clearance:.25,wall:2.5,baseHeight:24,totalHeight:75,tipRadius:.7};
+const defaults = {
+  nutAf:33,
+  clearance:.25,
+  lockAmount:.20,
+  lockZ:7,
+  wall:2.5,
+  baseHeight:24,
+  totalHeight:75,
+  tipRadius:.8,
+  material:"ASA"
+};
+
+const materialProfiles = {
+  PLA:{label:"PLA",use:"Koekappaleet ja sisäkäyttö",nozzle:"210–220 °C",bed:"55–60 °C",note:"Helpoin materiaalivalinta ensimmäisiin sovitustesteihin."},
+  PETG:{label:"PETG",use:"Käyttöosat ja kohtalainen ulkokäyttö",nozzle:"235–250 °C",bed:"70–85 °C",note:"Sitkeä ja helppo vaihtoehto ennen ASA:aa."},
+  ASA:{label:"ASA",use:"Ulkokäyttö, UV ja sää",nozzle:"250–270 °C",bed:"90–105 °C",note:"Suositus lopulliseen rekkaosaan suljetulla tulostimella."}
+};
 
 function params(){
   const p={};
-  for(const k of Object.keys(defaults)) p[k]=Number($(k).value);
-  if(!Object.values(p).every(Number.isFinite)) throw new Error("Tarkista mitat.");
+  for(const k of ["nutAf","clearance","lockAmount","lockZ","wall","baseHeight","totalHeight","tipRadius"]) p[k]=Number($(k).value);
+  p.material=$("material").value;
+  if(!Object.values(p).filter(v=>typeof v==="number").every(Number.isFinite)) throw new Error("Tarkista mitat.");
   if(p.nutAf<=0) throw new Error("Mutterin avainkoon pitää olla positiivinen.");
   if(p.clearance<0) throw new Error("Välys ei voi olla negatiivinen.");
+  if(p.lockAmount<0 || p.lockAmount>p.clearance*2+1) throw new Error("Puristuslukituksen arvo on liian suuri.");
   if(p.wall<1) throw new Error("Seinämän pitää olla vähintään 1 mm.");
-  if(p.baseHeight<5) throw new Error("Mutteriosan korkeus on liian pieni.");
-  if(p.totalHeight<=p.baseHeight+5) throw new Error("Kokonaiskorkeuden pitää olla selvästi mutteriosaa suurempi.");
-  if(p.tipRadius<=0 || p.tipRadius>p.wall*2) throw new Error("Kärjen pyöristyksen arvo ei ole järkevä suhteessa seinämään.");
+  if(p.baseHeight<8) throw new Error("Mutteriosan korkeus on liian pieni.");
+  if(p.lockZ<2 || p.lockZ>p.baseHeight-4) throw new Error("Lukituksen korkeus pitää olla mutteriosan sisällä.");
+  if(p.totalHeight<=p.baseHeight+8) throw new Error("Kokonaiskorkeuden pitää olla selvästi mutteriosaa suurempi.");
+  if(p.tipRadius<=0 || p.tipRadius>4) throw new Error("Kärjen pyöristys ei ole järkevä.");
   return p;
 }
 
@@ -30,81 +49,100 @@ function normal(t){
   return v(n.x/l,n.y/l,n.z/l);
 }
 
-function hexRadiusFromAF(af){return af/Math.sqrt(3)}
-function ring(radius,z,n=6,phase=Math.PI/6){
+function hexVerticesFromAF(af,z){
+  const r=af/Math.sqrt(3), phase=Math.PI/6;
+  return Array.from({length:6},(_,i)=>v(r*Math.cos(phase+i*Math.PI/3),r*Math.sin(phase+i*Math.PI/3),z));
+}
+
+function sampledHexRing(af,z,segmentsPerSide=4){
+  const verts=hexVerticesFromAF(af,z),out=[];
+  for(let s=0;s<6;s++){
+    const a=verts[s],b=verts[(s+1)%6];
+    for(let j=0;j<segmentsPerSide;j++){
+      const t=j/segmentsPerSide;
+      out.push(v(a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t,z));
+    }
+  }
+  return out;
+}
+
+function circleRing(radius,z,n=24,phase=Math.PI/24){
   return Array.from({length:n},(_,i)=>v(radius*Math.cos(phase+i*2*Math.PI/n),radius*Math.sin(phase+i*2*Math.PI/n),z));
 }
 
-function buildMesh(p){
-  const innerAF=p.nutAf+2*p.clearance;
-  const outerAF=innerAF+2*p.wall;
-  const ri=hexRadiusFromAF(innerAF), ro=hexRadiusFromAF(outerAF);
-  const innerTop=Math.max(p.wall+1,p.baseHeight-p.wall);
-  const tipBaseZ=Math.max(p.baseHeight+1,p.totalHeight-p.tipRadius);
-  const tipR=Math.max(.15,Math.min(p.tipRadius,ro*.25));
+function bridge(T,a,b,reverse=false){
+  if(a.length!==b.length) throw new Error("Sisäinen rengasvirhe.");
+  const n=a.length;
+  for(let i=0;i<n;i++){
+    const j=(i+1)%n;
+    if(!reverse) T.push(tri(a[i],a[j],b[j]),tri(a[i],b[j],b[i]));
+    else T.push(tri(a[i],b[j],a[j]),tri(a[i],b[i],b[j]));
+  }
+}
 
-  const outer0=ring(ro,0,6);
-  const outerB=ring(ro,p.baseHeight,6);
-  const inner0=ring(ri,0,6);
-  const innerB=ring(ri,innerTop,6);
-  const innerCap=v(0,0,innerTop);
-  const tipRing=ring(tipR,tipBaseZ,6);
+function annulus(T,outer,inner,up=true){
+  if(outer.length!==inner.length) throw new Error("Sisäinen rengasvirhe.");
+  const n=outer.length;
+  for(let i=0;i<n;i++){
+    const j=(i+1)%n;
+    if(up) T.push(tri(outer[i],outer[j],inner[j]),tri(outer[i],inner[j],inner[i]));
+    else T.push(tri(outer[i],inner[j],outer[j]),tri(outer[i],inner[i],inner[j]));
+  }
+}
+
+function buildMesh(p){
+  const n=24;
+  const innerAF=p.nutAf+2*p.clearance;
+  const lockAF=Math.max(p.nutAf-.1,innerAF-2*p.lockAmount);
+  const outerAF=innerAF+2*p.wall;
+  const innerTop=p.baseHeight-p.wall-1;
+  const hexShoulderZ=Math.max(innerTop+1,p.baseHeight-3);
+  const circleShoulderZ=p.baseHeight;
+  const outerRadius=(outerAF/2)*1.02;
+  const tipBaseZ=p.totalHeight-p.tipRadius;
+  const tipR=Math.max(.18,p.tipRadius*.72);
+
+  const outer0=sampledHexRing(outerAF,0,4);
+  const outerRoof=sampledHexRing(outerAF,innerTop,4);
+  const outerHexTop=sampledHexRing(outerAF,hexShoulderZ,4);
+  const shoulder=circleRing(outerRadius,circleShoulderZ,n);
+  const inner0=sampledHexRing(innerAF,0,4);
+  const innerLock=sampledHexRing(lockAF,p.lockZ,4);
+  const innerTopRing=sampledHexRing(innerAF,innerTop,4);
+  const tipRing=circleRing(tipR,tipBaseZ,n);
   const apex=v(0,0,p.totalHeight);
   const T=[];
 
-  // Ulkoseinä.
-  for(let i=0;i<6;i++){
-    const j=(i+1)%6;
-    T.push(tri(outer0[i],outer0[j],outerB[j]),tri(outer0[i],outerB[j],outerB[i]));
-  }
-
-  // Sisäkolo mutterille.
-  for(let i=0;i<6;i++){
-    const j=(i+1)%6;
-    T.push(tri(inner0[i],innerB[j],inner0[j]),tri(inner0[i],innerB[i],innerB[j]));
-  }
-
-  // Alareunan materiaalikehä, keskusta jää auki mutteria varten.
-  for(let i=0;i<6;i++){
-    const j=(i+1)%6;
-    T.push(tri(outer0[i],inner0[j],outer0[j]),tri(outer0[i],inner0[i],inner0[j]));
-  }
-
-  // Mutterikolon suljettu katto. Tämä ei jaa ulkoreunaa piikin kanssa.
-  for(let i=0;i<6;i++){
-    const j=(i+1)%6;
-    T.push(tri(innerB[i],innerCap,innerB[j]));
-  }
-
-  // Piikki alkaa suoraan ulkoseinän yläreunasta.
-  for(let i=0;i<6;i++){
-    const j=(i+1)%6;
-    T.push(tri(outerB[i],outerB[j],tipRing[j]),tri(outerB[i],tipRing[j],tipRing[i]));
-  }
-
-  // Pieni kärkirengas suljetaan kärkipisteeseen.
-  for(let i=0;i<6;i++){
-    const j=(i+1)%6;
+  bridge(T,outer0,outerRoof,false);
+  if(hexShoulderZ>innerTop+.001) bridge(T,outerRoof,outerHexTop,false);
+  bridge(T,outerHexTop,shoulder,false);
+  bridge(T,inner0,innerLock,true);
+  bridge(T,innerLock,innerTopRing,true);
+  annulus(T,outer0,inner0,false);
+  annulus(T,outerRoof,innerTopRing,true);
+  bridge(T,shoulder,tipRing,false);
+  for(let i=0;i<n;i++){
+    const j=(i+1)%n;
     T.push(tri(tipRing[i],tipRing[j],apex));
   }
 
-  return {triangles:T,innerAF,outerAF,height:p.totalHeight,kind:"full"};
+  return {triangles:T,innerAF,lockAF,outerAF,height:p.totalHeight,kind:"full"};
 }
 
 function buildFitMesh(p){
   const innerAF=p.nutAf+2*p.clearance;
+  const lockAF=Math.max(p.nutAf-.1,innerAF-2*p.lockAmount);
   const outerAF=innerAF+2*p.wall;
-  const ri=hexRadiusFromAF(innerAF), ro=hexRadiusFromAF(outerAF), h=8;
-  const outer0=ring(ro,0,6), outer1=ring(ro,h,6), inner0=ring(ri,0,6), inner1=ring(ri,h,6);
+  const h=Math.max(10,p.lockZ+4);
+  const outer0=sampledHexRing(outerAF,0,4),outer1=sampledHexRing(outerAF,h,4);
+  const inner0=sampledHexRing(innerAF,0,4),innerLock=sampledHexRing(lockAF,p.lockZ,4),inner1=sampledHexRing(innerAF,h,4);
   const T=[];
-  for(let i=0;i<6;i++){
-    const j=(i+1)%6;
-    T.push(tri(outer0[i],outer0[j],outer1[j]),tri(outer0[i],outer1[j],outer1[i]));
-    T.push(tri(inner0[i],inner1[j],inner0[j]),tri(inner0[i],inner1[i],inner1[j]));
-    T.push(tri(outer0[i],inner0[j],outer0[j]),tri(outer0[i],inner0[i],inner0[j]));
-    T.push(tri(outer1[i],outer1[j],inner1[j]),tri(outer1[i],inner1[j],inner1[i]));
-  }
-  return {triangles:T,innerAF,outerAF,height:h,kind:"fit"};
+  bridge(T,outer0,outer1,false);
+  bridge(T,inner0,innerLock,true);
+  bridge(T,innerLock,inner1,true);
+  annulus(T,outer0,inner0,false);
+  annulus(T,outer1,inner1,true);
+  return {triangles:T,innerAF,lockAF,outerAF,height:h,kind:"fit"};
 }
 
 function keyPoint(q){return `${q.x.toFixed(6)},${q.y.toFixed(6)},${q.z.toFixed(6)}`}
@@ -114,22 +152,24 @@ function validateMesh(mesh){
   if(!mesh || !mesh.triangles.length) return {ok:false,message:"Mesh puuttuu."};
   const edges=new Map();
   let degenerate=0;
+  let minX=Infinity,minY=Infinity,minZ=Infinity,maxX=-Infinity,maxY=-Infinity,maxZ=-Infinity;
   for(const t of mesh.triangles){
     if(t.some(q=>![q.x,q.y,q.z].every(Number.isFinite))) return {ok:false,message:"Mesh sisältää virheellisen koordinaatin."};
-    const n=normal(t);
     const [a,b,c]=t;
     const area2=Math.hypot(
       (b.y-a.y)*(c.z-a.z)-(b.z-a.z)*(c.y-a.y),
       (b.z-a.z)*(c.x-a.x)-(b.x-a.x)*(c.z-a.z),
       (b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x)
     );
-    if(area2<1e-8 || ![n.x,n.y,n.z].every(Number.isFinite)) degenerate++;
+    if(area2<1e-8) degenerate++;
+    for(const q of t){minX=Math.min(minX,q.x);minY=Math.min(minY,q.y);minZ=Math.min(minZ,q.z);maxX=Math.max(maxX,q.x);maxY=Math.max(maxY,q.y);maxZ=Math.max(maxZ,q.z)}
     [[a,b],[b,c],[c,a]].forEach(([p1,p2])=>{const k=edgeKey(p1,p2);edges.set(k,(edges.get(k)||0)+1)});
   }
   const badEdges=[...edges.values()].filter(n=>n!==2).length;
   if(degenerate) return {ok:false,message:`Meshissä on ${degenerate} nollapinta-alaista kolmiota.`};
   if(badEdges) return {ok:false,message:`Mesh ei ole suljettu: ${badEdges} reunaa ei jakaudu täsmälleen kahdelle pinnalle.`};
-  return {ok:true,message:`Suljettu manifold-mesh: ${mesh.triangles.length} kolmiota, ${edges.size} tarkistettua reunaa.`};
+  const bounds={x:maxX-minX,y:maxY-minY,z:maxZ-minZ};
+  return {ok:true,message:`Suljettu manifold-mesh: ${mesh.triangles.length} kolmiota, ${edges.size} reunaa.`,bounds};
 }
 
 function stl(mesh,name){
@@ -156,8 +196,14 @@ function draw(){
   const faces=currentMesh.triangles.map(t=>{const p=t.map(q=>project(q,scale,W/2,H*.82));return {p,d:p.reduce((a,b)=>a+b.d,0)/3};}).sort((a,b)=>a.d-b.d);
   for(const f of faces){
     ctx.beginPath();ctx.moveTo(f.p[0].x,f.p[0].y);ctx.lineTo(f.p[1].x,f.p[1].y);ctx.lineTo(f.p[2].x,f.p[2].y);ctx.closePath();
-    ctx.fillStyle="rgba(20,184,166,.72)";ctx.fill();ctx.strokeStyle="rgba(153,246,228,.34)";ctx.lineWidth=.8;ctx.stroke();
+    ctx.fillStyle="rgba(20,184,166,.74)";ctx.fill();ctx.strokeStyle="rgba(153,246,228,.22)";ctx.lineWidth=.65;ctx.stroke();
   }
+}
+
+function updateMaterialCard(){
+  const m=materialProfiles[$("material").value];
+  $("materialCard").innerHTML=`<strong>${m.label}: ${m.use}</strong><span>Suutin ${m.nozzle} • Alusta ${m.bed}</span><span>${m.note}</span>`;
+  $("legend").innerHTML=`<span>Valittu materiaali: <strong>${m.label}</strong></span><span>${m.note}</span>`;
 }
 
 function setValidation(fullCheck,fitCheck){
@@ -175,8 +221,9 @@ function generate(){
     const valid=setValidation(fullCheck,fitCheck);
     $("btnDownload").disabled=!valid;
     $("btnFitTest").disabled=!valid;
-    $("status").textContent=valid?`Malli luotu ja tarkistettu. Sisä-AF = ${currentMesh.innerAF.toFixed(2)} mm. Tulosta ensin sovitustesti.`:"Mallia ei anneta ladattavaksi ennen kuin mesh-tarkistus menee läpi.";
-    $("dimensions").textContent=`Sisä-AF ${currentMesh.innerAF.toFixed(2)} mm • Ulko-AF ${currentMesh.outerAF.toFixed(2)} mm • Korkeus ${currentMesh.height.toFixed(1)} mm`;
+    $("status").textContent=valid?`Malli luotu ja tarkistettu. Perusaukko ${currentMesh.innerAF.toFixed(2)} mm, lukituskohdassa ${currentMesh.lockAF.toFixed(2)} mm. Tulosta ensin sovitustesti.`:"Mallia ei anneta ladattavaksi ennen kuin mesh-tarkistus menee läpi.";
+    $("dimensions").textContent=`Sisä-AF ${currentMesh.innerAF.toFixed(2)} mm • Lukitus-AF ${currentMesh.lockAF.toFixed(2)} mm • Ulko-AF ${currentMesh.outerAF.toFixed(2)} mm • Korkeus ${currentMesh.height.toFixed(1)} mm`;
+    updateMaterialCard();
     draw();
   }catch(e){
     $("status").textContent="Virhe: "+e.message;
@@ -190,14 +237,15 @@ function saveMesh(mesh,filename,name){
   const blob=new Blob([stl(mesh,name)],{type:"model/stl"}),a=document.createElement("a");
   a.href=URL.createObjectURL(blob);a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
-function download(){if(currentMesh)saveMesh(currentMesh,"piikkimutterinsuojus_33mm_v0.2.stl","piikkimutterinsuojus_33mm_v02")}
-function downloadFit(){if(currentFitMesh)saveMesh(currentFitMesh,"piikkimutteri_33mm_sovitustesti_v0.2.stl","piikkimutteri_33mm_sovitustesti_v02")}
-function reset(){for(const [k,val] of Object.entries(defaults))$(k).value=val;generate();}
+function download(){if(currentMesh)saveMesh(currentMesh,"piikkimutterinsuojus_33mm_v0.3.stl","piikkimutterinsuojus_33mm_v03")}
+function downloadFit(){if(currentFitMesh)saveMesh(currentFitMesh,"piikkimutteri_33mm_sovitustesti_v0.3.stl","piikkimutteri_33mm_sovitustesti_v03")}
+function reset(){for(const [k,val] of Object.entries(defaults)){if($(k))$(k).value=val}generate();}
 
 $("btnGenerate").addEventListener("click",generate);
 $("btnDownload").addEventListener("click",download);
 $("btnFitTest").addEventListener("click",downloadFit);
 $("btnReset").addEventListener("click",reset);
+$("material").addEventListener("change",()=>{updateMaterialCard();generate()});
 canvas.addEventListener("pointerdown",e=>{drag=true;lastX=e.clientX;lastY=e.clientY;canvas.setPointerCapture(e.pointerId)});
 canvas.addEventListener("pointermove",e=>{if(!drag)return;yaw+=(e.clientX-lastX)*.008;pitch=Math.max(-1.2,Math.min(1.2,pitch+(e.clientY-lastY)*.006));lastX=e.clientX;lastY=e.clientY;draw()});
 canvas.addEventListener("pointerup",()=>drag=false);
