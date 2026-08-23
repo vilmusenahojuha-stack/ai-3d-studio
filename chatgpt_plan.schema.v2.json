@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vilmusenahojuha-stack.github.io/ai-3d-studio/chatgpt_plan.schema.v2.json",
+  "title": "AI 3D Studio ChatGPT Plan Schema v2",
+  "type": "object",
+  "required": ["schemaVersion", "status", "projectName", "partType", "material", "parameters"],
+  "properties": {
+    "schemaVersion": { "const": 2 },
+    "status": { "enum": ["ready", "approved"] },
+    "projectName": { "type": "string", "minLength": 1 },
+    "partType": {
+      "enum": ["sleeve", "spike", "endPlug", "mountingPlate", "adapter", "enclosure"]
+    },
+    "material": { "enum": ["PLA", "PETG", "ASA"] },
+    "parameters": {
+      "type": "object",
+      "description": "Parametric dimensions in millimetres. Supported names include length, width, height, thickness, wall, insideDiameter, outsideDiameter, holeDiameter, cornerRadius and chamfer.",
+      "additionalProperties": true
+    },
+    "operations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": { "enum": ["hole", "holes", "fillet", "chamfer", "union", "subtract", "intersect"] },
+          "x": { "type": "number" },
+          "y": { "type": "number" },
+          "z": { "type": "number" },
+          "diameter": { "type": "number", "exclusiveMinimum": 0 },
+          "radius": { "type": "number", "minimum": 0 },
+          "size": { "type": "number", "minimum": 0 },
+          "holes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["x", "y", "diameter"],
+              "properties": {
+                "x": { "type": "number" },
+                "y": { "type": "number" },
+                "diameter": { "type": "number", "exclusiveMinimum": 0 }
+              }
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "summary": { "type": "string" },
+    "updatedAt": { "type": "string" }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "hole": {
+      "type": "object",
+      "required": ["x", "y", "diameter"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "diameter": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    }
+  },
+  "examples": [
+    {
+      "schemaVersion": 2,
+      "status": "ready",
+      "projectName": "Kiinnikelevy 100x60x4",
+      "partType": "mountingPlate",
+      "material": "PETG",
+      "parameters": {
+        "length": 100,
+        "width": 60,
+        "thickness": 4,
+        "cornerRadius": 5,
+        "centerHole": { "diameter": 20 },
+        "holes": [
+          { "x": -35, "y": -15, "diameter": 6 },
+          { "x": 35, "y": -15, "diameter": 6 },
+          { "x": 35, "y": 15, "diameter": 6 },
+          { "x": -35, "y": 15, "diameter": 6 }
+        ]
+      },
+      "operations": [],
+      "summary": "Parametrinen kiinnikelevy keskireiällä ja neljällä kiinnitysreiällä."
+    }
+  ]
+}
