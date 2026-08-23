@@ -47,30 +47,42 @@ function buildMesh(p){
   const outerB=ring(ro,p.baseHeight,6);
   const inner0=ring(ri,0,6);
   const innerB=ring(ri,innerTop,6);
+  const innerCap=v(0,0,innerTop);
   const tipRing=ring(tipR,tipBaseZ,6);
   const apex=v(0,0,p.totalHeight);
   const T=[];
 
+  // Ulkoseinä.
   for(let i=0;i<6;i++){
     const j=(i+1)%6;
     T.push(tri(outer0[i],outer0[j],outerB[j]),tri(outer0[i],outerB[j],outerB[i]));
   }
+
+  // Sisäkolo mutterille.
   for(let i=0;i<6;i++){
     const j=(i+1)%6;
     T.push(tri(inner0[i],innerB[j],inner0[j]),tri(inner0[i],innerB[i],innerB[j]));
   }
+
+  // Alareunan materiaalikehä, keskusta jää auki mutteria varten.
   for(let i=0;i<6;i++){
     const j=(i+1)%6;
     T.push(tri(outer0[i],inner0[j],outer0[j]),tri(outer0[i],inner0[i],inner0[j]));
   }
+
+  // Mutterikolon suljettu katto. Tämä ei jaa ulkoreunaa piikin kanssa.
   for(let i=0;i<6;i++){
     const j=(i+1)%6;
-    T.push(tri(innerB[i],outerB[j],innerB[j]),tri(innerB[i],outerB[i],outerB[j]));
+    T.push(tri(innerB[i],innerCap,innerB[j]));
   }
+
+  // Piikki alkaa suoraan ulkoseinän yläreunasta.
   for(let i=0;i<6;i++){
     const j=(i+1)%6;
     T.push(tri(outerB[i],outerB[j],tipRing[j]),tri(outerB[i],tipRing[j],tipRing[i]));
   }
+
+  // Pieni kärkirengas suljetaan kärkipisteeseen.
   for(let i=0;i<6;i++){
     const j=(i+1)%6;
     T.push(tri(tipRing[i],tipRing[j],apex));
