@@ -5,13 +5,25 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#111827">
   <title>AI 3D Studio</title>
-  <link rel="stylesheet" href="styles.css?v=0.4.1">
+  <link rel="stylesheet" href="styles.css?v=0.5">
 </head>
 <body>
-<header class="topbar"><div><h1>AI 3D Studio</h1><p>Parametrinen 3D-suunnittelu ja STL-vienti</p></div><span class="badge">v0.4.1</span></header>
+<header class="topbar"><div><h1>AI 3D Studio</h1><p>AI-avusteinen parametrinen 3D-suunnittelu ja STL-vienti</p></div><span class="badge">v0.5</span></header>
 <main class="layout">
 <section class="panel controls">
-<h2>Piikkimutterinsuojus</h2><p class="hint">Kuorma-auton 33 mm pyöränmutterille. Malli, puristuslukitus, materiaaliprofiilit ja mittanäkymä.</p>
+<h2>Piikkimutterinsuojus</h2><p class="hint">Kuorma-auton pyöränmutterille. Voit suunnitella joko AI-avustimella tai muuttaa mittoja käsin.</p>
+
+<div class="ai-box">
+  <div class="ai-title"><span>✨ AI-SUUNNITTELU</span><span class="ai-stage">v1</span></div>
+  <p class="ai-help">Kuvaile osa tavallisella suomella. Avustin ehdottaa mitat ensin — mitään ei muuteta ennen hyväksyntää.</p>
+  <textarea id="aiPrompt" rows="4" placeholder="Esim. Tee 33 mm mutterille 90 mm pitkä terävä piikkisuoja ASA:sta. Seinämä 3 mm ja napakka lukitus."></textarea>
+  <div class="ai-actions"><button id="btnAiAnalyze" class="ai-primary">ANALYSOI PYYNTÖ</button><button id="btnAiExample" class="tool">ESIMERKKI</button></div>
+  <div id="aiStatus" class="ai-status">Valmis. Kirjoita suunnittelupyyntö.</div>
+  <div id="aiProposal" class="ai-proposal" hidden></div>
+  <div id="aiApproval" class="ai-approval" hidden><button id="btnAiAccept" class="primary">HYVÄKSY JA LUO 3D-MALLI</button><button id="btnAiReject" class="ghost">HYLKÄÄ EHDOTUS</button></div>
+  <div class="ai-security">Tässä v1-versiossa luonnollisen kielen tulkinta tehdään turvallisesti selaimessa. Oikea OpenAI-yhteys lisätään myöhemmin palvelimen kautta — API-avainta ei tallenneta julkiseen GitHub Pages -koodiin.</div>
+</div>
+
 <div class="section-title">Sovitus</div><div class="grid">
 <label>Mutterin avainkoko (mm)<input id="nutAf" type="number" value="33" step="0.1"></label>
 <label>Välys per puoli (mm)<input id="clearance" type="number" value="0.25" step="0.05"></label>
@@ -35,6 +47,7 @@
 <div class="legend" id="legend"></div>
 </section>
 </main>
-<footer><p>AI 3D Studio v0.4.1 — korjattu mobiilin mittanäkymä.</p></footer>
-<script src="app.js?v=0.4.1"></script>
+<footer><p>AI 3D Studio v0.5 — AI-suunnittelun ensimmäinen turvallinen hyväksyntäketju.</p></footer>
+<script src="app.js?v=0.5"></script>
+<script src="ai.js?v=0.5"></script>
 </body></html>
