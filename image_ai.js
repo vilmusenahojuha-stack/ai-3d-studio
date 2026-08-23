@@ -1,6 +1,6 @@
 "use strict";
 (()=>{
-  const $=id=>document.getElementById(id);
+  const $=id=>document.getElementById(id),DEFAULT_BACKEND="https://ai-3d-studio-backend.onrender.com";
   const host=document.querySelector(".controls");
   const textAi=document.querySelector(".ai-box");
   if(!host||!textAi)return;
@@ -34,9 +34,10 @@
 
   let imageData=null,analysis=null,cadProposal=null;
   const apiInput=$("imageApiUrl");
-  apiInput.value=localStorage.getItem("ai3d:imageApiUrl")||"";
-  apiInput.addEventListener("change",()=>localStorage.setItem("ai3d:imageApiUrl",apiInput.value.trim().replace(/\/$/,"")));
-  const endpoint=path=>{const base=apiInput.value.trim().replace(/\/$/,"");if(!base)throw Error("AI-backendia ei ole vielä yhdistetty. Lisää Backend URL.");return base+path};
+  apiInput.value=localStorage.getItem("ai3d:imageApiUrl")||DEFAULT_BACKEND;
+  if(!localStorage.getItem("ai3d:imageApiUrl"))localStorage.setItem("ai3d:imageApiUrl",DEFAULT_BACKEND);
+  apiInput.addEventListener("change",()=>localStorage.setItem("ai3d:imageApiUrl",apiInput.value.trim().replace(/\/$/,"")||DEFAULT_BACKEND));
+  const endpoint=path=>{const base=(apiInput.value.trim().replace(/\/$/,"")||DEFAULT_BACKEND);return base+path};
 
   function readFile(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(Error("Kuvan lukeminen epäonnistui."));r.readAsDataURL(file)})}
   $("imageFile").addEventListener("change",async e=>{const f=e.target.files?.[0];if(!f)return;if(!f.type.startsWith("image/")){$("imageStatus").textContent="Valitse kuvatiedosto.";return}if(f.size>8*1024*1024){$("imageStatus").textContent="Kuva on liian suuri. Maksimi 8 Mt.";return}imageData=await readFile(f);$("imagePreview").src=imageData;$("imagePreview").hidden=false;$("imageDropText").hidden=true;$("btnImageAnalyze").disabled=false;$("imageStatus").textContent="Kuva valmis analysoitavaksi.";analysis=null;cadProposal=null;$("imageResult").hidden=true;$("imageQuestions").innerHTML="";$("btnImageFinalize").hidden=true;$("imageCadProposal").hidden=true;$("btnImageAccept").hidden=true});
