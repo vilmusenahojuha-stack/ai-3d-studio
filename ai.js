@@ -1,99 +1,14 @@
 "use strict";
-(() => {
-  const $ = id => document.getElementById(id);
-  let proposal = null;
-
-  const clamp=(v,min,max)=>Math.min(max,Math.max(min,v));
-  const numberFrom=(text,patterns)=>{
-    for(const re of patterns){const m=text.match(re);if(m)return Number(String(m[1]).replace(",","."));}
-    return null;
-  };
-
-  function parsePrompt(raw){
-    const t=raw.toLowerCase().replace(/\s+/g," ").trim();
-    if(!t) throw new Error("Kirjoita ensin mitä haluat suunnitella.");
-
-    const current={
-      nutAf:Number($("nutAf").value),clearance:Number($("clearance").value),lockAmount:Number($("lockAmount").value),
-      lockZ:Number($("lockZ").value),wall:Number($("wall").value),baseHeight:Number($("baseHeight").value),
-      totalHeight:Number($("totalHeight").value),tipRadius:Number($("tipRadius").value),material:$("material").value
-    };
-    const p={...current};
-    const found=[];
-
-    const nut=numberFrom(t,[/(\d+(?:[.,]\d+)?)\s*mm\s*(?:mutter|pyöränmutter)/,/(?:mutter|avainkoko)[^\d]{0,12}(\d+(?:[.,]\d+)?)/]);
-    if(nut){p.nutAf=clamp(nut,10,80);found.push(`mutteri ${p.nutAf} mm`)}
-
-    const height=numberFrom(t,[/(?:kokonaiskorkeus|korkeus|pitkä|pituus)[^\d]{0,12}(\d+(?:[.,]\d+)?)\s*mm/,/(\d+(?:[.,]\d+)?)\s*mm\s*(?:pitkä|korkea)/]);
-    if(height){p.totalHeight=clamp(height,25,160);found.push(`korkeus ${p.totalHeight} mm`)}
-
-    const wall=numberFrom(t,[/(?:seinämä|seinaman|seinämän)[^\d]{0,12}(\d+(?:[.,]\d+)?)\s*mm/]);
-    if(wall){p.wall=clamp(wall,1,8);found.push(`seinämä ${p.wall} mm`)}
-
-    const base=numberFrom(t,[/(?:mutteriosan korkeus|mutteriosa)[^\d]{0,12}(\d+(?:[.,]\d+)?)\s*mm/]);
-    if(base){p.baseHeight=clamp(base,8,60);found.push(`mutteriosa ${p.baseHeight} mm`)}
-
-    const clear=numberFrom(t,[/(?:välys|valys)[^\d]{0,12}(\d+(?:[.,]\d+)?)\s*mm/]);
-    if(clear!==null){p.clearance=clamp(clear,0,2);found.push(`välys ${p.clearance} mm/puoli`)}
-
-    const lock=numberFrom(t,[/(?:puristuslukitus|lukitus)[^\d]{0,12}(\d+(?:[.,]\d+)?)\s*mm/]);
-    if(lock!==null){p.lockAmount=clamp(lock,0,1.2);found.push(`lukitus ${p.lockAmount} mm`)}
-
-    if(/napakka|tiukka|pitävä/.test(t) && lock===null){p.lockAmount=.25; p.clearance=.20; found.push("napakka sovitus")}
-    if(/helposti irtoava|löysä|loysa/.test(t)){p.lockAmount=.10; p.clearance=.35; found.push("väljempi sovitus")}
-    if(/terävä|terava/.test(t)){p.tipRadius=.35;found.push("terävä kärki")}
-    if(/pyöristetty kärki|pyoristetty karki|pyöreä kärki|pyorea karki/.test(t)){p.tipRadius=1.5;found.push("pyöristetty kärki")}
-
-    if(/\basa\b/.test(t)) p.material="ASA";
-    else if(/\bpetg\b/.test(t)) p.material="PETG";
-    else if(/\bpla\b/.test(t)) p.material="PLA";
-
-    if(/ulko|rekka|kuorma-auto|uv|sää|saa/.test(t) && !/\b(pla|petg|asa)\b/.test(t)) p.material="ASA";
-
-    if(p.totalHeight<=p.baseHeight+8) p.totalHeight=p.baseHeight+12;
-    if(p.lockZ>p.baseHeight-4) p.lockZ=Math.max(2,p.baseHeight-5);
-
-    const warnings=[];
-    if(found.length===0) warnings.push("Pyynnöstä ei löytynyt selviä mittoja; nykyiset arvot säilytettiin.");
-    if(p.material==="ASA") warnings.push("ASA sopii ulkokäyttöön, mutta tulosta suljetulla tulostimella ja käytä hyvää ilmanvaihtoa.");
-    warnings.push("33 mm avainkoko ei yksin takaa täydellistä istuvuutta — sovitustesti tehdään ennen lopullista kappaletta.");
-
-    return {params:p, found, warnings, raw};
-  }
-
-  function showProposal(r){
-    const p=r.params;
-    $("aiProposal").hidden=false;
-    $("aiApproval").hidden=false;
-    $("aiProposal").innerHTML=`
-      <div class="proposal-title">Ehdotetut asetukset</div>
-      <div class="proposal-grid">
-        <span>Mutteri <b>${p.nutAf.toFixed(1)} mm</b></span><span>Korkeus <b>${p.totalHeight.toFixed(1)} mm</b></span>
-        <span>Seinämä <b>${p.wall.toFixed(2)} mm</b></span><span>Välys <b>${p.clearance.toFixed(2)} mm/puoli</b></span>
-        <span>Lukitus <b>${p.lockAmount.toFixed(2)} mm</b></span><span>Mutteriosa <b>${p.baseHeight.toFixed(1)} mm</b></span>
-        <span>Kärki <b>${p.tipRadius.toFixed(2)} mm</b></span><span>Materiaali <b>${p.material}</b></span>
-      </div>
-      ${r.found.length?`<div class="proposal-note">Tulkittu: ${r.found.join(" • ")}</div>`:""}
-      <div class="proposal-warn">${r.warnings.map(x=>`⚠ ${x}`).join("<br>")}</div>`;
-    $("aiStatus").textContent="Ehdotus valmis. Tarkista mitat ja hyväksy vasta sitten.";
-  }
-
-  function applyProposal(){
-    if(!proposal) return;
-    const p=proposal.params;
-    for(const k of ["nutAf","clearance","lockAmount","lockZ","wall","baseHeight","totalHeight","tipRadius"]) $(k).value=p[k];
-    $("material").value=p.material;
-    $("btnGenerate").click();
-    $("aiStatus").textContent="✓ Ehdotus hyväksytty ja 3D-malli luotu.";
-    $("aiProposal").hidden=true;$("aiApproval").hidden=true;
-    document.querySelector(".preview-panel")?.scrollIntoView({behavior:"smooth",block:"start"});
-  }
-
-  $("btnAiAnalyze").addEventListener("click",()=>{
-    try{proposal=parsePrompt($("aiPrompt").value);showProposal(proposal)}
-    catch(e){$("aiStatus").textContent="Virhe: "+e.message;$("aiProposal").hidden=true;$("aiApproval").hidden=true;proposal=null;}
-  });
-  $("btnAiExample").addEventListener("click",()=>{$("aiPrompt").value="Tee 33 mm mutterille 90 mm pitkä terävä piikkisuoja ASA:sta. Seinämä 3 mm ja napakka lukitus.";});
-  $("btnAiAccept").addEventListener("click",applyProposal);
-  $("btnAiReject").addEventListener("click",()=>{proposal=null;$("aiProposal").hidden=true;$("aiApproval").hidden=true;$("aiStatus").textContent="Ehdotus hylätty. Nykyistä mallia ei muutettu.";});
-})();
+(()=>{const $=id=>document.getElementById(id);let proposal=null,exampleIndex=0;const examples=["Tee 33 mm mutterille 90 mm pitkä terävä piikkisuoja ASA:sta. Seinämä 3 mm ja napakka lukitus.","Tee 50 x 30 mm suorakaideputkeen päätytulppa. Putken seinämä 2,5 mm, upotus 18 mm ja ASA.","Tee holkki, sisähalkaisija 20 mm, seinämä 3 mm ja pituus 35 mm PETG:stä.","Tee 100 x 50 mm kiinnikeaihio, paksuus 4 mm PETG:stä."];
+const num=s=>Number(String(s).replace(",",".")),find=(t,re)=>{const m=t.match(re);return m?num(m[1]):null},mat=t=>/\basa\b/i.test(t)?"ASA":/\bpetg\b/i.test(t)?"PETG":/\bpla\b/i.test(t)?"PLA":null;
+function detectType(t){if(/päätytulppa|paatytulppa|suorakaideputk|putken tulppa/.test(t))return"plug";if(/holkki|soviterengas|soviteholkki/.test(t))return"sleeve";if(/levy|kiinnikeaihio|kiinnikelevy/.test(t))return"plate";if(/piikk|mutteri|pyöränmutter|pyoranmutter/.test(t))return"spike";return null}
+function parse(raw){const t=raw.toLowerCase().replace(/×/g,"x").replace(/\s+/g," ").trim();if(!t)throw Error("Kirjoita ensin mitä haluat suunnitella.");const type=detectType(t),material=mat(t)||(/ulko|uv|rekka|kuorma-auto/.test(t)?"ASA":$("material").value),values={},found=[],missing=[],warnings=[];if(!type){missing.push("osatyyppi (esim. piikkimutteri, päätytulppa, holkki tai levy)");return{type:null,values,material,found,missing,warnings,raw}}
+if(type==="spike"){let n=find(t,/(\d+(?:[.,]\d+)?)\s*mm\s*(?:mutter|pyöränmutter|pyoranmutter)/)||find(t,/(?:mutter|avainkoko)[^\d]{0,12}(\d+(?:[.,]\d+)?)/);let h=find(t,/(?:pitkä|pitka|korkeus|korkea)[^\d]{0,10}(\d+(?:[.,]\d+)?)\s*mm/)||find(t,/(\d+(?:[.,]\d+)?)\s*mm\s*(?:pitkä|pitka|korkea)/);let w=find(t,/(?:seinämä|seinama)[^\d]{0,10}(\d+(?:[.,]\d+)?)\s*mm/);if(n!==null){values.nutAf=n;found.push(`mutteri ${n} mm`)}else missing.push("mutterin avainkoko");if(h!==null){values.totalHeight=h;found.push(`korkeus ${h} mm`)}else values.totalHeight=75;if(w!==null)values.wall=w;if(/napakka|tiukka|pitävä|pitava/.test(t)){values.lockAmount=.25;values.clearance=.20}if(/terävä|terava/.test(t))values.tipRadius=.35;warnings.push("Tulosta aina ensin sovitustesti ennen liikennekäyttöä.")}
+if(type==="plug"){const dims=t.match(/(\d+(?:[.,]\d+)?)\s*[x]\s*(\d+(?:[.,]\d+)?)\s*mm/);const tw=find(t,/(?:putken seinämä|putken seinama|seinämä|seinama)[^\d]{0,12}(\d+(?:[.,]\d+)?)\s*mm/),ins=find(t,/(?:upotus|upotussyvyys|sisään|sisaan)[^\d]{0,10}(\d+(?:[.,]\d+)?)\s*mm/),ct=find(t,/(?:päätylevyn paksuus|paatylevyn paksuus|kannen paksuus)[^\d]{0,10}(\d+(?:[.,]\d+)?)\s*mm/);if(dims){values.tubeW=num(dims[1]);values.tubeH=num(dims[2]);found.push(`putki ${values.tubeW} × ${values.tubeH} mm`)}else missing.push("putken ulkomitat, esim. 50 × 30 mm");if(tw!==null){values.tubeWall=tw;found.push(`putken seinämä ${tw} mm`)}else missing.push("putken seinämän paksuus");values.insertDepth=ins??18;values.capThickness=ct??3;values.plugClear=.25;values.capOverhang=1;warnings.push("Putken todellinen sisämitta kannattaa mitata työntömitalla ennen lopullista tulostusta.")}
+if(type==="sleeve"){const id=find(t,/(?:sisähalkaisija|sisahalkaisija|sisä ?ø|sisa ?ø|id)[^\d]{0,10}(\d+(?:[.,]\d+)?)\s*mm/),w=find(t,/(?:seinämä|seinama)[^\d]{0,10}(\d+(?:[.,]\d+)?)\s*mm/),h=find(t,/(?:pituus|pitkä|pitka)[^\d]{0,10}(\d+(?:[.,]\d+)?)\s*mm/);if(id!==null)values.sleeveID=id;else missing.push("holkin sisähalkaisija");if(w!==null)values.sleeveWall=w;else missing.push("holkin seinämä");if(h!==null)values.sleeveLength=h;else missing.push("holkin pituus")}
+if(type==="plate"){const dims=t.match(/(\d+(?:[.,]\d+)?)\s*x\s*(\d+(?:[.,]\d+)?)\s*mm/),th=find(t,/(?:paksuus|paksu)[^\d]{0,10}(\d+(?:[.,]\d+)?)\s*mm/);if(dims){values.plateL=num(dims[1]);values.plateW=num(dims[2]);found.push(`levy ${values.plateL} × ${values.plateW} mm`)}else missing.push("levyn pituus ja leveys, esim. 100 × 50 mm");if(th!==null)values.plateT=th;else missing.push("levyn paksuus");if(/reikä|reika|pultinreikä|pultinreika/.test(t))warnings.push("v0.6 ei vielä tee reikiä levyyn; reikätyökalu lisätään seuraavaksi.")}
+return{type,values,material,found,missing,warnings,raw}}
+function typeName(t){return{spike:"Piikkimutterinsuojus",plug:"Suorakaideputken päätytulppa",sleeve:"Holkki / soviterengas",plate:"Levy / kiinnikeaihio"}[t]||"Tuntematon"}
+function show(r){$("aiProposal").hidden=false;const miss=r.missing.length>0;$("aiApproval").hidden=miss;const vals=Object.entries(r.values).map(([k,v])=>`<span>${k} <b>${typeof v==="number"?v.toFixed(2):v}</b></span>`).join("");$("aiProposal").innerHTML=`<div class="proposal-title">${typeName(r.type)}</div>${vals?`<div class="proposal-grid">${vals}</div>`:""}${r.found.length?`<div class="proposal-note">Tulkittu: ${r.found.join(" • ")}</div>`:""}${miss?`<div class="proposal-warn"><b>Tarvitsen vielä:</b><br>• ${r.missing.join("<br>• ")}</div>`:""}${r.warnings.length?`<div class="proposal-warn">${r.warnings.map(x=>`⚠ ${x}`).join("<br>")}</div>`:""}`;$("aiStatus").textContent=miss?"Pyyntö tunnistettiin, mutta kriittisiä mittoja puuttuu. Lisää ne tekstiin ja analysoi uudelleen.":"Ehdotus valmis. Tarkista mitat ja hyväksy."}
+function apply(){if(!proposal||proposal.missing.length)return;$("material").value=proposal.material;window.AI3D.setPart(proposal.type,proposal.values);$("aiStatus").textContent=`✓ ${typeName(proposal.type)} luotu ja tarkistettu.`;$("aiProposal").hidden=true;$("aiApproval").hidden=true;document.querySelector(".preview-panel")?.scrollIntoView({behavior:"smooth",block:"start"})}
+$("btnAiAnalyze").onclick=()=>{try{proposal=parse($("aiPrompt").value);show(proposal)}catch(e){$("aiStatus").textContent="Virhe: "+e.message}};$("btnAiExample").onclick=()=>{$("aiPrompt").value=examples[exampleIndex++%examples.length]};$("btnAiAccept").onclick=apply;$("btnAiReject").onclick=()=>{proposal=null;$("aiProposal").hidden=true;$("aiApproval").hidden=true;$("aiStatus").textContent="Ehdotus hylätty."};})();
