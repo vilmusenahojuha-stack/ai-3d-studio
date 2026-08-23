@@ -1,53 +1,15 @@
 <!doctype html>
-<html lang="fi">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#111827">
-  <title>AI 3D Studio</title>
-  <link rel="stylesheet" href="styles.css?v=0.5">
-</head>
-<body>
-<header class="topbar"><div><h1>AI 3D Studio</h1><p>AI-avusteinen parametrinen 3D-suunnittelu ja STL-vienti</p></div><span class="badge">v0.5</span></header>
-<main class="layout">
-<section class="panel controls">
-<h2>Piikkimutterinsuojus</h2><p class="hint">Kuorma-auton pyöränmutterille. Voit suunnitella joko AI-avustimella tai muuttaa mittoja käsin.</p>
-
-<div class="ai-box">
-  <div class="ai-title"><span>✨ AI-SUUNNITTELU</span><span class="ai-stage">v1</span></div>
-  <p class="ai-help">Kuvaile osa tavallisella suomella. Avustin ehdottaa mitat ensin — mitään ei muuteta ennen hyväksyntää.</p>
-  <textarea id="aiPrompt" rows="4" placeholder="Esim. Tee 33 mm mutterille 90 mm pitkä terävä piikkisuoja ASA:sta. Seinämä 3 mm ja napakka lukitus."></textarea>
-  <div class="ai-actions"><button id="btnAiAnalyze" class="ai-primary">ANALYSOI PYYNTÖ</button><button id="btnAiExample" class="tool">ESIMERKKI</button></div>
-  <div id="aiStatus" class="ai-status">Valmis. Kirjoita suunnittelupyyntö.</div>
-  <div id="aiProposal" class="ai-proposal" hidden></div>
-  <div id="aiApproval" class="ai-approval" hidden><button id="btnAiAccept" class="primary">HYVÄKSY JA LUO 3D-MALLI</button><button id="btnAiReject" class="ghost">HYLKÄÄ EHDOTUS</button></div>
-  <div class="ai-security">Tässä v1-versiossa luonnollisen kielen tulkinta tehdään turvallisesti selaimessa. Oikea OpenAI-yhteys lisätään myöhemmin palvelimen kautta — API-avainta ei tallenneta julkiseen GitHub Pages -koodiin.</div>
-</div>
-
-<div class="section-title">Sovitus</div><div class="grid">
-<label>Mutterin avainkoko (mm)<input id="nutAf" type="number" value="33" step="0.1"></label>
-<label>Välys per puoli (mm)<input id="clearance" type="number" value="0.25" step="0.05"></label>
-<label>Puristuslukitus (mm)<input id="lockAmount" type="number" value="0.20" step="0.05"></label>
-<label>Lukituksen korkeus (mm)<input id="lockZ" type="number" value="7" step="0.5"></label></div>
-<div class="section-title">Muoto</div><div class="grid">
-<label>Seinämä (mm)<input id="wall" type="number" value="2.5" step="0.1"></label>
-<label>Mutteriosan korkeus (mm)<input id="baseHeight" type="number" value="24" step="0.5"></label>
-<label>Kokonaiskorkeus (mm)<input id="totalHeight" type="number" value="75" step="1"></label>
-<label>Kärjen pyöristys (mm)<input id="tipRadius" type="number" value="0.8" step="0.1"></label></div>
-<div class="section-title">Tulostusmateriaali</div><div class="material-row"><select id="material"><option value="PLA">PLA – koekappale</option><option value="PETG">PETG – helppo käyttöosa</option><option value="ASA" selected>ASA – ulkokäyttö / UV</option></select><div id="materialCard" class="material-card"></div></div>
-<div class="actions"><button id="btnGenerate" class="primary">LUO JA TARKISTA MALLI</button><button id="btnFitTest" disabled>LATAA SOVITUSTESTI STL</button><button id="btnDownload" disabled>LATAA KOKO STL</button><button id="btnReset" class="ghost">PALAUTA OLETUKSET</button></div>
-<div id="status" class="status">Valmis suunnitteluun.</div><div id="validation" class="validation"></div>
-<details open><summary>Suositeltu ensimmäinen tulostus</summary><p>Tulosta ensin sovitustesti. Kun se menee mutterille napakasti mutta ilman väkivaltaa, tulosta vasta koko piikki.</p></details>
-</section>
-<section class="panel preview-panel">
-<div class="preview-head"><div><h2>3D-esikatselu</h2><p class="hint">Vedä sormella tai hiirellä pyörittääksesi.</p></div><div class="dimensions" id="dimensions">–</div></div>
-<div class="view-tools"><button id="btnMeasure" class="tool active">MITTANÄKYMÄ: PÄÄLLÄ</button><button id="btnFront" class="tool">ETUNÄKYMÄ</button><button id="btnIso" class="tool">3D-NÄKYMÄ</button></div>
-<div class="canvas-wrap"><canvas id="preview" width="900" height="700" aria-label="3D-esikatselu"></canvas><div id="measureOverlay" class="measure-overlay"></div></div>
-<div class="measure-help">Keltaiset mittaviivat ja mittalaatikot näyttävät mallin suunnittelumitat. Sisä- ja lukitus-AF ovat kuusikulmion vastakkaisten sivujen välisiä mittoja.</div>
-<div class="legend" id="legend"></div>
-</section>
-</main>
-<footer><p>AI 3D Studio v0.5 — AI-suunnittelun ensimmäinen turvallinen hyväksyntäketju.</p></footer>
-<script src="app.js?v=0.5"></script>
-<script src="ai.js?v=0.5"></script>
-</body></html>
+<html lang="fi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#111827"><title>AI 3D Studio</title><link rel="stylesheet" href="styles.css?v=0.6"></head>
+<body><header class="topbar"><div><h1>AI 3D Studio</h1><p>AI-avusteinen parametrinen 3D-suunnittelu ja STL-vienti</p></div><span class="badge">v0.6</span></header>
+<main class="layout"><section class="panel controls">
+<h2 id="partTitle">Piikkimutterinsuojus</h2><p class="hint">AI voi nyt valita useita osatyyppejä. Puuttuvat kriittiset mitat kysytään ennen mallin luontia.</p>
+<div class="ai-box"><div class="ai-title"><span>✨ AI-SUUNNITTELU</span><span class="ai-stage">v2</span></div><p class="ai-help">Kuvaile osa tavallisella suomella. Esim. “tee 50 × 30 mm suorakaideputkeen päätytulppa, putken seinämä 2,5 mm, ASA”.</p><textarea id="aiPrompt" rows="4" placeholder="Kuvaile osa ja tärkeät mitat..."></textarea><div class="ai-actions"><button id="btnAiAnalyze" class="ai-primary">ANALYSOI PYYNTÖ</button><button id="btnAiExample" class="tool">ESIMERKIT</button></div><div id="aiStatus" class="ai-status">Valmis. Kirjoita suunnittelupyyntö.</div><div id="aiProposal" class="ai-proposal" hidden></div><div id="aiApproval" class="ai-approval" hidden><button id="btnAiAccept" class="primary">HYVÄKSY JA LUO 3D-MALLI</button><button id="btnAiReject" class="ghost">HYLKÄÄ</button></div><div class="ai-security">v0.6 käyttää vielä paikallista turvallista tulkintaa. Varsinainen OpenAI-yhteys lisätään myöhemmin backendin kautta.</div></div>
+<div class="section-title">Osatyyppi</div><select id="partType"><option value="spike">Piikkimutterinsuojus</option><option value="plug">Suorakaideputken päätytulppa</option><option value="sleeve">Holkki / soviterengas</option><option value="plate">Levy / kiinnikeaihio</option></select>
+<div id="fields-spike" class="part-fields"><div class="section-title">Sovitus</div><div class="grid"><label>Mutterin avainkoko (mm)<input id="nutAf" type="number" value="33" step="0.1"></label><label>Välys per puoli (mm)<input id="clearance" type="number" value="0.25" step="0.05"></label><label>Puristuslukitus (mm)<input id="lockAmount" type="number" value="0.20" step="0.05"></label><label>Lukituksen korkeus (mm)<input id="lockZ" type="number" value="7" step="0.5"></label></div><div class="section-title">Muoto</div><div class="grid"><label>Seinämä (mm)<input id="wall" type="number" value="2.5" step="0.1"></label><label>Mutteriosan korkeus (mm)<input id="baseHeight" type="number" value="24" step="0.5"></label><label>Kokonaiskorkeus (mm)<input id="totalHeight" type="number" value="75" step="1"></label><label>Kärjen pyöristys (mm)<input id="tipRadius" type="number" value="0.8" step="0.1"></label></div></div>
+<div id="fields-plug" class="part-fields" hidden><div class="section-title">Putki ja tulppa</div><div class="grid"><label>Putken ulkoleveys (mm)<input id="tubeW" type="number" value="50" step="0.1"></label><label>Putken ulkokorkeus (mm)<input id="tubeH" type="number" value="30" step="0.1"></label><label>Putken seinämä (mm)<input id="tubeWall" type="number" value="2.5" step="0.1"></label><label>Sovitusvälys / puoli (mm)<input id="plugClear" type="number" value="0.25" step="0.05"></label><label>Upotussyvyys (mm)<input id="insertDepth" type="number" value="18" step="1"></label><label>Päätylevyn paksuus (mm)<input id="capThickness" type="number" value="3" step="0.5"></label><label>Päätylevyn ylitys / puoli (mm)<input id="capOverhang" type="number" value="1" step="0.5"></label></div></div>
+<div id="fields-sleeve" class="part-fields" hidden><div class="section-title">Holkki</div><div class="grid"><label>Sisähalkaisija (mm)<input id="sleeveID" type="number" value="20" step="0.1"></label><label>Seinämä (mm)<input id="sleeveWall" type="number" value="3" step="0.1"></label><label>Pituus (mm)<input id="sleeveLength" type="number" value="30" step="1"></label></div></div>
+<div id="fields-plate" class="part-fields" hidden><div class="section-title">Levy</div><div class="grid"><label>Pituus (mm)<input id="plateL" type="number" value="100" step="1"></label><label>Leveys (mm)<input id="plateW" type="number" value="50" step="1"></label><label>Paksuus (mm)<input id="plateT" type="number" value="4" step="0.5"></label></div><p class="hint">Tämä versio tekee kiinnikeaihion ilman reikiä. Reikätyökalu tulee seuraavaan vaiheeseen.</p></div>
+<div class="section-title">Tulostusmateriaali</div><div class="material-row"><select id="material"><option value="PLA">PLA – koekappale</option><option value="PETG">PETG – käyttöosa</option><option value="ASA" selected>ASA – ulkokäyttö / UV</option></select><div id="materialCard" class="material-card"></div></div>
+<div class="actions"><button id="btnGenerate" class="primary">LUO JA TARKISTA MALLI</button><button id="btnFitTest">LATAA SOVITUSTESTI STL</button><button id="btnDownload" disabled>LATAA STL</button><button id="btnReset" class="ghost">PALAUTA OLETUKSET</button></div><div id="status" class="status">Valmis suunnitteluun.</div><div id="validation" class="validation"></div>
+</section><section class="panel preview-panel"><div class="preview-head"><div><h2>3D-esikatselu</h2><p class="hint">Vedä sormella tai hiirellä pyörittääksesi.</p></div><div class="dimensions" id="dimensions">–</div></div><div class="view-tools"><button id="btnMeasure" class="tool active">MITTANÄKYMÄ: PÄÄLLÄ</button><button id="btnFront" class="tool">ETUNÄKYMÄ</button><button id="btnIso" class="tool">3D-NÄKYMÄ</button></div><div class="canvas-wrap"><canvas id="preview" width="900" height="700"></canvas><div id="measureOverlay" class="measure-overlay"></div></div><div class="measure-help">Mittalaatikot näyttävät valitun osan tärkeimmät suunnittelumitat.</div><div class="legend" id="legend"></div></section></main>
+<footer><p>AI 3D Studio v0.6 — moniosainen parametrinen suunnittelu ja puuttuvien mittojen tunnistus.</p></footer><script src="app.js?v=0.6"></script><script src="ai.js?v=0.6"></script></body></html>
