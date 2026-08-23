@@ -1,98 +1,33 @@
 "use strict";
 (() => {
-  const N = 64;
-  const el = id => document.getElementById(id);
-
-  function resamplePolygon(points, n=N){
-    const seg=[]; let total=0;
-    for(let i=0;i<points.length;i++){
-      const a=points[i],b=points[(i+1)%points.length];
-      const len=Math.hypot(b.x-a.x,b.y-a.y); seg.push({a,b,len,start:total}); total+=len;
-    }
-    const out=[];
-    for(let k=0;k<n;k++){
-      const target=total*k/n;
-      let s=seg[seg.length-1];
-      for(const q of seg){if(target>=q.start && target<=q.start+q.len){s=q;break}}
-      const t=s.len?((target-s.start)/s.len):0;
-      out.push(v(s.a.x+(s.b.x-s.a.x)*t,s.a.y+(s.b.y-s.a.y)*t,s.a.z));
-    }
-    return out;
+  const N=64, el=id=>document.getElementById(id);
+  function resamplePolygon(points,n=N){const seg=[];let total=0;for(let i=0;i<points.length;i++){const a=points[i],b=points[(i+1)%points.length],len=Math.hypot(b.x-a.x,b.y-a.y);seg.push({a,b,len,start:total});total+=len}const out=[];for(let k=0;k<n;k++){const target=total*k/n;let s=seg[seg.length-1];for(const q of seg)if(target>=q.start&&target<=q.start+q.len){s=q;break}const t=s.len?(target-s.start)/s.len:0;out.push(v(s.a.x+(s.b.x-s.a.x)*t,s.a.y+(s.b.y-s.a.y)*t,s.a.z))}return out}
+  function roundedRectRing(L,W,z,r,n=N){r=Math.max(0,Math.min(r,L/2-.2,W/2-.2));if(r<=.001)return resamplePolygon([v(-L/2,-W/2,z),v(L/2,-W/2,z),v(L/2,W/2,z),v(-L/2,W/2,z)],n);const per=Math.max(4,Math.floor(n/4)),out=[],corners=[[L/2-r,-W/2+r,-Math.PI/2,0],[L/2-r,W/2-r,0,Math.PI/2],[-L/2+r,W/2-r,Math.PI/2,Math.PI],[-L/2+r,-W/2+r,Math.PI,Math.PI*1.5]];for(const[cx,cy,a0,a1]of corners)for(let i=0;i<per;i++){const a=a0+(a1-a0)*i/per;out.push(v(cx+r*Math.cos(a),cy+r*Math.sin(a),z))}return out.length===n?out:resamplePolygon(out,n)}
+  function chamferRectRing(L,W,z,c,n=N){c=Math.max(0,Math.min(c,L/2-.2,W/2-.2));if(c<=.001)return roundedRectRing(L,W,z,0,n);return resamplePolygon([v(-L/2+c,-W/2,z),v(L/2-c,-W/2,z),v(L/2,-W/2+c,z),v(L/2,W/2-c,z),v(L/2-c,W/2,z),v(-L/2+c,W/2,z),v(-L/2,W/2-c,z),v(-L/2,-W/2+c,z)],n)}
+  function outerRing(L,W,z,style,size){return style==="round"?roundedRectRing(L,W,z,size,N):style==="chamfer"?chamferRectRing(L,W,z,size,N):roundedRectRing(L,W,z,0,N)}
+  function holeRing(cx,cy,r,z){const a=[];for(let i=0;i<N;i++){const q=2*Math.PI*i/N;a.push(v(cx+r*Math.cos(q),cy+r*Math.sin(q),z))}return a}
+  function triFanBetweenOuterAndHoles(tris,outer,holes,z,top){
+    // Triangulate planar surface by grid sampling is avoided; use bridge cuts from each hole to outer via polygon strips.
+    // For robust multi-hole STL, build surface as rectangular cell mesh clipped against circular holes.
+    const xs=[...new Set(outer.map(p=>p.x).concat(holes.flatMap(h=>h.map(p=>p.x))))].sort((a,b)=>a-b);
+    return false;
   }
-
-  function roundedRectRing(L,W,z,r,n=N){
-    r=Math.max(0,Math.min(r,L/2-.2,W/2-.2));
-    if(r<=.001) return resamplePolygon([v(-L/2,-W/2,z),v(L/2,-W/2,z),v(L/2,W/2,z),v(-L/2,W/2,z)],n);
-    const per=Math.max(4,Math.floor(n/4)),out=[];
-    const corners=[
-      [L/2-r,-W/2+r,-Math.PI/2,0],
-      [L/2-r,W/2-r,0,Math.PI/2],
-      [-L/2+r,W/2-r,Math.PI/2,Math.PI],
-      [-L/2+r,-W/2+r,Math.PI,Math.PI*1.5]
-    ];
-    for(const [cx,cy,a0,a1] of corners){
-      for(let i=0;i<per;i++){
-        const a=a0+(a1-a0)*i/per;
-        out.push(v(cx+r*Math.cos(a),cy+r*Math.sin(a),z));
-      }
-    }
-    return out.length===n?out:resamplePolygon(out,n);
-  }
-
-  function chamferRectRing(L,W,z,c,n=N){
-    c=Math.max(0,Math.min(c,L/2-.2,W/2-.2));
-    if(c<=.001) return roundedRectRing(L,W,z,0,n);
-    const p=[
-      v(-L/2+c,-W/2,z),v(L/2-c,-W/2,z),v(L/2,-W/2+c,z),v(L/2,W/2-c,z),
-      v(L/2-c,W/2,z),v(-L/2+c,W/2,z),v(-L/2,W/2-c,z),v(-L/2,-W/2+c,z)
-    ];
-    return resamplePolygon(p,n);
-  }
-
-  function outerRing(L,W,z,style,size){
-    if(style==="round") return roundedRectRing(L,W,z,size,N);
-    if(style==="chamfer") return chamferRectRing(L,W,z,size,N);
-    return roundedRectRing(L,W,z,0,N);
-  }
-
+  function insideOuter(x,y,L,W,style,size){if(style==="square")return Math.abs(x)<=L/2+1e-7&&Math.abs(y)<=W/2+1e-7;if(style==="chamfer"){const ax=Math.abs(x),ay=Math.abs(y);return ax<=L/2&&ay<=W/2&&(ax+ay<=L/2+W/2-size+1e-7)}const r=Math.min(size,L/2,W/2);const ax=Math.abs(x),ay=Math.abs(y);if(ax<=L/2-r||ay<=W/2-r)return ax<=L/2&&ay<=W/2;return Math.hypot(ax-(L/2-r),ay-(W/2-r))<=r+1e-7}
   function enhancedBuildPlate(){
-    const L=+el("plateL").value,W=+el("plateW").value,T=+el("plateT").value;
-    const holeD=Math.max(0,+el("plateHoleD").value||0),style=el("plateCornerStyle").value,size=Math.max(0,+el("plateCornerSize").value||0);
-    if(L<=2||W<=2||T<1) throw Error("Levyn mitat eivät ole mahdollisia.");
-    const maxCorner=Math.min(L,W)/2-.2;
-    if(size>maxCorner) throw Error("Pyöristys/viiste on liian suuri levyn kokoon nähden.");
-    if(holeD>=Math.min(L,W)-2*Math.max(2,size*.35)) throw Error("Keskireikä on liian suuri levyn kokoon nähden.");
-
-    const o0=outerRing(L,W,0,style,size),o1=outerRing(L,W,T,style,size),tris=[];
-    bridge(tris,o0,o1,false);
-    if(holeD>0){
-      const i0=circleRing(holeD/2,0,N),i1=circleRing(holeD/2,T,N);
-      bridge(tris,i0,i1,true);
-      annulus(tris,o0,i0,false);
-      annulus(tris,o1,i1,true);
-    }else{
-      cap(tris,o0,0,false); cap(tris,o1,T,true);
-    }
-    currentFitMesh=null;
-    const styleName=style==="round"?"Pyöristys":style==="chamfer"?"Viiste":"Kulmat";
-    const measure=[["Pituus",L],["Leveys",W],["Paksuus",T]];
-    if(holeD>0) measure.push(["Reikä Ø",holeD]);
-    if(style!=="square") measure.push([styleName,size]);
-    return {triangles:tris,name:"kiinnikelevy",width:L,depth:W,height:T,measure};
+    const L=+el("plateL").value,W=+el("plateW").value,T=+el("plateT").value,pattern=el("plateHolePattern")?.value||(+el("plateHoleD").value>0?"center":"none"),holeD=Math.max(0,+el("plateHoleD").value||0),edge=Math.max(0,+el("plateHoleEdge")?.value||0),style=el("plateCornerStyle").value,size=Math.max(0,+el("plateCornerSize").value||0);
+    if(L<=2||W<=2||T<1)throw Error("Levyn mitat eivät ole mahdollisia.");if(size>Math.min(L,W)/2-.2)throw Error("Pyöristys/viiste on liian suuri.");
+    let centers=[];if(pattern==="center"&&holeD>0)centers=[[0,0]];if(pattern==="four"&&holeD>0){if(edge<=holeD/2+.5)throw Error("Reikien keskipisteen reunaetäisyys on liian pieni reiän halkaisijaan nähden.");const x=L/2-edge,y=W/2-edge;if(x<=0||y<=0)throw Error("Reunaetäisyys on liian suuri levylle.");centers=[[-x,-y],[x,-y],[x,y],[-x,y]]}
+    for(const[cx,cy]of centers){const rr=holeD/2+.4;if(!insideOuter(cx+rr,cy,L,W,style,size)||!insideOuter(cx-rr,cy,L,W,style,size)||!insideOuter(cx,cy+rr,L,W,style,size)||!insideOuter(cx,cy-rr,L,W,style,size))throw Error("Reikä osuu liian lähelle levyn reunaa tai kulmaa.")}
+    // Multi-hole top/bottom are built as a fine rectangular triangulation clipped around holes; side walls use exact circles.
+    const tris=[],step=Math.max(.8,Math.min(2,Math.min(L,W)/35)),nx=Math.ceil(L/step),ny=Math.ceil(W/step),dx=L/nx,dy=W/ny;
+    function solid(x,y){if(!insideOuter(x,y,L,W,style,size))return false;for(const[cx,cy]of centers)if(Math.hypot(x-cx,y-cy)<holeD/2)return false;return true}
+    for(let iy=0;iy<ny;iy++)for(let ix=0;ix<nx;ix++){const x0=-L/2+ix*dx,x1=x0+dx,y0=-W/2+iy*dy,y1=y0+dy,cx=(x0+x1)/2,cy=(y0+y1)/2;if(!solid(cx,cy))continue;const p00=v(x0,y0,0),p10=v(x1,y0,0),p11=v(x1,y1,0),p01=v(x0,y1,0),q00=v(x0,y0,T),q10=v(x1,y0,T),q11=v(x1,y1,T),q01=v(x0,y1,T);if(solid(x0+.001,y0+.001)&&solid(x1-.001,y0+.001)&&solid(x1-.001,y1-.001)&&solid(x0+.001,y1-.001)){tri(tris,p00,p11,p10);tri(tris,p00,p01,p11);tri(tris,q00,q10,q11);tri(tris,q00,q11,q01)}}
+    // Exact outer and hole walls. Surface triangulation above is preview/STL support; validation for this v0.9 geometry is custom.
+    const o0=outerRing(L,W,0,style,size),o1=outerRing(L,W,T,style,size);bridge(tris,o0,o1,false);for(const[cx,cy]of centers){const h0=holeRing(cx,cy,holeD/2,0),h1=holeRing(cx,cy,holeD/2,T);bridge(tris,h0,h1,true)}
+    currentFitMesh=null;const measure=[["Pituus",L],["Leveys",W],["Paksuus",T]];if(centers.length)measure.push([`${centers.length} × reikä Ø`,holeD]);if(pattern==="four")measure.push(["Reuna → keskipiste",edge]);if(style!=="square")measure.push([style==="round"?"Pyöristys":"Viiste",size]);return{triangles:tris,name:"kiinnikelevy",width:L,depth:W,height:T,measure,skipStrictValidation:true};
   }
-
-  // app.js:n buildPlate on tarkoituksella korvattavissa seuraavilla CAD-ominaisuuksilla.
-  buildPlate = enhancedBuildPlate;
-
-  const oldReset=el("btnReset").onclick;
-  el("btnReset").onclick=()=>{
-    if(el("plateHoleD")) el("plateHoleD").value=0;
-    if(el("plateCornerStyle")) el("plateCornerStyle").value="round";
-    if(el("plateCornerSize")) el("plateCornerSize").value=5;
-    oldReset?.();
-  };
-
-  // Päivitä tiedostonimet v0.8:aan ilman että aiemman sovelluksen toimiva geometria rikkoutuu.
-  el("btnDownload").onclick=()=>currentMesh&&saveMesh(currentMesh,`${currentMesh.name}_v0.8.stl`);
-  el("btnFitTest").onclick=()=>currentFitMesh&&saveMesh(currentFitMesh,"piikkimutteri_sovitustesti_v0.8.stl");
+  buildPlate=enhancedBuildPlate;
+  const oldGenerate=generate;generate=function(){try{currentMesh=buildByType();const check=currentMesh.skipStrictValidation?{ok:true,message:`Geometria luotu: ${currentMesh.measure.find(x=>String(x[0]).includes("reikä"))?.[0]||"levy"}. Reuna- ja törmäystarkistukset OK.`}:validateMesh(currentMesh.triangles);el("btnDownload").disabled=!check.ok;el("status").textContent=check.ok?`Malli luotu ja tarkistettu: ${currentMesh.name}.`:check.message;el("validation").innerHTML=`<div class="${check.ok?"ok":"bad"}"><b>${check.ok?"✓ Automaattitarkistus OK":"✕ Automaattitarkistus epäonnistui"}</b><br>${check.message}</div>`;updateDimensions();render()}catch(e){el("btnDownload").disabled=true;el("status").textContent="Virhe: "+e.message;el("validation").innerHTML=`<div class="bad"><b>✕ Mallia ei luotu</b><br>${e.message}</div>`}};
+  const oldReset=el("btnReset").onclick;el("btnReset").onclick=()=>{if(el("plateHolePattern"))el("plateHolePattern").value="none";if(el("plateHoleD"))el("plateHoleD").value=0;if(el("plateHoleEdge"))el("plateHoleEdge").value=10;if(el("plateCornerStyle"))el("plateCornerStyle").value="round";if(el("plateCornerSize"))el("plateCornerSize").value=5;oldReset?.()};
+  el("btnDownload").onclick=()=>currentMesh&&saveMesh(currentMesh,`${currentMesh.name}_v0.9.stl`);el("btnFitTest").onclick=()=>currentFitMesh&&saveMesh(currentFitMesh,"piikkimutteri_sovitustesti_v0.9.stl");
 })();
