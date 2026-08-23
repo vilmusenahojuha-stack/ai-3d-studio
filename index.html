@@ -13,13 +13,13 @@
       <h1>AI 3D Studio</h1>
       <p>Parametrinen 3D-suunnittelu ja STL-vienti</p>
     </div>
-    <span class="badge">v0.1</span>
+    <span class="badge">v0.2</span>
   </header>
 
   <main class="layout">
     <section class="panel controls">
       <h2>Piikkimutterinsuojus</h2>
-      <p class="hint">Ensimmäinen testimalli kuorma-auton 33 mm pyöränmutterille.</p>
+      <p class="hint">Testimalli kuorma-auton 33 mm pyöränmutterille.</p>
 
       <div class="grid">
         <label>Mutterin avainkoko (mm)
@@ -37,22 +37,29 @@
         <label>Kokonaiskorkeus (mm)
           <input id="totalHeight" type="number" value="75" min="20" max="160" step="1">
         </label>
-        <label>Piikin kärjen säde (mm)
+        <label>Kärjen pyöristys (mm)
           <input id="tipRadius" type="number" value="0.7" min="0.2" max="4" step="0.1">
         </label>
       </div>
 
       <div class="actions">
-        <button id="btnGenerate" class="primary">LUO MALLI</button>
-        <button id="btnDownload" disabled>LATAA STL</button>
+        <button id="btnGenerate" class="primary">LUO JA TARKISTA MALLI</button>
+        <button id="btnFitTest" disabled>LATAA SOVITUSTESTI STL</button>
+        <button id="btnDownload" disabled>LATAA KOKO STL</button>
         <button id="btnReset" class="ghost">PALAUTA OLETUKSET</button>
       </div>
 
       <div id="status" class="status">Valmis suunnitteluun.</div>
+      <div id="validation" class="validation"></div>
+
+      <details open>
+        <summary>Suositeltu ensimmäinen tulostus</summary>
+        <p>Lataa ensin <strong>SOVITUSTESTI STL</strong>. Se on vain 8 mm korkea rengas ja käyttää vähän materiaalia. Kun se istuu mutteriin oikein, tulosta vasta kokonainen piikki.</p>
+      </details>
 
       <details>
         <summary>Tärkeä sovitusohje</summary>
-        <p>33 mm on mutterin avainkoko. Aloita yhdellä koekappaleella. Jos suoja on liian tiukka tai löysä, muuta välystä 0,05–0,15 mm kerrallaan.</p>
+        <p>33 mm on mutterin avainkoko. Sisä-AF lasketaan kaavalla avainkoko + 2 × välys. Oletusasetuksella sisä-AF on 33,50 mm. Jos suoja on liian löysä tai tiukka, muuta välystä 0,05–0,15 mm kerrallaan.</p>
       </details>
     </section>
 
@@ -73,7 +80,7 @@
   </main>
 
   <footer>
-    <p>AI 3D Studio — ensimmäinen prototyyppi. Tulostus käynnistetään aina käyttäjän hyväksynnällä tulevissa versioissa.</p>
+    <p>AI 3D Studio v0.2 — STL-geometria tarkistetaan ennen latausta. Tulosta aina ensin sovitustesti.</p>
   </footer>
 
   <script src="app.js"></script>
