@@ -8,99 +8,33 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header class="topbar">
-    <div>
-      <h1>AI 3D Studio</h1>
-      <p>Parametrinen 3D-suunnittelu ja STL-vienti</p>
-    </div>
-    <span class="badge">v0.3</span>
-  </header>
-
-  <main class="layout">
-    <section class="panel controls">
-      <h2>Piikkimutterinsuojus</h2>
-      <p class="hint">Kuorma-auton 33 mm pyöränmutterille. v0.3:ssa ulkomuoto on pyöreämpi ja sisällä on säädettävä puristuslukitus.</p>
-
-      <div class="section-title">Sovitus</div>
-      <div class="grid">
-        <label>Mutterin avainkoko (mm)
-          <input id="nutAf" type="number" value="33" min="10" max="80" step="0.1">
-        </label>
-        <label>Välys per puoli (mm)
-          <input id="clearance" type="number" value="0.25" min="0" max="2" step="0.05">
-        </label>
-        <label>Puristuslukitus (mm)
-          <input id="lockAmount" type="number" value="0.20" min="0" max="1.2" step="0.05">
-        </label>
-        <label>Lukituksen korkeus (mm)
-          <input id="lockZ" type="number" value="7" min="2" max="20" step="0.5">
-        </label>
-      </div>
-
-      <div class="section-title">Muoto</div>
-      <div class="grid">
-        <label>Seinämä (mm)
-          <input id="wall" type="number" value="2.5" min="1" max="8" step="0.1">
-        </label>
-        <label>Mutteriosan korkeus (mm)
-          <input id="baseHeight" type="number" value="24" min="8" max="60" step="0.5">
-        </label>
-        <label>Kokonaiskorkeus (mm)
-          <input id="totalHeight" type="number" value="75" min="25" max="160" step="1">
-        </label>
-        <label>Kärjen pyöristys (mm)
-          <input id="tipRadius" type="number" value="0.8" min="0.2" max="4" step="0.1">
-        </label>
-      </div>
-
-      <div class="section-title">Tulostusmateriaali</div>
-      <div class="material-row">
-        <select id="material">
-          <option value="PLA">PLA – koekappale</option>
-          <option value="PETG">PETG – helppo käyttöosa</option>
-          <option value="ASA" selected>ASA – ulkokäyttö / UV</option>
-        </select>
-        <div id="materialCard" class="material-card"></div>
-      </div>
-
-      <div class="actions">
-        <button id="btnGenerate" class="primary">LUO JA TARKISTA MALLI</button>
-        <button id="btnFitTest" disabled>LATAA SOVITUSTESTI STL</button>
-        <button id="btnDownload" disabled>LATAA KOKO STL</button>
-        <button id="btnReset" class="ghost">PALAUTA OLETUKSET</button>
-      </div>
-
-      <div id="status" class="status">Valmis suunnitteluun.</div>
-      <div id="validation" class="validation"></div>
-
-      <details open>
-        <summary>Suositeltu ensimmäinen tulostus</summary>
-        <p>Lataa ensin <strong>SOVITUSTESTI STL</strong>. v0.3-testissä on mukana sama sisäinen puristuslukitus kuin lopullisessa osassa. Kun testi menee mutterille napakasti mutta ilman väkivaltaa, tulosta vasta koko piikki.</p>
-      </details>
-
-      <details>
-        <summary>Miten puristuslukitus toimii?</summary>
-        <p>Lukituksen kohdalla sisä-AF pienenee hetkellisesti. Oletuksena 33,50 mm perusaukko kaventuu 33,10 mm:iin. Tämä on koekäyttöön tarkoitettu lähtöarvo ja säädetään oikean tulosteen perusteella.</p>
-      </details>
-    </section>
-
-    <section class="panel preview-panel">
-      <div class="preview-head">
-        <div>
-          <h2>3D-esikatselu</h2>
-          <p class="hint">Vedä hiirellä tai sormella pyörittääksesi.</p>
-        </div>
-        <div class="dimensions" id="dimensions">–</div>
-      </div>
-      <canvas id="preview" width="800" height="650" aria-label="3D-esikatselu"></canvas>
-      <div class="legend" id="legend"></div>
-    </section>
-  </main>
-
-  <footer>
-    <p>AI 3D Studio v0.3 — parannettu ulkomuoto, puristuslukitus, mesh-tarkistus ja materiaaliprofiilit.</p>
-  </footer>
-
-  <script src="app.js"></script>
-</body>
-</html>
+<header class="topbar"><div><h1>AI 3D Studio</h1><p>Parametrinen 3D-suunnittelu ja STL-vienti</p></div><span class="badge">v0.4</span></header>
+<main class="layout">
+<section class="panel controls">
+<h2>Piikkimutterinsuojus</h2><p class="hint">Kuorma-auton 33 mm pyöränmutterille. Malli, puristuslukitus, materiaaliprofiilit ja mittanäkymä.</p>
+<div class="section-title">Sovitus</div><div class="grid">
+<label>Mutterin avainkoko (mm)<input id="nutAf" type="number" value="33" step="0.1"></label>
+<label>Välys per puoli (mm)<input id="clearance" type="number" value="0.25" step="0.05"></label>
+<label>Puristuslukitus (mm)<input id="lockAmount" type="number" value="0.20" step="0.05"></label>
+<label>Lukituksen korkeus (mm)<input id="lockZ" type="number" value="7" step="0.5"></label></div>
+<div class="section-title">Muoto</div><div class="grid">
+<label>Seinämä (mm)<input id="wall" type="number" value="2.5" step="0.1"></label>
+<label>Mutteriosan korkeus (mm)<input id="baseHeight" type="number" value="24" step="0.5"></label>
+<label>Kokonaiskorkeus (mm)<input id="totalHeight" type="number" value="75" step="1"></label>
+<label>Kärjen pyöristys (mm)<input id="tipRadius" type="number" value="0.8" step="0.1"></label></div>
+<div class="section-title">Tulostusmateriaali</div><div class="material-row"><select id="material"><option value="PLA">PLA – koekappale</option><option value="PETG">PETG – helppo käyttöosa</option><option value="ASA" selected>ASA – ulkokäyttö / UV</option></select><div id="materialCard" class="material-card"></div></div>
+<div class="actions"><button id="btnGenerate" class="primary">LUO JA TARKISTA MALLI</button><button id="btnFitTest" disabled>LATAA SOVITUSTESTI STL</button><button id="btnDownload" disabled>LATAA KOKO STL</button><button id="btnReset" class="ghost">PALAUTA OLETUKSET</button></div>
+<div id="status" class="status">Valmis suunnitteluun.</div><div id="validation" class="validation"></div>
+<details open><summary>Suositeltu ensimmäinen tulostus</summary><p>Tulosta ensin sovitustesti. Kun se menee mutterille napakasti mutta ilman väkivaltaa, tulosta vasta koko piikki.</p></details>
+</section>
+<section class="panel preview-panel">
+<div class="preview-head"><div><h2>3D-esikatselu</h2><p class="hint">Vedä sormella tai hiirellä pyörittääksesi.</p></div><div class="dimensions" id="dimensions">–</div></div>
+<div class="view-tools"><button id="btnMeasure" class="tool active">MITTANÄKYMÄ: PÄÄLLÄ</button><button id="btnFront" class="tool">ETUNÄKYMÄ</button><button id="btnIso" class="tool">3D-NÄKYMÄ</button></div>
+<canvas id="preview" width="900" height="700" aria-label="3D-esikatselu"></canvas>
+<div class="measure-help">Mittaviivat näyttävät mallin suunnittelumitat. Sisä- ja lukitus-AF ovat kuusikulmion vastakkaisten sivujen välisiä mittoja.</div>
+<div class="legend" id="legend"></div>
+</section>
+</main>
+<footer><p>AI 3D Studio v0.4 — mittanäkymä, mesh-tarkistus, sovitustesti ja materiaaliprofiilit.</p></footer>
+<script src="app.js"></script>
+</body></html>
