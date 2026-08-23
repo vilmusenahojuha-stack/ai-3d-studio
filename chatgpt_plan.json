@@ -1,14 +1,25 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "status": "ready",
-  "projectName": "Holkki 20x3x50",
-  "partType": "sleeve",
+  "projectName": "Kiinnikelevy 100x60x4",
+  "partType": "mountingPlate",
   "material": "PETG",
-  "values": {
-    "sleeveID": 20,
-    "sleeveWall": 3,
-    "sleeveLength": 50
+  "parameters": {
+    "length": 100,
+    "width": 60,
+    "thickness": 4,
+    "cornerRadius": 5,
+    "centerHole": {
+      "diameter": 20
+    },
+    "holes": [
+      { "x": -35, "y": -15, "diameter": 6 },
+      { "x": 35, "y": -15, "diameter": 6 },
+      { "x": 35, "y": 15, "diameter": 6 },
+      { "x": -35, "y": 15, "diameter": 6 }
+    ]
   },
-  "summary": "Testisuunnitelma: holkki, sisähalkaisija 20 mm, seinämä 3 mm, pituus 50 mm, PETG.",
-  "updatedAt": "2026-08-23T20:45:00+03:00"
+  "operations": [],
+  "summary": "Schema v2 -testi: 100 x 60 x 4 mm kiinnikelevy, kulmapyöristys 5 mm, keskireikä Ø20 mm ja neljä Ø6 mm kiinnitysreikää kohdissa ±35 / ±15 mm.",
+  "updatedAt": "2026-08-23T22:24:00+03:00"
 }
