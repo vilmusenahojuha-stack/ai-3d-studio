@@ -1,25 +1,37 @@
 {
   "schemaVersion": 2,
   "status": "ready",
-  "projectName": "Kiinnikelevy 100x60x4",
+  "projectName": "Monireikäinen epäsymmetrinen kiinnikelevy",
   "partType": "mountingPlate",
   "material": "PETG",
   "parameters": {
-    "length": 100,
-    "width": 60,
-    "thickness": 4,
-    "cornerRadius": 5,
+    "length": 160,
+    "width": 100,
+    "thickness": 6,
+    "cornerRadius": 10,
     "centerHole": {
-      "diameter": 20
+      "diameter": 32
     },
     "holes": [
-      { "x": -35, "y": -15, "diameter": 6 },
-      { "x": 35, "y": -15, "diameter": 6 },
-      { "x": 35, "y": 15, "diameter": 6 },
-      { "x": -35, "y": 15, "diameter": 6 }
+      { "x": -60, "y": -34, "diameter": 6.5 },
+      { "x": 60, "y": -34, "diameter": 6.5 },
+      { "x": 60, "y": 34, "diameter": 6.5 },
+      { "x": -60, "y": 34, "diameter": 6.5 },
+      { "x": -42, "y": 0, "diameter": 8 },
+      { "x": 48, "y": 8, "diameter": 10 }
     ]
   },
-  "operations": [],
-  "summary": "Schema v2 -testi: 100 x 60 x 4 mm kiinnikelevy, kulmapyöristys 5 mm, keskireikä Ø20 mm ja neljä Ø6 mm kiinnitysreikää kohdissa ±35 / ±15 mm.",
-  "updatedAt": "2026-08-23T22:24:00+03:00"
+  "operations": [
+    {
+      "type": "holes",
+      "holes": [
+        { "x": 0, "y": -36, "diameter": 5 },
+        { "x": 0, "y": 36, "diameter": 5 },
+        { "x": -22, "y": 28, "diameter": 4 },
+        { "x": 26, "y": -25, "diameter": 4 }
+      ]
+    }
+  ],
+  "summary": "Vaativa Schema v2 -testi: 160 x 100 x 6 mm PETG-kiinnikelevy, 10 mm kulmapyöristykset, Ø32 mm keskireikä, kuusi suoraan parametreissa määriteltyä erikokoista reikää sekä neljä CAD operations -rakenteen kautta lisättävää reikää. Reiät ovat tarkoituksella epäsymmetrisissä sijainneissa, jotta testataan v2-parametrien, reikäsijaintien ja operations-adapterin yhteistoimintaa.",
+  "updatedAt": "2026-08-23T22:27:00+03:00"
 }
