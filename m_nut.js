@@ -15,39 +15,33 @@
   const innerTop=p.baseHeight-p.wall,outer0=hexRing(outerAF,0),outer1=hexRing(outerAF,p.baseHeight),inner0=hexRing(innerAF,0),innerLock=hexRing(lockAF,p.lockZ),inner1=hexRing(innerAF,innerTop);
   bridge(T,outer0,outer1);bridge(T,inner0,innerLock,true);bridge(T,innerLock,inner1,true);annulus(T,outer0,inner0,false);cap(T,inner1,innerTop,true);cap(T,outer1,p.baseHeight,true);
 
-  // Varsinainen piikki: pyöreä kartio kapenee ennen M-muodon alkua.
   const N=120,morphStart=p.totalHeight-p.monogramHeight;
+  // Kartio kapenee vain siihen kokoon, josta M voi jatkua ylöspäin ilman uudelleen levenevää tiimalasikaulaa.
   const cone0=circleRing(outerAF/2*1.02,p.baseHeight-1.2,N);
-  const cone1=circleRing(Math.min(7.0,p.monogramWidth*.30),morphStart,N);
+  const joinRadius=Math.max(p.monogramWidth*.47,p.monogramDepth*.52);
+  const cone1=circleRing(joinRadius,morphStart,N);
   bridge(T,cone0,cone1);
 
-  // Todellinen YLÄ-näkymän M-siluetti. Tämä on kappaleen ulkoreuna, ei pinnalle piirretty kirjain.
   const W=p.monogramWidth/2,D=p.monogramDepth/2;
-  const M=[
-   [-W,-D],[-W,D],[-W*.64,D],[-W*.38,D*.28],[0,-D*.05],
-   [W*.38,D*.28],[W*.64,D],[W,D],[W,-D],[W*.62,-D],
-   [W*.28,-D*.42],[0,-D*.70],[-W*.28,-D*.42],[-W*.62,-D]
-  ];
-  let top2=sample(M,N);
-  // Aloituskohta sidotaan samaan vasempaan alakulmaan, jotta loft ei kierry.
-  top2=rotateTo(top2,[-W,-D]);
-  let round2=cone1.map(q=>[q.x,q.y]);round2=rotateTo(round2,top2[0]);
+  const M=[[-W,-D],[-W,D],[-W*.64,D],[-W*.38,D*.28],[0,-D*.05],[W*.38,D*.28],[W*.64,D],[W,D],[W,-D],[W*.62,-D],[W*.28,-D*.42],[0,-D*.70],[-W*.28,-D*.42],[-W*.62,-D]];
+  let top2=rotateTo(sample(M,N),[-W,-D]);
+  let round2=rotateTo(cone1.map(q=>[q.x,q.y]),top2[0]);
   const h=p.monogramHeight;
+  // Muoto vaihtuu ympyrästä M:ksi, mutta kokonaisleveys ei enää kasva ylöspäin.
+  // Ensimmäinen M-poikkileikkaus on lähes lopullisen kokoinen, jolloin sivusiluetti jatkaa kartion kapenemista suoraviivaisesti.
+  const m92=scalePoly(top2,.92),m95=scalePoly(top2,.95),m98=scalePoly(top2,.98);
   const levels=[
    {z:morphStart,poly:round2},
-   {z:morphStart+h*.18,poly:scalePoly(top2,.38)},
-   {z:morphStart+h*.38,poly:scalePoly(top2,.55)},
-   {z:morphStart+h*.60,poly:scalePoly(top2,.72)},
-   {z:morphStart+h*.80,poly:scalePoly(top2,.88)},
+   {z:morphStart+h*.24,poly:m92},
+   {z:morphStart+h*.50,poly:m95},
+   {z:morphStart+h*.75,poly:m98},
    {z:p.totalHeight,poly:top2}
   ];
-  // Ensimmäinen M-rengas saa hieman pyöreän keskuksen mutta jokainen seuraava rengas säilyttää saman M-topologian.
-  const firstM=levels[1].poly;const r0=ring2(levels[0].poly,levels[0].z),r1=ring2(firstM,levels[1].z);bridge(T,r0,r1);
-  for(let i=1;i<levels.length-1;i++)bridge(T,ring2(levels[i].poly,levels[i].z),ring2(levels[i+1].poly,levels[i+1].z));
+  for(let i=0;i<levels.length-1;i++)bridge(T,ring2(levels[i].poly,levels[i].z),ring2(levels[i+1].poly,levels[i+1].z));
   capPoly(T,top2,p.totalHeight);
 
   return{triangles:T,name:"M-piikkimutterisuojus",width:Math.max(outerAF,p.monogramWidth),depth:Math.max(outerAF,p.monogramDepth),height:p.totalHeight,measure:[["Kokonaiskorkeus",p.totalHeight],["M-muoto alkaa",morphStart],["M leveys",p.monogramWidth],["M syvyys",p.monogramDepth],["Ulko-AF",outerAF],["Sisä-AF",innerAF],["Mutteriosa",p.baseHeight]]};
  }
- function finish(mesh){currentFitMesh=null;currentMesh=mesh;const a=validate(mesh),ok=a.ok;el("validation").innerHTML=`<div class="check ${ok?"ok":"fail"}"><strong>${ok?"✓ Automaattitarkistus OK":"✕ Tarkistus epäonnistui"}</strong><br>${a.message}<br>Kartion kärki loftautuu nyt oikeaan M-muotoiseen yläpintaan.</div>`;el("btnDownload").disabled=!ok;el("btnFitTest").disabled=true;el("status").textContent=ok?"60 mm M-piikkimutterisuojus luotu. Tarkista erityisesti YLÄ-näkymä.":"STL-lataus estetty virheen vuoksi.";el("dimensions").textContent=mesh.measure.map(([k,x])=>`${k} ${typeof x==="number"?x.toFixed(2)+" mm":x}`).join(" • ");updateMaterial();draw()}
+ function finish(mesh){currentFitMesh=null;currentMesh=mesh;const a=validate(mesh),ok=a.ok;el("validation").innerHTML=`<div class="check ${ok?"ok":"fail"}"><strong>${ok?"✓ Automaattitarkistus OK":"✕ Tarkistus epäonnistui"}</strong><br>${a.message}<br>Tiimalasikaula poistettu: kartio jatkuu nyt yhtenäisesti M-kärkeen.</div>`;el("btnDownload").disabled=!ok;el("btnFitTest").disabled=true;el("status").textContent=ok?"60 mm M-piikkimutterisuojus luotu ilman tiimalasikaulaa.":"STL-lataus estetty virheen vuoksi.";el("dimensions").textContent=mesh.measure.map(([k,x])=>`${k} ${typeof x==="number"?x.toFixed(2)+" mm":x}`).join(" • ");updateMaterial();draw()}
  window.AI3D.setPart=(type,values={})=>{if(type!=="spike"||String(values.monogram||"").toUpperCase()!=="M")return oldSetPart(type,values);el("partType").value="spike";updateFields();for(const[k,x]of Object.entries(values))if(el(k))el(k).value=x;finish(buildM(values))};
 })();
