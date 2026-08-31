@@ -13,26 +13,43 @@
   for(let i=0;i<points.length;i++){const j=(i+1)%points.length;T.push(tri(a[i],a[j],b[j]),tri(a[i],b[j],b[i]))}
   return T;
  }
+ function closedFrustum(r0,r1,z0,z1,n=32){
+  const a=circleRing(r0,z0,n),b=circleRing(r1,z1,n),T=[];
+  bridge(T,a,b);cap(T,a,z0,false);cap(T,b,z1,true);return T;
+ }
  function buildM(values){
   const p={
    nutAf:num(values.nutAf,33),clearance:num(values.clearance,.25),lockAmount:num(values.lockAmount,.2),lockZ:num(values.lockZ,7),
    wall:num(values.wall,2.5),baseHeight:num(values.baseHeight,24),totalHeight:num(values.totalHeight,60),
-   monogramWidth:num(values.monogramWidth,36),monogramDepth:num(values.monogramDepth,9),lean:num(values.monogramLean,.10)
+   monogramWidth:num(values.monogramWidth,18),monogramDepth:num(values.monogramDepth,6),lean:num(values.monogramLean,.04),
+   monogramHeight:num(values.monogramHeight,10),neckRadius:num(values.neckRadius,5.5)
   };
-  if(p.wall<1||p.baseHeight<12||p.totalHeight<=p.baseHeight+18)throw Error("M-mutterisuojuksen mitat eivät ole mahdollisia.");
+  if(p.wall<1||p.baseHeight<12||p.totalHeight<=p.baseHeight+22)throw Error("M-piikkimutterisuojuksen mitat eivät ole mahdollisia.");
+  if(p.monogramWidth<10||p.monogramDepth<3||p.monogramHeight<6)throw Error("M-kirjaimen mitat ovat liian pienet.");
   const innerAF=p.nutAf+2*p.clearance,lockAF=Math.max(p.nutAf-.1,innerAF-2*p.lockAmount),outerAF=innerAF+2*p.wall;
   const innerTop=p.baseHeight-p.wall,outer0=hexRing(outerAF,0),outer1=hexRing(outerAF,p.baseHeight),inner0=hexRing(innerAF,0),innerLock=hexRing(lockAF,p.lockZ),inner1=hexRing(innerAF,innerTop),T=[];
   bridge(T,outer0,outer1);bridge(T,inner0,innerLock,true);bridge(T,innerLock,inner1,true);annulus(T,outer0,inner0,false);cap(T,inner1,innerTop,true);cap(T,outer1,p.baseHeight,true);
-  const z0=p.baseHeight-1.5,h=p.totalHeight-z0,w=p.monogramWidth;
-  const raw=[[-.50,0],[-.42,1],[-.18,1],[0,.53],[.18,1],[.42,1],[.50,0],[.29,0],[.22,.61],[.055,.18],[-.055,.18],[-.22,.61],[-.29,0]];
+
+  // Säilytä alkuperäisen piikkimutterin siluetti lähes koko korkeudelle.
+  const shoulderR=outerAF/2*1.02;
+  const letterTop=p.totalHeight;
+  const letterBottom=letterTop-p.monogramHeight;
+  const neckTop=letterBottom+1.5;
+  const neckBottom=p.baseHeight-1.2;
+  T.push(...closedFrustum(shoulderR,p.neckRadius,neckBottom,neckTop,32));
+
+  // Piikin aivan kärki korvataan pienellä vahvalla M-kirjaimella.
+  const w=p.monogramWidth,h=p.monogramHeight,z0=letterBottom;
+  const raw=[[-.50,0],[-.42,1],[-.20,1],[0,.55],[.20,1],[.42,1],[.50,0],[.30,0],[.22,.58],[.06,.20],[-.06,.20],[-.22,.58],[-.30,0]];
   const pts=raw.map(([x,y])=>[(x+p.lean*y)*w,z0+y*h]);
   T.push(...prismXZ(pts,p.monogramDepth));
-  return{triangles:T,name:"M-mutterisuojus",width:Math.max(outerAF,p.monogramWidth*(1+p.lean)),depth:Math.max(outerAF,p.monogramDepth),height:p.totalHeight,measure:[["Kokonaiskorkeus",p.totalHeight],["M leveys",p.monogramWidth],["M paksuus",p.monogramDepth],["Ulko-AF",outerAF],["Sisä-AF",innerAF],["Lukitus-AF",lockAF],["Mutteriosa",p.baseHeight]]};
+
+  return{triangles:T,name:"M-piikkimutterisuojus",width:Math.max(outerAF,p.monogramWidth*(1+p.lean)),depth:Math.max(outerAF,p.monogramDepth),height:p.totalHeight,measure:[["Kokonaiskorkeus",p.totalHeight],["Piikkiosa",letterBottom-p.baseHeight],["M korkeus",p.monogramHeight],["M leveys",p.monogramWidth],["M paksuus",p.monogramDepth],["Ulko-AF",outerAF],["Sisä-AF",innerAF],["Lukitus-AF",lockAF],["Mutteriosa",p.baseHeight]]};
  }
  function finish(mesh){
   currentFitMesh=null;currentMesh=mesh;const a=validate(mesh),ok=a.ok;
-  el("validation").innerHTML=`<div class="check ${ok?"ok":"fail"}"><strong>${ok?"✓ Automaattitarkistus OK":"✕ Tarkistus epäonnistui"}</strong><br>${a.message}<br>M-kirjain on erillinen suljettu runko, joka limittää kantaan tulostusta varten.</div>`;
-  el("btnDownload").disabled=!ok;el("btnFitTest").disabled=true;el("status").textContent=ok?"60 mm M-mutterisuojus luotu. Tarkista mitat ja M-kirjaimen ulkonäkö ennen STL-vientiä.":"STL-lataus estetty virheen vuoksi.";
+  el("validation").innerHTML=`<div class="check ${ok?"ok":"fail"}"><strong>${ok?"✓ Automaattitarkistus OK":"✕ Tarkistus epäonnistui"}</strong><br>${a.message}<br>Muoto säilyy piikkimäisenä ja vain piikin kärki on korvattu M-kirjaimella.</div>`;
+  el("btnDownload").disabled=!ok;el("btnFitTest").disabled=true;el("status").textContent=ok?"60 mm M-piikkimutterisuojus luotu. Tarkista erityisesti kärjen M-muoto ennen STL-vientiä.":"STL-lataus estetty virheen vuoksi.";
   el("dimensions").textContent=mesh.measure.map(([k,x])=>`${k} ${typeof x==="number"?x.toFixed(2)+" mm":x}`).join(" • ");updateMaterial();draw();
  }
  window.AI3D.setPart=(type,values={})=>{
