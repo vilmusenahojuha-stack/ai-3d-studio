@@ -1,37 +1,23 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 1,
   "status": "ready",
-  "projectName": "Monireikäinen epäsymmetrinen kiinnikelevy",
-  "partType": "mountingPlate",
-  "material": "PETG",
-  "parameters": {
-    "length": 160,
-    "width": 100,
-    "thickness": 6,
-    "cornerRadius": 10,
-    "centerHole": {
-      "diameter": 32
-    },
-    "holes": [
-      { "x": -60, "y": -34, "diameter": 6.5 },
-      { "x": 60, "y": -34, "diameter": 6.5 },
-      { "x": 60, "y": 34, "diameter": 6.5 },
-      { "x": -60, "y": 34, "diameter": 6.5 },
-      { "x": -42, "y": 0, "diameter": 8 },
-      { "x": 48, "y": 8, "diameter": 10 }
-    ]
+  "projectName": "M-mutterisuojus 60 mm",
+  "partType": "spike",
+  "material": "ASA",
+  "values": {
+    "nutAf": 33,
+    "clearance": 0.25,
+    "lockAmount": 0.20,
+    "lockZ": 7,
+    "wall": 2.5,
+    "baseHeight": 24,
+    "totalHeight": 60,
+    "tipRadius": 0.8,
+    "monogram": "M",
+    "monogramWidth": 36,
+    "monogramDepth": 9,
+    "monogramLean": 0.10
   },
-  "operations": [
-    {
-      "type": "holes",
-      "holes": [
-        { "x": 0, "y": -36, "diameter": 5 },
-        { "x": 0, "y": 36, "diameter": 5 },
-        { "x": -22, "y": 28, "diameter": 4 },
-        { "x": 26, "y": -25, "diameter": 4 }
-      ]
-    }
-  ],
-  "summary": "Vaativa Schema v2 -testi: 160 x 100 x 6 mm PETG-kiinnikelevy, 10 mm kulmapyöristykset, Ø32 mm keskireikä, kuusi suoraan parametreissa määriteltyä erikokoista reikää sekä neljä CAD operations -rakenteen kautta lisättävää reikää. Reiät ovat tarkoituksella epäsymmetrisissä sijainneissa, jotta testataan v2-parametrien, reikäsijaintien ja operations-adapterin yhteistoimintaa.",
-  "updatedAt": "2026-08-23T22:27:00+03:00"
+  "summary": "Ensimmäinen M-kirjaimellinen mutterisuojuksen testimalli. Kokonaiskorkeus 60 mm, ASA. M on paksu, hieman kallistettu kolmiulotteinen muoto. Mutterin 33 mm avainkoko on tässä vaiheessa testiarvo ja pitää tarkistaa oikeasta mutterista ennen sarjatulostusta.",
+  "updatedAt": "2026-08-31T17:45:00+03:00"
 }
