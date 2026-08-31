@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "status": "ready",
-  "projectName": "M-mutterisuojus 60 mm",
+  "projectName": "M-piikkimutterisuojus 60 mm",
   "partType": "spike",
   "material": "ASA",
   "values": {
@@ -14,10 +14,12 @@
     "totalHeight": 60,
     "tipRadius": 0.8,
     "monogram": "M",
-    "monogramWidth": 36,
-    "monogramDepth": 9,
-    "monogramLean": 0.10
+    "monogramWidth": 18,
+    "monogramDepth": 6,
+    "monogramHeight": 10,
+    "monogramLean": 0.04,
+    "neckRadius": 5.5
   },
-  "summary": "Ensimmäinen M-kirjaimellinen mutterisuojuksen testimalli. Kokonaiskorkeus 60 mm, ASA. M on paksu, hieman kallistettu kolmiulotteinen muoto. Mutterin 33 mm avainkoko on tässä vaiheessa testiarvo ja pitää tarkistaa oikeasta mutterista ennen sarjatulostusta.",
-  "updatedAt": "2026-08-31T17:45:00+03:00"
+  "summary": "Uusi M-piikkimutterisuojuksen testimalli: kokonaiskorkeus 60 mm ja muoto säilyy lähes koko matkalta piikkimäisenä. Vain piikin aivan kärki on korvattu pienellä, vahvalla 3D M-kirjaimella. Materiaali ASA. Mutterin 33 mm avainkoko on edelleen testiarvo ja tarkistetaan oikeasta mutterista ennen sarjatulostusta.",
+  "updatedAt": "2026-08-31T17:55:00+03:00"
 }
