@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "plans": [
+    {
+      "id": "light-sign-400",
+      "name": "Valokyltti 400 mm",
+      "description": "400 mm kolmiosakarainen LED-valokyltti Centauri-tulostimelle. Parametreja voi muuttaa ennen STL-vientiä.",
+      "type": "lightSign",
+      "values": {
+        "signDiameter": 400,
+        "signRingWidth": 28,
+        "signDepth": 24,
+        "signWall": 2.4,
+        "diffuserThickness": 1.2,
+        "starWidth": 28,
+        "starThickness": 4,
+        "ledWidth": 10,
+        "splitCount": 4,
+        "material": "PETG"
+      },
+      "print": {
+        "printer": "Elegoo Centauri / 256 x 256 mm",
+        "nozzle": "0.4 mm",
+        "layer": "0.20 mm",
+        "walls": 4,
+        "infill": "15 %",
+        "notes": "Tulosta runko ja tähti mustasta PETG:stä, diffuusori luonnonvalkoisesta tai läpikuultavasta PETG:stä. Rungon neljännekset liitetään takapuolen liitoslevyillä."
+      }
+    }
+  ]
+}
