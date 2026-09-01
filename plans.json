@@ -4,7 +4,7 @@
     {
       "id": "light-sign-400",
       "name": "Valokyltti 400 mm",
-      "description": "400 mm kolmiosakarainen LED-valokyltti Centauri-tulostimelle. Parametreja voi muuttaa ennen STL-vientiä.",
+      "description": "400 mm kolmiosakarainen LED-valokyltti Centauri-tulostimelle. Parametreja ja kustannusarvion hintoja voi muuttaa ennen STL-vientiä.",
       "type": "lightSign",
       "values": {
         "signDiameter": 400,
@@ -15,7 +15,10 @@
         "starWidth": 28,
         "starThickness": 4,
         "ledWidth": 10,
-        "splitCount": 4,
+        "filamentPriceKg": 20,
+        "ledCost": 25.5,
+        "powerCost": 12,
+        "miscCost": 5,
         "material": "PETG"
       },
       "print": {
@@ -24,7 +27,7 @@
         "layer": "0.20 mm",
         "walls": 4,
         "infill": "15 %",
-        "notes": "Tulosta runko ja tähti mustasta PETG:stä, diffuusori luonnonvalkoisesta tai läpikuultavasta PETG:stä. Rungon neljännekset liitetään takapuolen liitoslevyillä."
+        "notes": "Runko 4 osaa, etukehys 4 osaa ja diffuusori 4 osaa. Tulosta tähtisakara 3 kpl ja liitoslevy 4 kpl. Runko ja tähti mustasta PETG:stä, diffuusori luonnonvalkoisesta tai läpikuultavasta PETG:stä. LED-nauha kiinnitetään rungon sisäseinään."
       }
     }
   ]
