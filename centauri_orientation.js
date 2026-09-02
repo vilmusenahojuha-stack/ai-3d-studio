@@ -1,6 +1,7 @@
 "use strict";
 (()=>{
  if(!document.querySelector('script[data-ai3d-plan-preflight],script[src^="plan_preflight.js"]')){const s=document.createElement("script");s.src="plan_preflight.js?v=1.1";s.dataset.ai3dPlanPreflight="1";document.head.appendChild(s)}
+ if(!document.querySelector('script[data-ai3d-operation-guard],script[src^="plan_operation_guard.js"]')){const s=document.createElement("script");s.src="plan_operation_guard.js?v=1.0";s.dataset.ai3dOperationGuard="1";document.head.appendChild(s)}
  const $=id=>document.getElementById(id);
  const views=[
   {id:"current",name:"Nykyinen asento",rot:p=>({x:p.x,y:p.y,z:p.z})},
