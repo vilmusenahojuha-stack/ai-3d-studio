@@ -1,0 +1,12 @@
+"use strict";
+(()=>{
+ const $=id=>document.getElementById(id);
+ const support={mountingPlate:new Set(["hole","holes"]),sleeve:new Set(),spike:new Set(),endPlug:new Set(),adapter:new Set(),enclosure:new Set()};
+ let running=true,last={ok:false,errors:["Tarkistus ei ole vielä valmis."]};
+ function validate(raw){const errors=[],warnings=[];if(!raw||raw.schemaVersion!==2)return{ok:true,errors,warnings};const ops=raw.operations;if(ops==null)return{ok:true,errors,warnings};if(!Array.isArray(ops))return{ok:false,errors:["operations pitää olla taulukko."],warnings};if(ops.length>200)warnings.push("operations sisältää yli 200 operaatiota.");const allowed=support[raw.partType]||new Set();ops.forEach((op,i)=>{if(!op||typeof op!=="object"||Array.isArray(op)){errors.push(`Operaatio ${i+1} ei ole kelvollinen objekti.`);return}const type=String(op.type||"").trim();if(!type){errors.push(`Operaatio ${i+1}: type puuttuu.`);return}if(!allowed.has(type))errors.push(`Operaatiota ”${type}” ei toteuteta ${raw.partType||"tämän"}-editorissa.`);if(type==="holes"&&!Array.isArray(op.holes))errors.push(`Operaatio ${i+1}: holes-taulukko puuttuu.`)});return{ok:errors.length===0,errors,warnings}}
+ function gate(){const b=document.querySelector('[data-plan="chatgpt-current"]');if(!b)return;const base=window.AI3DPlanPreflight?.getLastResult?.(),ok=!running&&last.ok&&base?.ok===true;b.disabled=!ok;b.classList.toggle("unsupported",!ok);if(!ok)b.title=running?"CAD-operaatioiden tarkistus on kesken.":last.errors[0]||"Suunnitelma on estetty."}
+ async function run(){running=true;last={ok:false,errors:["Tarkistus kesken."],warnings:[]};gate();try{const r=await fetch("chatgpt_plan.json?operations="+Date.now(),{cache:"no-store"});if(!r.ok)throw Error("HTTP "+r.status);last=validate(await r.json())}catch(e){last={ok:false,errors:["CAD-operaatioiden tarkistus epäonnistui: "+(e?.message||e)],warnings:[]}}running=false;gate();const box=$("planPreflight");if(box&&!last.ok)box.textContent="⚠ ChatGPT-suunnitelma estetty: "+last.errors.join(" ")}
+ function init(){const list=$("planList");if(list)new MutationObserver(gate).observe(list,{childList:true,subtree:true});run();document.addEventListener("click",e=>{if(e.target?.id==="btnReloadPlans")setTimeout(run,420)})}
+ window.AI3DPlanOperationGuard={validate,run,getLastResult:()=>last};
+ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
+})();
