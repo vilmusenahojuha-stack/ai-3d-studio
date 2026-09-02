@@ -4,7 +4,7 @@
  const isExtra=()=>["adapter","enclosure"].includes($("partType")?.value);
  function ring(r,z){return Array.from({length:N},(_,i)=>v(r*Math.cos(i*2*Math.PI/N),r*Math.sin(i*2*Math.PI/N),z))}
  function rect(w,d,z){return [v(-w/2,-d/2,z),v(w/2,-d/2,z),v(w/2,d/2,z),v(-w/2,d/2,z)]}
- function loadProjectTools(){if(document.querySelector('script[data-ai3d-project-tools]'))return;const s=document.createElement("script");s.src="project_tools.js?v=1.6";s.dataset.ai3dProjectTools="1";document.body.appendChild(s)}
+ function loadProjectTools(){if(document.querySelector('script[data-ai3d-project-tools]'))return;const s=document.createElement("script");s.src="project_tools.js?v=1.7";s.dataset.ai3dProjectTools="1";document.body.appendChild(s)}
  function inject(){
   const sel=$("partType");if(!sel)return;
   if(!sel.querySelector('option[value="adapter"]')){const o=document.createElement("option");o.value="adapter";o.textContent="Pyöreä adapteri / supistus";sel.appendChild(o)}
