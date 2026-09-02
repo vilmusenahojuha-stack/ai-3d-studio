@@ -1,5 +1,6 @@
 "use strict";
 (()=>{
+ const loader=document.createElement("script");loader.src=`centauri.js?v=1.4&t=${Date.now()}`;document.head.appendChild(loader);
  const KEY="ai3d:projects:v3", $=id=>document.getElementById(id), esc=s=>String(s??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
  let projects=[],plans=[],activeId="";
  const save=()=>{localStorage.setItem(KEY,JSON.stringify(projects));localStorage.setItem(KEY+":active",activeId||"")};
