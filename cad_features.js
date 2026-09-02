@@ -41,25 +41,43 @@
     for(let i=0;i<ids.length;i+=3){const a=ids[i],b=ids[i+1],c=ids[i+2];tris.push(tri(all0[a],all0[c],all0[b]));tris.push(tri(all1[a],all1[b],all1[c]))}
   }
 
+  function ensureCustomHoleUI(){
+    const pattern=el("plateHolePattern");if(!pattern)return;
+    if(![...pattern.options].some(o=>o.value==="custom")){const o=document.createElement("option");o.value="custom";o.textContent="Mukautetut reiät";pattern.appendChild(o)}
+    if(!el("plateCustomHoles")){
+      const label=document.createElement("label");label.id="plateCustomHolesLabel";label.style.gridColumn="1 / -1";label.innerHTML='Mukautetut reiät — yksi per rivi: X;Y;Ø (mm)<textarea id="plateCustomHoles" rows="4" placeholder="0;0;8\n20;0;5"></textarea>';
+      pattern.closest(".grid")?.appendChild(label)
+    }
+    const sync=()=>{const lab=el("plateCustomHolesLabel");if(lab)lab.hidden=pattern.value!=="custom"};pattern.addEventListener("change",sync);sync()
+  }
+
+  function parseCustomHoles(raw){
+    const holes=[];for(const [i,line] of String(raw||"").split(/\r?\n/).entries()){
+      const s=line.trim();if(!s)continue;const parts=s.replace(/,/g,".").split(/[;\s]+/).filter(Boolean);if(parts.length!==3)throw Error(`Mukautettu reikä rivillä ${i+1}: käytä muotoa X;Y;Ø.`);const [x,y,d]=parts.map(Number);if(![x,y,d].every(Number.isFinite)||d<=0)throw Error(`Mukautettu reikä rivillä ${i+1}: tarkista numerot ja halkaisija.`);holes.push({x,y,d})
+    }return holes
+  }
+
   function enhancedBuildPlate(){
     const L=+el("plateL").value,W=+el("plateW").value,T=+el("plateT").value;
     const pattern=el("plateHolePattern")?.value||"none",holeD=Math.max(0,+el("plateHoleD").value||0),edge=Math.max(0,+el("plateHoleEdge")?.value||0),style=el("plateCornerStyle").value,size=Math.max(0,+el("plateCornerSize").value||0);
     if(L<=2||W<=2||T<1)throw Error("Levyn mitat eivät ole mahdollisia.");
     if(size>Math.min(L,W)/2-.2)throw Error("Pyöristys/viiste on liian suuri levylle.");
-    if(pattern!=="none"&&holeD<=0)throw Error("Anna reiän halkaisija.");
+    if(pattern!=="none"&&pattern!=="custom"&&holeD<=0)throw Error("Anna reiän halkaisija.");
 
-    let centers=[];
-    if(pattern==="center")centers=[[0,0]];
+    let holes=[];
+    if(pattern==="center")holes=[{x:0,y:0,d:holeD}];
     if(pattern==="four"){
       if(edge<=holeD/2+.5)throw Error("Reiän keskipisteen reunaetäisyys on liian pieni.");
       const x=L/2-edge,y=W/2-edge;if(x<=0||y<=0)throw Error("Reunaetäisyys on liian suuri levylle.");
-      centers=[[-x,-y],[x,-y],[x,y],[-x,y]];
+      holes=[{x:-x,y:-y,d:holeD},{x,y:-y,d:holeD},{x,y,d:holeD},{x:-x,y,d:holeD}]
     }
-    for(const[cx,cy]of centers){const rr=holeD/2+.6;for(const[tx,ty]of[[cx+rr,cy],[cx-rr,cy],[cx,cy+rr],[cx,cy-rr]])if(!insideOuter(tx,ty,L,W,style,size))throw Error("Reikä on liian lähellä levyn reunaa tai kulmaa.")}
-    for(let i=0;i<centers.length;i++)for(let j=i+1;j<centers.length;j++)if(Math.hypot(centers[i][0]-centers[j][0],centers[i][1]-centers[j][1])<=holeD+1)throw Error("Reiät ovat liian lähellä toisiaan.");
+    if(pattern==="custom")holes=parseCustomHoles(el("plateCustomHoles")?.value);
+
+    for(const h of holes){const rr=h.d/2+.6;for(const[tx,ty]of[[h.x+rr,h.y],[h.x-rr,h.y],[h.x,h.y+rr],[h.x,h.y-rr]])if(!insideOuter(tx,ty,L,W,style,size))throw Error("Reikä on liian lähellä levyn reunaa tai kulmaa.")}
+    for(let i=0;i<holes.length;i++)for(let j=i+1;j<holes.length;j++)if(Math.hypot(holes[i].x-holes[j].x,holes[i].y-holes[j].y)<=(holes[i].d+holes[j].d)/2+1)throw Error("Reiät ovat liian lähellä toisiaan.");
 
     const o0=outerRing(L,W,0,style,size),o1=o0.map(p=>v(p.x,p.y,T));
-    const holes0=centers.map(([x,y])=>holeRing(x,y,holeD/2,0));
+    const holes0=holes.map(h=>holeRing(h.x,h.y,h.d/2,0));
     const holes1=holes0.map(r=>r.map(p=>v(p.x,p.y,T)));
     const tris=[];
     triangulateFaces(tris,o0,holes0,T);
@@ -68,15 +86,16 @@
 
     currentFitMesh=null;
     const measure=[["Pituus",L],["Leveys",W],["Paksuus",T]];
-    if(centers.length)measure.push([`${centers.length} × reikä Ø`,holeD]);
+    if(holes.length){const same=holes.every(h=>Math.abs(h.d-holes[0].d)<1e-6);measure.push([same?`${holes.length} × reikä Ø`:`${holes.length} reikää`,same?holes[0].d:holes.map(h=>`Ø${h.d} @ ${h.x},${h.y}`).join("; ")])}
     if(pattern==="four")measure.push(["Reuna → keskipiste",edge]);
     if(style!=="square")measure.push([style==="round"?"Pyöristys":"Viiste",size]);
     return{triangles:tris,name:"kiinnikelevy",width:L,depth:W,height:T,measure};
   }
 
+  ensureCustomHoleUI();
   buildPlate=enhancedBuildPlate;
   const oldReset=el("btnReset").onclick;
-  el("btnReset").onclick=()=>{if(el("plateHolePattern"))el("plateHolePattern").value="none";if(el("plateHoleD"))el("plateHoleD").value=0;if(el("plateHoleEdge"))el("plateHoleEdge").value=10;if(el("plateCornerStyle"))el("plateCornerStyle").value="round";if(el("plateCornerSize"))el("plateCornerSize").value=5;oldReset?.()};
-  el("btnDownload").onclick=()=>currentMesh&&saveMesh(currentMesh,`${currentMesh.name}_v0.9.1.stl`);
-  el("btnFitTest").onclick=()=>currentFitMesh&&saveMesh(currentFitMesh,"piikkimutteri_sovitustesti_v0.9.1.stl");
+  el("btnReset").onclick=()=>{if(el("plateHolePattern"))el("plateHolePattern").value="none";if(el("plateHoleD"))el("plateHoleD").value=0;if(el("plateHoleEdge"))el("plateHoleEdge").value=10;if(el("plateCornerStyle"))el("plateCornerStyle").value="round";if(el("plateCornerSize"))el("plateCornerSize").value=5;if(el("plateCustomHoles"))el("plateCustomHoles").value="";el("plateHolePattern")?.dispatchEvent(new Event("change"));oldReset?.()};
+  el("btnDownload").onclick=()=>currentMesh&&saveMesh(currentMesh,`${currentMesh.name}_v0.9.2.stl`);
+  el("btnFitTest").onclick=()=>currentFitMesh&&saveMesh(currentFitMesh,"piikkimutteri_sovitustesti_v0.9.2.stl");
 })();
