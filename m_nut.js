@@ -1,7 +1,8 @@
 "use strict";
 (()=>{
- const oldSetPart=window.AI3D?.setPart;if(!oldSetPart)return;
+ const oldSetPart=window.AI3D?.setPart,oldGenerate=window.AI3D?.generate;if(!oldSetPart||!oldGenerate)return;
  const el=id=>document.getElementById(id),num=(x,d)=>Number.isFinite(+x)?+x:d;
+ let mActive=false,mBase=null;
  function area(p){let a=0;for(let i=0;i<p.length;i++){const j=(i+1)%p.length;a+=p[i][0]*p[j][1]-p[j][0]*p[i][1]}return a/2}
  function sample(poly,n){let p=poly.slice();if(area(p)<0)p=p.reverse();const L=[],C=[0];let total=0;for(let i=0;i<p.length;i++){const a=p[i],b=p[(i+1)%p.length],l=Math.hypot(b[0]-a[0],b[1]-a[1]);L.push(l);total+=l;C.push(total)}const out=[];for(let k=0;k<n;k++){const s=total*k/n;let i=0;while(i<L.length-1&&C[i+1]<s)i++;const t=L[i]?(s-C[i])/L[i]:0,a=p[i],b=p[(i+1)%p.length];out.push([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t])}return out}
  function rotateTo(points,target){let best=0,score=1e99;for(let i=0;i<points.length;i++){const dx=points[i][0]-target[0],dy=points[i][1]-target[1],s=dx*dx+dy*dy;if(s<score){score=s;best=i}}return points.slice(best).concat(points.slice(0,best))}
@@ -10,8 +11,10 @@
  function scalePoly(poly,s){return poly.map(([x,y])=>[x*s,y*s])}
  function buildM(values){
   const p={nutAf:num(values.nutAf,33),clearance:num(values.clearance,.25),lockAmount:num(values.lockAmount,.2),lockZ:num(values.lockZ,7),wall:num(values.wall,2.5),baseHeight:num(values.baseHeight,24),totalHeight:num(values.totalHeight,60),monogramWidth:num(values.monogramWidth,22),monogramDepth:num(values.monogramDepth,18),monogramHeight:num(values.monogramHeight,18)};
-  if(p.wall<1||p.totalHeight<=p.baseHeight+18)throw Error("M-piikkimutterisuojuksen mitat eivät ole mahdollisia.");
+  const required=[p.nutAf,p.wall,p.baseHeight,p.totalHeight,p.monogramWidth,p.monogramDepth,p.monogramHeight];
+  if(!required.every(x=>Number.isFinite(x)&&x>0)||p.wall<1||p.clearance<0||p.lockAmount<0||p.lockZ<0||p.totalHeight<=p.baseHeight+18||p.monogramHeight>p.totalHeight-p.baseHeight)throw Error("M-piikkimutterisuojuksen mitat eivät ole mahdollisia.");
   const innerAF=p.nutAf+2*p.clearance,lockAF=Math.max(p.nutAf-.1,innerAF-2*p.lockAmount),outerAF=innerAF+2*p.wall,T=[];
+  if(innerAF<=0||outerAF<=0||p.lockZ>=p.baseHeight||p.baseHeight<=p.wall)throw Error("M-piikkimutterisuojuksen sovitusmitat eivät ole mahdollisia.");
   const innerTop=p.baseHeight-p.wall,outer0=hexRing(outerAF,0),outer1=hexRing(outerAF,p.baseHeight),inner0=hexRing(innerAF,0),innerLock=hexRing(lockAF,p.lockZ),inner1=hexRing(innerAF,innerTop);
   bridge(T,outer0,outer1);bridge(T,inner0,innerLock,true);bridge(T,innerLock,inner1,true);annulus(T,outer0,inner0,false);cap(T,inner1,innerTop,true);cap(T,outer1,p.baseHeight,true);
 
@@ -43,6 +46,13 @@
 
   return{triangles:T,name:"M-piikkimutterisuojus",width:Math.max(outerAF,p.monogramWidth),depth:Math.max(outerAF,p.monogramDepth),height:p.totalHeight,measure:[["Kokonaiskorkeus",p.totalHeight],["M alkaa",mStart],["M leveys",p.monogramWidth],["M syvyys",p.monogramDepth],["Ulko-AF",outerAF],["Sisä-AF",innerAF],["Mutteriosa",p.baseHeight]]};
  }
- function finish(mesh){currentFitMesh=null;currentMesh=mesh;const a=validate(mesh),ok=a.ok;el("validation").innerHTML=`<div class="check ${ok?"ok":"fail"}"><strong>${ok?"✓ Automaattitarkistus OK":"✕ Tarkistus epäonnistui"}</strong><br>${a.message}<br>Ylempi kartio on poistettu. Alempi kartio päättyy suoraan M-muotoiseen kruunuun.</div>`;el("btnDownload").disabled=!ok;el("btnFitTest").disabled=true;el("status").textContent=ok?"60 mm M-piikkimutterisuojus luotu: ylempi kartio poistettu.":"STL-lataus estetty virheen vuoksi.";el("dimensions").textContent=mesh.measure.map(([k,x])=>`${k} ${typeof x==="number"?x.toFixed(2)+" mm":x}`).join(" • ");updateMaterial();draw()}
- window.AI3D.setPart=(type,values={})=>{if(type!=="spike"||String(values.monogram||"").toUpperCase()!=="M")return oldSetPart(type,values);el("partType").value="spike";updateFields();for(const[k,x]of Object.entries(values))if(el(k))el(k).value=x;finish(buildM(values))};
+ function finish(mesh){currentFitMesh=null;currentMesh=mesh;const a=validate(mesh),ok=a.ok;el("validation").innerHTML=`<div class="check ${ok?"ok":"fail"}"><strong>${ok?"✓ Automaattitarkistus OK":"✕ Tarkistus epäonnistui"}</strong><br>${a.message}<br>Ylempi kartio on poistettu. Alempi kartio päättyy suoraan M-muotoiseen kruunuun.</div>`;el("btnDownload").disabled=!ok;el("btnFitTest").disabled=true;el("status").textContent=ok?"M-piikkimutterisuojus luotu ja tarkistettu.":"STL-lataus estetty virheen vuoksi.";el("dimensions").textContent=mesh.measure.map(([k,x])=>`${k} ${typeof x==="number"?x.toFixed(2)+" mm":x}`).join(" • ");updateMaterial();draw();setTimeout(()=>window.CentauriProfile?.check?.(),0)}
+ function currentValues(){const out={...(mBase||{})};for(const id of["nutAf","clearance","lockAmount","lockZ","wall","baseHeight","totalHeight","tipRadius","material"]){const e=el(id);if(e)out[id]=e.type==="number"?+e.value:e.value}out.monogram="M";return out}
+ function fail(e){currentMesh=null;currentFitMesh=null;el("btnDownload").disabled=true;el("btnFitTest").disabled=true;el("dimensions").textContent="–";el("validation").innerHTML=`<div class="check fail"><strong>✕ M-mallin generointi epäonnistui</strong><br>${String(e?.message||e).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]))}</div>`;el("status").textContent="Virhe: "+(e?.message||e);try{draw()}catch{}setTimeout(()=>window.CentauriProfile?.check?.(),0)}
+ function generateM(){try{finish(buildM(currentValues()))}catch(e){fail(e)}}
+ window.AI3D.setPart=(type,values={})=>{const isM=type==="spike"&&String(values.monogram||"").trim().toUpperCase()==="M";if(!isM){mActive=false;mBase=null;return oldSetPart(type,values)}mActive=true;mBase={...values,monogram:"M"};el("partType").value="spike";updateFields();for(const[k,x]of Object.entries(values))if(el(k))el(k).value=x;generateM()};
+ window.AI3D.generate=()=>mActive&&el("partType")?.value==="spike"?generateM():oldGenerate();
+ const generateButton=el("btnGenerate");if(generateButton)generateButton.onclick=()=>window.AI3D.generate();
+ el("partType")?.addEventListener("change",()=>{if(el("partType").value!=="spike"){mActive=false;mBase=null}});
+ el("btnReset")?.addEventListener("click",()=>{mActive=false;mBase=null},true);
 })();
