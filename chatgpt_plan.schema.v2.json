@@ -7,18 +7,17 @@
   "properties": {
     "schemaVersion": { "const": 2 },
     "status": { "enum": ["ready", "approved"] },
-    "projectName": { "type": "string", "minLength": 1 },
-    "partType": {
-      "enum": ["sleeve", "spike", "endPlug", "mountingPlate", "adapter", "enclosure"]
-    },
+    "projectName": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "partType": { "enum": ["sleeve", "spike", "endPlug", "mountingPlate", "adapter", "enclosure"] },
     "material": { "enum": ["PLA", "PETG", "ASA"] },
     "parameters": {
       "type": "object",
-      "description": "Parametric dimensions in millimetres. Supported names include length, width, height, thickness, wall, insideDiameter, outsideDiameter, holeDiameter, cornerRadius and chamfer.",
+      "description": "Parametric dimensions in millimetres.",
       "additionalProperties": true
     },
     "operations": {
       "type": "array",
+      "maxItems": 200,
       "items": {
         "type": "object",
         "required": ["type"],
@@ -27,38 +26,60 @@
           "x": { "type": "number" },
           "y": { "type": "number" },
           "z": { "type": "number" },
-          "diameter": { "type": "number", "exclusiveMinimum": 0 },
-          "radius": { "type": "number", "minimum": 0 },
-          "size": { "type": "number", "minimum": 0 },
+          "diameter": { "$ref": "#/$defs/positiveMm" },
+          "radius": { "$ref": "#/$defs/nonNegativeMm" },
+          "size": { "$ref": "#/$defs/nonNegativeMm" },
           "holes": {
             "type": "array",
-            "items": {
-              "type": "object",
-              "required": ["x", "y", "diameter"],
-              "properties": {
-                "x": { "type": "number" },
-                "y": { "type": "number" },
-                "diameter": { "type": "number", "exclusiveMinimum": 0 }
-              }
-            }
+            "maxItems": 200,
+            "items": { "$ref": "#/$defs/hole" }
           }
         },
         "additionalProperties": true
       }
     },
-    "summary": { "type": "string" },
+    "summary": { "type": "string", "maxLength": 1000 },
     "updatedAt": { "type": "string" }
   },
+  "allOf": [
+    {
+      "if": { "properties": { "partType": { "const": "mountingPlate" } } },
+      "then": { "properties": { "parameters": { "required": ["length", "width", "thickness"], "properties": { "length": { "$ref": "#/$defs/positiveMm" }, "width": { "$ref": "#/$defs/positiveMm" }, "thickness": { "$ref": "#/$defs/positiveMm" }, "cornerRadius": { "$ref": "#/$defs/nonNegativeMm" }, "chamfer": { "$ref": "#/$defs/nonNegativeMm" } } } } }
+    },
+    {
+      "if": { "properties": { "partType": { "const": "sleeve" } } },
+      "then": { "properties": { "parameters": { "required": ["insideDiameter", "length"], "properties": { "insideDiameter": { "$ref": "#/$defs/positiveMm" }, "outsideDiameter": { "$ref": "#/$defs/positiveMm" }, "wall": { "$ref": "#/$defs/positiveMm" }, "length": { "$ref": "#/$defs/positiveMm" } }, "anyOf": [ { "required": ["wall"] }, { "required": ["outsideDiameter"] } ] } } }
+    },
+    {
+      "if": { "properties": { "partType": { "const": "spike" } } },
+      "then": { "properties": { "parameters": { "required": ["wall"], "properties": { "nutAcrossFlats": { "$ref": "#/$defs/positiveMm" }, "nutAf": { "$ref": "#/$defs/positiveMm" }, "wall": { "$ref": "#/$defs/positiveMm" }, "height": { "$ref": "#/$defs/positiveMm" }, "totalHeight": { "$ref": "#/$defs/positiveMm" }, "baseHeight": { "$ref": "#/$defs/positiveMm" }, "clearance": { "$ref": "#/$defs/nonNegativeMm" } }, "allOf": [ { "anyOf": [ { "required": ["nutAcrossFlats"] }, { "required": ["nutAf"] } ] }, { "anyOf": [ { "required": ["height"] }, { "required": ["totalHeight"] } ] } ] } } }
+    },
+    {
+      "if": { "properties": { "partType": { "const": "endPlug" } } },
+      "then": { "properties": { "parameters": { "required": ["width", "height", "wall", "insertDepth"], "properties": { "width": { "$ref": "#/$defs/positiveMm" }, "height": { "$ref": "#/$defs/positiveMm" }, "wall": { "$ref": "#/$defs/positiveMm" }, "insertDepth": { "$ref": "#/$defs/positiveMm" }, "clearance": { "$ref": "#/$defs/nonNegativeMm" }, "capThickness": { "$ref": "#/$defs/positiveMm" }, "overhang": { "$ref": "#/$defs/nonNegativeMm" } } } } }
+    },
+    {
+      "if": { "properties": { "partType": { "const": "adapter" } } },
+      "then": { "properties": { "parameters": { "required": ["length"], "properties": { "length": { "$ref": "#/$defs/positiveMm" }, "insideDiameter": { "$ref": "#/$defs/positiveMm" }, "insideDiameter1": { "$ref": "#/$defs/positiveMm" }, "insideDiameter2": { "$ref": "#/$defs/positiveMm" }, "outsideDiameter": { "$ref": "#/$defs/positiveMm" }, "outsideDiameter1": { "$ref": "#/$defs/positiveMm" }, "outsideDiameter2": { "$ref": "#/$defs/positiveMm" }, "wall": { "$ref": "#/$defs/positiveMm" } }, "allOf": [ { "anyOf": [ { "required": ["insideDiameter"] }, { "required": ["insideDiameter1"] } ] }, { "anyOf": [ { "required": ["wall"] }, { "required": ["outsideDiameter"] }, { "required": ["outsideDiameter1"] } ] } ] } } }
+    },
+    {
+      "if": { "properties": { "partType": { "const": "enclosure" } } },
+      "then": { "properties": { "parameters": { "required": ["width", "height"], "properties": { "width": { "$ref": "#/$defs/positiveMm" }, "length": { "$ref": "#/$defs/positiveMm" }, "depth": { "$ref": "#/$defs/positiveMm" }, "height": { "$ref": "#/$defs/positiveMm" }, "wall": { "$ref": "#/$defs/positiveMm" }, "thickness": { "$ref": "#/$defs/positiveMm" }, "floorThickness": { "$ref": "#/$defs/positiveMm" } }, "allOf": [ { "anyOf": [ { "required": ["length"] }, { "required": ["depth"] } ] }, { "anyOf": [ { "required": ["wall"] }, { "required": ["thickness"] } ] } ] } } }
+    }
+  ],
   "additionalProperties": true,
   "$defs": {
+    "positiveMm": { "type": "number", "exclusiveMinimum": 0, "maximum": 5000 },
+    "nonNegativeMm": { "type": "number", "minimum": 0, "maximum": 5000 },
     "hole": {
       "type": "object",
       "required": ["x", "y", "diameter"],
       "properties": {
-        "x": { "type": "number" },
-        "y": { "type": "number" },
-        "diameter": { "type": "number", "exclusiveMinimum": 0 }
-      }
+        "x": { "type": "number", "minimum": -5000, "maximum": 5000 },
+        "y": { "type": "number", "minimum": -5000, "maximum": 5000 },
+        "diameter": { "$ref": "#/$defs/positiveMm" }
+      },
+      "additionalProperties": true
     }
   },
   "examples": [
