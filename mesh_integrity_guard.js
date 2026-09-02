@@ -40,13 +40,14 @@
   if(issue){block(issue);return false}
   lastIssue="";return true
  }
+ function loadMultipart(){if(document.querySelector('script[data-ai3d-multipart]'))return;const s=document.createElement("script");s.src="multipart_projects.js?v=1.0";s.dataset.ai3dMultipart="1";document.body.appendChild(s)}
  function init(){
   const status=$("status"),validation=$("validation");
   const obs=new MutationObserver(()=>setTimeout(check,0));
   if(status)obs.observe(status,{childList:true,subtree:true,characterData:true});
   if(validation)obs.observe(validation,{childList:true,subtree:true,characterData:true});
   $("btnDownload")?.addEventListener("click",e=>{if(!check()){e.preventDefault();e.stopImmediatePropagation()}},true);
-  setTimeout(check,50)
+  setTimeout(check,50);loadMultipart()
  }
  window.AI3DMeshIntegrity={check,inspect:inspectMesh,get lastIssue(){return lastIssue}};
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
