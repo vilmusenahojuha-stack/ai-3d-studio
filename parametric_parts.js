@@ -4,6 +4,7 @@
  const isExtra=()=>["adapter","enclosure"].includes($("partType")?.value);
  function ring(r,z){return Array.from({length:N},(_,i)=>v(r*Math.cos(i*2*Math.PI/N),r*Math.sin(i*2*Math.PI/N),z))}
  function rect(w,d,z){return [v(-w/2,-d/2,z),v(w/2,-d/2,z),v(w/2,d/2,z),v(-w/2,d/2,z)]}
+ function loadProjectTools(){if(document.querySelector('script[data-ai3d-project-tools]'))return;const s=document.createElement("script");s.src="project_tools.js?v=1.6";s.dataset.ai3dProjectTools="1";document.body.appendChild(s)}
  function inject(){
   const sel=$("partType");if(!sel)return;
   if(!sel.querySelector('option[value="adapter"]')){const o=document.createElement("option");o.value="adapter";o.textContent="Pyöreä adapteri / supistus";sel.appendChild(o)}
@@ -18,7 +19,7 @@
  function buildEnclosure(){const W=num($("enclosureW").value),D=num($("enclosureD").value),H=num($("enclosureH").value),wall=num($("enclosureWall").value),floor=num($("enclosureFloor").value);if(W<=2*wall+2||D<=2*wall+2||H<=floor+2||wall<.8||floor<.8)throw Error("Kotelon mitat eivät ole mahdollisia.");const o0=rect(W,D,0),o1=rect(W,D,H),i0=rect(W-2*wall,D-2*wall,floor),i1=rect(W-2*wall,D-2*wall,H),T=[];bridge(T,o0,o1);bridge(T,i0,i1,true);cap(T,o0,0,false);cap(T,i0,floor,true);annulus(T,o1,i1,true);return{triangles:T,name:"avoin_kotelo",width:W,depth:D,height:H,measure:[["Leveys",W],["Pituus",D],["Korkeus",H],["Seinämä",wall],["Pohja",floor]]}}
  function generateExtra(){try{const type=$("partType").value;if(type!=="adapter"&&type!=="enclosure")return;showFields(type);finish(type==="adapter"?buildAdapter():buildEnclosure())}catch(e){$("status").textContent="Virhe: "+e.message;$("btnDownload").disabled=true;$("validation").innerHTML='<div class="check fail"><strong>✕ Tarkistus epäonnistui</strong><br>'+String(e.message||e)+'</div>'}}
  function setExtra(type,values={}){showFields(type);const keys=type==="adapter"?["adapterLength","adapterID1","adapterID2","adapterOD1","adapterOD2"]:["enclosureW","enclosureD","enclosureH","enclosureWall","enclosureFloor"];for(const k of keys)if($(k)&&values[k]!=null)$(k).value=values[k];if(values.material&&$("material"))$("material").value=values.material;generateExtra()}
- function init(){inject();const oldSet=window.AI3D?.setPart;if(oldSet)window.AI3D.setPart=(type,values={})=>{if(type!=="adapter"&&type!=="enclosure")return oldSet(type,values);$("partType").value=type;setExtra(type,values)};const typeEl=$("partType"),oldChange=typeEl?.onchange;if(typeEl)typeEl.onchange=()=>{if(isExtra())generateExtra();else oldChange?.()};$("btnGenerate")?.addEventListener("click",e=>{if(!isExtra())return;e.preventDefault();e.stopImmediatePropagation();generateExtra()},true)}
+ function init(){inject();loadProjectTools();const oldSet=window.AI3D?.setPart;if(oldSet)window.AI3D.setPart=(type,values={})=>{if(type!=="adapter"&&type!=="enclosure")return oldSet(type,values);$("partType").value=type;setExtra(type,values)};const typeEl=$("partType"),oldChange=typeEl?.onchange;if(typeEl)typeEl.onchange=()=>{if(isExtra())generateExtra();else oldChange?.()};$("btnGenerate")?.addEventListener("click",e=>{if(!isExtra())return;e.preventDefault();e.stopImmediatePropagation();generateExtra()},true)}
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
  window.AI3DParametric={generate:generateExtra};
 })();
