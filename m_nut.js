@@ -7,8 +7,21 @@
  function sample(poly,n){let p=poly.slice();if(area(p)<0)p=p.reverse();const L=[],C=[0];let total=0;for(let i=0;i<p.length;i++){const a=p[i],b=p[(i+1)%p.length],l=Math.hypot(b[0]-a[0],b[1]-a[1]);L.push(l);total+=l;C.push(total)}const out=[];for(let k=0;k<n;k++){const s=total*k/n;let i=0;while(i<L.length-1&&C[i+1]<s)i++;const t=L[i]?(s-C[i])/L[i]:0,a=p[i],b=p[(i+1)%p.length];out.push([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t])}return out}
  function rotateTo(points,target){let best=0,score=1e99;for(let i=0;i<points.length;i++){const dx=points[i][0]-target[0],dy=points[i][1]-target[1],s=dx*dx+dy*dy;if(s<score){score=s;best=i}}return points.slice(best).concat(points.slice(0,best))}
  function ring2(points,z){return points.map(p=>v(p[0],p[1],z))}
- function capPoly(T,pts,z){const flat=[];for(const p of pts)flat.push(p[0],p[1]);const ids=earcut(flat,null,2),vv=ring2(pts,z);for(let i=0;i<ids.length;i+=3)T.push(tri(vv[ids[i]],vv[ids[i+1]],vv[ids[i+2]]))}
+ function capPoly(T,pts,z){if(typeof earcut!=="function")throw Error("Polygonin triangulointikirjastoa ei ole ladattu.");const flat=[];for(const p of pts)flat.push(p[0],p[1]);const ids=earcut(flat,null,2),vv=ring2(pts,z);if(!Array.isArray(ids)||ids.length<3||ids.length%3)throw Error("M-kruunun triangulointi epäonnistui.");for(let i=0;i<ids.length;i+=3)T.push(tri(vv[ids[i]],vv[ids[i+1]],vv[ids[i+2]]))}
  function scalePoly(poly,s){return poly.map(([x,y])=>[x*s,y*s])}
+ function ensureEditor(values={}){
+  let box=el("mNutParams");
+  if(!box){
+   const host=el("fields-spike");if(!host)return null;
+   box=document.createElement("div");box.id="mNutParams";box.hidden=true;
+   box.innerHTML='<div class="section-title">M-kruunun mitat</div><div class="grid"><label>M leveys (mm)<input id="monogramWidth" type="number" min="8" max="80" step="0.5"></label><label>M syvyys (mm)<input id="monogramDepth" type="number" min="8" max="80" step="0.5"></label><label>M korkeus (mm)<input id="monogramHeight" type="number" min="8" max="40" step="0.5"></label></div><input id="monogram" type="hidden" value="M"><p class="hint">Nämä arvot tulevat ChatGPT-suunnitelmasta ja tallentuvat projektin mukana.</p>';
+   host.appendChild(box)
+  }
+  [["monogramWidth",22],["monogramDepth",18],["monogramHeight",18]].forEach(([id,d])=>{const e=el(id);if(e)e.value=num(values[id],d)});
+  if(el("monogram"))el("monogram").value="M";
+  box.hidden=false;return box
+ }
+ function hideEditor(){const b=el("mNutParams");if(b)b.hidden=true}
  function buildM(values){
   const p={nutAf:num(values.nutAf,33),clearance:num(values.clearance,.25),lockAmount:num(values.lockAmount,.2),lockZ:num(values.lockZ,7),wall:num(values.wall,2.5),baseHeight:num(values.baseHeight,24),totalHeight:num(values.totalHeight,60),monogramWidth:num(values.monogramWidth,22),monogramDepth:num(values.monogramDepth,18),monogramHeight:num(values.monogramHeight,18)};
   const required=[p.nutAf,p.wall,p.baseHeight,p.totalHeight,p.monogramWidth,p.monogramDepth,p.monogramHeight];
@@ -42,12 +55,12 @@
   return{triangles:T,name:"M-piikkimutterisuojus",width:Math.max(outerAF,p.monogramWidth),depth:Math.max(outerAF,p.monogramDepth),height:p.totalHeight,measure:[["Kokonaiskorkeus",p.totalHeight],["M alkaa",mStart],["M leveys",p.monogramWidth],["M syvyys",p.monogramDepth],["Ulko-AF",outerAF],["Sisä-AF",innerAF],["Mutteriosa",p.baseHeight]]};
  }
  function finish(mesh){currentFitMesh=null;currentMesh=mesh;const a=validate(mesh),ok=a.ok;el("validation").innerHTML=`<div class="check ${ok?"ok":"fail"}"><strong>${ok?"✓ Automaattitarkistus OK":"✕ Tarkistus epäonnistui"}</strong><br>${a.message}<br>Alempi kartio päättyy suoraan M-muotoiseen kruunuun.</div>`;el("btnDownload").disabled=!ok;el("btnFitTest").disabled=true;el("status").textContent=ok?"M-piikkimutterisuojus luotu ja tarkistettu.":"STL-lataus estetty virheen vuoksi.";el("dimensions").textContent=mesh.measure.map(([k,x])=>`${k} ${typeof x==="number"?x.toFixed(2)+" mm":x}`).join(" • ");updateMaterial();draw();setTimeout(()=>window.CentauriProfile?.check?.(),0)}
- function currentValues(){const out={...(mBase||{})};for(const id of["nutAf","clearance","lockAmount","lockZ","wall","baseHeight","totalHeight","tipRadius","material"]){const e=el(id);if(e)out[id]=e.type==="number"?+e.value:e.value}out.monogram="M";return out}
+ function currentValues(){const out={...(mBase||{})};for(const id of["nutAf","clearance","lockAmount","lockZ","wall","baseHeight","totalHeight","tipRadius","monogramWidth","monogramDepth","monogramHeight","material"]){const e=el(id);if(e){if(e.type==="number"){if(Number.isFinite(e.valueAsNumber))out[id]=e.valueAsNumber}else out[id]=e.value}}out.monogram="M";return out}
  function fail(e){currentMesh=null;currentFitMesh=null;el("btnDownload").disabled=true;el("btnFitTest").disabled=true;el("dimensions").textContent="–";el("validation").innerHTML=`<div class="check fail"><strong>✕ M-mallin generointi epäonnistui</strong><br>${String(e?.message||e).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]))}</div>`;el("status").textContent="Virhe: "+(e?.message||e);try{draw()}catch{}setTimeout(()=>window.CentauriProfile?.check?.(),0)}
- function generateM(){try{finish(buildM(currentValues()));return true}catch(e){fail(e);return false}}
- window.AI3D.setPart=(type,values={})=>{const isM=type==="spike"&&String(values.monogram||"").trim().toUpperCase()==="M";if(!isM){mActive=false;mBase=null;return oldSetPart(type,values)}mActive=true;mBase={...values,monogram:"M"};el("partType").value="spike";updateFields();for(const[k,x]of Object.entries(values))if(el(k))el(k).value=x;generateM()};
+ function generateM(){try{const values=currentValues();mBase={...values};finish(buildM(values));return true}catch(e){fail(e);return false}}
+ window.AI3D.setPart=(type,values={})=>{const isM=type==="spike"&&String(values.monogram||"").trim().toUpperCase()==="M";if(!isM){mActive=false;mBase=null;hideEditor();return oldSetPart(type,values)}mActive=true;mBase={...values,monogram:"M"};el("partType").value="spike";updateFields();ensureEditor(values);for(const[k,x]of Object.entries(values))if(el(k))el(k).value=x;generateM()};
  el("btnGenerate")?.addEventListener("click",e=>{if(!mActive||el("partType")?.value!=="spike")return;e.preventDefault();e.stopImmediatePropagation();generateM()},true);
- el("partType")?.addEventListener("change",()=>{if(el("partType").value!=="spike"){mActive=false;mBase=null}});
- el("btnReset")?.addEventListener("click",()=>{mActive=false;mBase=null},true);
+ el("partType")?.addEventListener("change",()=>{if(el("partType").value!=="spike"){mActive=false;mBase=null;hideEditor()}});
+ el("btnReset")?.addEventListener("click",()=>{mActive=false;mBase=null;hideEditor()},true);
  window.AI3DMNut={isActive:()=>mActive,generateIfActive:()=>mActive&&el("partType")?.value==="spike"?generateM():false};
 })();
