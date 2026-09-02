@@ -1,0 +1,12 @@
+"use strict";
+(()=>{
+ const $=id=>document.getElementById(id),KEY="ai3d:projects:v3";
+ function read(){try{const a=JSON.parse(localStorage.getItem(KEY)||"[]");return Array.isArray(a)?a:[]}catch{return[]}}
+ function write(items,active){try{localStorage.setItem(KEY,JSON.stringify(items));localStorage.setItem(KEY+":active",active||"");return true}catch(e){alert("Projektien tallennus epäonnistui: "+(e?.message||e));return false}}
+ function active(){return window.AI3DProjects?.active?.()||null}
+ function duplicate(){const p=active();if(!p)return alert("Valitse projekti ensin.");const items=read(),src=items.find(x=>x.id===p.id)||p,id="p"+Date.now(),copy={...src,id,name:String(src.name||"Projekti")+" – kopio",values:{...(src.values||{})},created:Date.now(),updated:Date.now()};items.unshift(copy);if(write(items,id))location.reload()}
+ function remove(){const p=active();if(!p)return alert("Valitse projekti ensin.");if(!confirm(`Poistetaanko projekti ”${p.name||"projekti"}” tältä laitteelta?\n\nChatGPT-suunnitelmaa tai GitHub-tiedostoja ei poisteta.`))return;const items=read().filter(x=>x.id!==p.id),next=items[0]?.id||"";if(write(items,next))location.reload()}
+ function storage(){const root=$("projectStorageInfo");if(!root)return;const raw=localStorage.getItem(KEY)||"[]",bytes=new Blob([raw]).size,count=read().length;root.textContent=`Paikalliset projektit: ${count} • tallennus noin ${(bytes/1024).toFixed(1)} kB`;root.title="Projektit tallennetaan tämän selaimen localStorageen. Käytä VIE PROJEKTI JSON -toimintoa tärkeiden projektien varmuuskopiointiin."}
+ function inject(){if($("btnDuplicateProject"))return;const sync=$("planSyncStatus");if(!sync)return;const box=document.createElement("div");box.className="project-extra-tools";box.style.display="grid";box.style.gridTemplateColumns="1fr 1fr";box.style.gap="6px";box.innerHTML='<button id="btnDuplicateProject" class="ghost">KOPIOI</button><button id="btnDeleteProject" class="ghost">POISTA</button><small id="projectStorageInfo" style="grid-column:1/-1;color:#64748b;padding:2px 3px"></small>';sync.after(box);$("btnDuplicateProject").onclick=duplicate;$("btnDeleteProject").onclick=remove;storage()}
+ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(inject,80));else setTimeout(inject,80);
+})();
