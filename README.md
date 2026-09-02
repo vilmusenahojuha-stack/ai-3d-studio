@@ -19,15 +19,19 @@ Selainpohjainen parametrinen 3D-suunnittelutyökalu, jossa ChatGPTissa tehty suu
 - suorakaideputken päätytulppa
 - levy / kiinnikeaihio
 - mukautetuilla rei'illä varustettu kiinnikelevy
+- pyöreä adapteri / supistus, jossa alku- ja loppupään sisä- ja ulkohalkaisijat voidaan määrittää erikseen
+- avoin suorakulmainen kotelo, jossa leveys, pituus, korkeus, seinämä ja pohjan paksuus ovat muokattavia
 - LED-valokyltti
 
-ChatGPT-suunnitelmien Schema v1 ja osa Schema v2 -rakenteista muunnetaan näihin muokattaviin osatyyppeihin. Tunnistettu mutta vielä tukematon Schema v2 -osatyyppi näytetään suunnitelmalistassa selvästi eikä sitä yritetä avata väärällä editorilla.
+ChatGPT-suunnitelmien Schema v1 sekä Schema v2:n `sleeve`, `spike`, `endPlug`, `mountingPlate`, `adapter` ja `enclosure` voidaan tuoda muokattaviksi projekteiksi. Tunnistettu mutta vielä tukematon osatyyppi näytetään suunnitelmalistassa selvästi eikä sitä yritetä avata väärällä editorilla.
 
 ## Projektien tallennus
 
 Projektit tallennetaan selaimen `localStorage`-muistiin. Sovellus siirtää vanhan v1/v2 projektivaraston v3-muotoon ensimmäisellä käynnistyksellä, jos uutta varastoa ei vielä ole.
 
-Projektista voi myös ladata erillisen `.ai3d.json`-varmuuskopion ja tuoda sen takaisin sovellukseen. Tuonnissa tarkistetaan tiedostokoko, projektirakenne ja tuettu osatyyppi ennen avaamista.
+Projektista voi ladata erillisen `.ai3d.json`-varmuuskopion ja tuoda sen takaisin sovellukseen. Tuonnissa tarkistetaan tiedostokoko, projektirakenne ja tuettu osatyyppi ennen avaamista.
+
+Projektityökaluihin kuuluu myös aktiivisen projektin kopiointi ja paikallinen poistaminen. Poisto koskee vain kyseisen selaimen projektikopiota eikä poista `chatgpt_plan.json`-suunnitelmaa tai GitHub-tiedostoja. Käyttöliittymä näyttää lisäksi paikallisten projektien määrän ja niiden likimääräisen tallennuskoon.
 
 ## CAD- ja STL-tarkistus
 
@@ -37,6 +41,8 @@ Ennen STL-latauksen sallimista sovellus tarkistaa mallin geometriasta vähintä�
 - nollapinta-alaiset kolmiot
 - avoimet tai moninkertaiset mesh-reunat
 - että jokainen mesh-reuna kuuluu suljetussa manifold-mallissa kahdelle kolmiolle
+
+Adapteri generoidaan suljettuna onttona kartiomaisena holkkina. Avoin kotelo generoidaan yhtenä suljettuna mesh-kuorena, jossa sisäpohja ja seinät ovat osa samaa mallia.
 
 Piikkimutterinsuojuksessa voidaan tehdä erillinen sovitustesti ennen koko osan tulostamista. Sovitusarvot ovat lähtöarvoja: todellinen sopivuus riippuu mutterin mitasta, tulostimen kalibroinnista, materiaalista ja kutistumisesta.
 
@@ -58,8 +64,8 @@ Ajoneuvoon tai muuhun turvallisuuskriittiseen käyttöön tuleva osa on aina sov
 
 ## Kehityssuunta
 
-- lisää parametrisia Schema v2 -osatyyppejä
 - moniosaiset projektit ja osakohtainen muokkaus
 - parempi 3D-esikatselun mitta- ja leikkausnäkymä
 - tulostettavuuden analyysi: seinämäpaksuudet, ylitykset ja tukitarve
+- lisää Schema v2 -operaatioita turvallisesti muokattaviksi
 - 3MF-vienti, kun se voidaan toteuttaa ilman että nykyinen STL-työnkulku rikkoutuu
