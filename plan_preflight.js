@@ -6,98 +6,15 @@
  const positive=v=>Number.isFinite(Number(v))&&Number(v)>0;
  const finite=v=>Number.isFinite(Number(v));
  const nonNegative=v=>Number.isFinite(Number(v))&&Number(v)>=0;
- const gt=(a,b)=>finite(a)&&finite(b)&&Number(a)>Number(b);
+ let lastResult=null,running=true;
  function checkMagnitude(obj,warnings){for(const[k,x]of Object.entries(obj||{}))if(typeof x==="number"&&Math.abs(x)>1000)warnings.push(k+" on poikkeuksellisen suuri.")}
- function validateV1(raw){
-  const errors=[],warnings=[],v=raw.values;
-  if(!supportedV1.has(raw.partType))errors.push("Schema v1 -osatyyppiä ei tueta.");
-  if(!v||typeof v!=="object"||Array.isArray(v))errors.push("values-objekti puuttuu.");
-  if(v&&raw.partType==="spike"){
-   if(!positive(v.nutAf))errors.push("nutAf puuttuu tai ei ole positiivinen luku.");
-   if(!positive(v.wall))errors.push("wall puuttuu tai ei ole positiivinen luku.");
-   if(!positive(v.totalHeight))errors.push("totalHeight puuttuu tai ei ole positiivinen luku.");
-   if(positive(v.baseHeight)&&positive(v.totalHeight)&&Number(v.baseHeight)>=Number(v.totalHeight))errors.push("baseHeight pitää olla kokonaiskorkeutta pienempi.");
-   if(v.clearance!=null&&!nonNegative(v.clearance))errors.push("clearance ei voi olla negatiivinen.");
-   if(v.lockAmount!=null&&!nonNegative(v.lockAmount))errors.push("lockAmount ei voi olla negatiivinen.");
-   if(positive(v.lockZ)&&positive(v.baseHeight)&&Number(v.lockZ)>=Number(v.baseHeight))warnings.push("lockZ on mutteriosan korkeudella tai sen yläpuolella; tarkista lukituskohta.");
-  }
-  if(v&&raw.partType==="sleeve"){
-   if(!positive(v.sleeveID??v.insideDiameter))errors.push("Holkin sisähalkaisija puuttuu.");
-   if(!positive(v.sleeveWall??v.wall))errors.push("Holkin seinämä puuttuu.");
-   if(!positive(v.sleeveLength??v.length))errors.push("Holkin pituus puuttuu.");
-  }
-  checkMagnitude(v,warnings);
-  return{ok:errors.length===0,errors,warnings,schema:1}
- }
+ function validateV1(raw){const errors=[],warnings=[],v=raw.values;if(!supportedV1.has(raw.partType))errors.push("Schema v1 -osatyyppiä ei tueta.");if(!v||typeof v!=="object"||Array.isArray(v))errors.push("values-objekti puuttuu.");if(v&&raw.partType==="spike"){if(!positive(v.nutAf))errors.push("nutAf puuttuu tai ei ole positiivinen luku.");if(!positive(v.wall))errors.push("wall puuttuu tai ei ole positiivinen luku.");if(!positive(v.totalHeight))errors.push("totalHeight puuttuu tai ei ole positiivinen luku.");if(positive(v.baseHeight)&&positive(v.totalHeight)&&Number(v.baseHeight)>=Number(v.totalHeight))errors.push("baseHeight pitää olla kokonaiskorkeutta pienempi.");if(v.clearance!=null&&!nonNegative(v.clearance))errors.push("clearance ei voi olla negatiivinen.");if(v.lockAmount!=null&&!nonNegative(v.lockAmount))errors.push("lockAmount ei voi olla negatiivinen.");if(positive(v.lockZ)&&positive(v.baseHeight)&&Number(v.lockZ)>=Number(v.baseHeight))warnings.push("lockZ on mutteriosan korkeudella tai sen yläpuolella; tarkista lukituskohta.")}if(v&&raw.partType==="sleeve"){if(!positive(v.sleeveID??v.insideDiameter))errors.push("Holkin sisähalkaisija puuttuu.");if(!positive(v.sleeveWall??v.wall))errors.push("Holkin seinämä puuttuu.");if(!positive(v.sleeveLength??v.length))errors.push("Holkin pituus puuttuu.")}checkMagnitude(v,warnings);return{ok:errors.length===0,errors,warnings,schema:1}}
  function collectHoles(raw){const holes=[];const add=h=>{if(!h)return;if(typeof h==="number"){holes.push({x:0,y:0,diameter:h});return}holes.push({x:h.x??0,y:h.y??0,diameter:h.diameter??h.d})};const p=raw.parameters||{};(p.holes||[]).forEach(add);if(p.centerHole)add(p.centerHole);for(const op of raw.operations||[]){if(op?.type==="hole")add(op);if(op?.type==="holes"&&Array.isArray(op.holes))op.holes.forEach(add)}return holes}
- function validateV2(raw){
-  const errors=[],warnings=[];
-  if(!["ready","approved"].includes(raw.status))errors.push("status pitää olla ready tai approved.");
-  if(!supportedV2.has(raw.partType))errors.push("Osatyyppiä ei tueta Schema v2:ssa.");
-  if(!["PLA","PETG","ASA"].includes(raw.material))errors.push("Materiaali pitää olla PLA, PETG tai ASA.");
-  const p=raw.parameters;
-  if(!p||typeof p!=="object"||Array.isArray(p))errors.push("parameters-objekti puuttuu.");
-  if(p&&typeof p==="object"){
-   const need=k=>{if(!positive(p[k]))errors.push(k+" puuttuu tai ei ole positiivinen luku.")};
-   if(raw.partType==="mountingPlate"){
-    need("length");need("width");need("thickness");
-    const holes=collectHoles(raw);
-    holes.forEach((h,i)=>{if(!finite(h.x)||!finite(h.y)||!positive(h.diameter))errors.push(`Reikä ${i+1}: x, y ja positiivinen diameter vaaditaan.`);else if(positive(p.length)&&positive(p.width)&&(Math.abs(Number(h.x))+Number(h.diameter)/2>Number(p.length)/2||Math.abs(Number(h.y))+Number(h.diameter)/2>Number(p.width)/2))warnings.push(`Reikä ${i+1} näyttää osuvan levyn ulkoreunaan tai sen yli.`)});
-   }
-   if(raw.partType==="sleeve"){
-    need("insideDiameter");need("length");
-    if(!positive(p.wall)&&!positive(p.outsideDiameter))errors.push("Holkki tarvitsee wall- tai outsideDiameter-arvon.");
-    if(positive(p.outsideDiameter)&&positive(p.insideDiameter)&&Number(p.outsideDiameter)<=Number(p.insideDiameter))errors.push("outsideDiameter pitää olla insideDiameter-arvoa suurempi.");
-   }
-   if(raw.partType==="spike"){
-    const af=p.nutAcrossFlats??p.nutAf,h=p.height??p.totalHeight;
-    if(!positive(af))errors.push("Piikkimutterin avainkoko puuttuu.");
-    if(!positive(p.wall))errors.push("wall puuttuu.");
-    if(!positive(h))errors.push("Kokonaiskorkeus puuttuu.");
-    if(positive(p.baseHeight)&&positive(h)&&Number(p.baseHeight)>=Number(h))errors.push("baseHeight pitää olla kokonaiskorkeutta pienempi.");
-    if(p.clearance!=null&&!nonNegative(p.clearance))errors.push("clearance ei voi olla negatiivinen.");
-    if(p.lockAmount!=null&&!nonNegative(p.lockAmount))errors.push("lockAmount ei voi olla negatiivinen.");
-   }
-   if(raw.partType==="endPlug"){need("width");need("height");need("wall");need("insertDepth");if(positive(p.width)&&positive(p.wall)&&Number(p.width)<=2*Number(p.wall))errors.push("Tulpan width on liian pieni suhteessa wall-arvoon.");if(positive(p.height)&&positive(p.wall)&&Number(p.height)<=2*Number(p.wall))errors.push("Tulpan height on liian pieni suhteessa wall-arvoon.")}
-   if(raw.partType==="adapter"){
-    need("length");const id1=p.insideDiameter1??p.insideDiameter,id2=p.insideDiameter2??p.insideDiameter??id1,wall=Number(p.wall||0),od1=p.outsideDiameter1??p.outsideDiameter,od2=p.outsideDiameter2??p.outsideDiameter;
-    if(!positive(id1))errors.push("Adapterin sisähalkaisija puuttuu.");
-    if(!positive(id2))errors.push("Adapterin loppupään sisähalkaisija puuttuu.");
-    if(!positive(od1)&&!(wall>0))errors.push("Adapterin alku tarvitsee outsideDiameter1/outsideDiameter- tai wall-arvon.");
-    if(!positive(od2)&&!(wall>0))errors.push("Adapterin loppu tarvitsee outsideDiameter2/outsideDiameter- tai wall-arvon.");
-    if(positive(od1)&&positive(id1)&&Number(od1)<=Number(id1))errors.push("Adapterin outsideDiameter1 pitää olla insideDiameter1-arvoa suurempi.");
-    if(positive(od2)&&positive(id2)&&Number(od2)<=Number(id2))errors.push("Adapterin outsideDiameter2 pitää olla insideDiameter2-arvoa suurempi.");
-   }
-   if(raw.partType==="enclosure"){
-    need("width");need("height");if(!positive(p.length)&&!positive(p.depth))errors.push("Kotelon length/depth puuttuu.");
-    const d=p.length??p.depth,wall=p.wall??p.thickness,floor=p.floorThickness??p.thickness??p.wall;
-    if(!positive(wall))errors.push("Kotelon wall/thickness puuttuu.");
-    if(!positive(floor))errors.push("Kotelon floorThickness/thickness puuttuu.");
-    if(positive(p.width)&&positive(wall)&&Number(p.width)<=2*Number(wall)+2)errors.push("Kotelon leveys on liian pieni seinämäpaksuuteen nähden.");
-    if(positive(d)&&positive(wall)&&Number(d)<=2*Number(wall)+2)errors.push("Kotelon pituus/syvyys on liian pieni seinämäpaksuuteen nähden.");
-    if(positive(p.height)&&positive(floor)&&Number(p.height)<=Number(floor)+2)errors.push("Kotelon korkeus on liian pieni pohjan paksuuteen nähden.");
-   }
-   checkMagnitude(p,warnings);
-  }
-  if(raw.operations!=null&&!Array.isArray(raw.operations))errors.push("operations pitää olla taulukko.");
-  if(Array.isArray(raw.operations)&&raw.operations.length>200)warnings.push("operations sisältää yli 200 operaatiota; tarkista suunnitelman koko.");
-  return{ok:errors.length===0,errors,warnings,schema:2}
- }
- function validate(raw){
-  if(!raw||typeof raw!=="object"||Array.isArray(raw))return{ok:false,errors:["Suunnitelma ei ole JSON-objekti."],warnings:[],schema:null};
-  if(typeof raw.projectName!=="string"||!raw.projectName.trim())return{ok:false,errors:["Projektin nimi puuttuu."],warnings:[],schema:raw.schemaVersion};
-  if(raw.schemaVersion===1)return validateV1(raw);
-  if(raw.schemaVersion===2)return validateV2(raw);
-  return{ok:false,errors:["Tuntematon schemaVersion."],warnings:[],schema:raw.schemaVersion}
- }
- function gate(v){const b=document.querySelector('[data-plan="chatgpt-current"]');if(!b)return;if(v.ok){b.disabled=false;b.classList.remove("unsupported");b.removeAttribute("title")}else{b.disabled=true;b.classList.add("unsupported");b.title="Suunnitelma on estetty, koska ennakkotarkistus löysi virheitä."}}
- async function run(){
-  let box=$("planPreflight");
-  if(!box){const side=document.querySelector(".project-sidebar");if(!side)return;box=document.createElement("div");box.id="planPreflight";box.style.margin="8px 0";box.style.padding="9px";box.style.border="1px solid #334155";box.style.borderRadius="10px";side.appendChild(box)}
-  try{const r=await fetch("chatgpt_plan.json?preflight="+Date.now(),{cache:"no-store"});if(!r.ok)throw Error("HTTP "+r.status);const v=validate(await r.json());box.textContent=v.ok?(v.warnings.length?`✓ Schema v${v.schema} -suunnitelman rakenne OK. `+v.warnings.join(" "):`✓ ChatGPT-suunnitelman rakenne OK (Schema v${v.schema}).`):"⚠ ChatGPT-suunnitelma estetty: "+v.errors.join(" ");gate(v);setTimeout(()=>gate(v),700)}
-  catch(e){box.textContent="⚠ Suunnitelman ennakkotarkistus ei onnistunut: "+e.message}
- }
- function init(){run();document.addEventListener("click",e=>{if(e.target&&e.target.id==="btnReloadPlans")setTimeout(run,350)})}
- window.AI3DPlanPreflight={validate,run};
+ function validateV2(raw){const errors=[],warnings=[];if(!["ready","approved"].includes(raw.status))errors.push("status pitää olla ready tai approved.");if(!supportedV2.has(raw.partType))errors.push("Osatyyppiä ei tueta Schema v2:ssa.");if(!["PLA","PETG","ASA"].includes(raw.material))errors.push("Materiaali pitää olla PLA, PETG tai ASA.");const p=raw.parameters;if(!p||typeof p!=="object"||Array.isArray(p))errors.push("parameters-objekti puuttuu.");if(p&&typeof p==="object"){const need=k=>{if(!positive(p[k]))errors.push(k+" puuttuu tai ei ole positiivinen luku.")};if(raw.partType==="mountingPlate"){need("length");need("width");need("thickness");const holes=collectHoles(raw);holes.forEach((h,i)=>{if(!finite(h.x)||!finite(h.y)||!positive(h.diameter))errors.push(`Reikä ${i+1}: x, y ja positiivinen diameter vaaditaan.`);else if(positive(p.length)&&positive(p.width)&&(Math.abs(Number(h.x))+Number(h.diameter)/2>Number(p.length)/2||Math.abs(Number(h.y))+Number(h.diameter)/2>Number(p.width)/2))warnings.push(`Reikä ${i+1} näyttää osuvan levyn ulkoreunaan tai sen yli.`)})}if(raw.partType==="sleeve"){need("insideDiameter");need("length");if(!positive(p.wall)&&!positive(p.outsideDiameter))errors.push("Holkki tarvitsee wall- tai outsideDiameter-arvon.");if(positive(p.outsideDiameter)&&positive(p.insideDiameter)&&Number(p.outsideDiameter)<=Number(p.insideDiameter))errors.push("outsideDiameter pitää olla insideDiameter-arvoa suurempi.")}if(raw.partType==="spike"){const af=p.nutAcrossFlats??p.nutAf,h=p.height??p.totalHeight;if(!positive(af))errors.push("Piikkimutterin avainkoko puuttuu.");if(!positive(p.wall))errors.push("wall puuttuu.");if(!positive(h))errors.push("Kokonaiskorkeus puuttuu.");if(positive(p.baseHeight)&&positive(h)&&Number(p.baseHeight)>=Number(h))errors.push("baseHeight pitää olla kokonaiskorkeutta pienempi.");if(p.clearance!=null&&!nonNegative(p.clearance))errors.push("clearance ei voi olla negatiivinen.");if(p.lockAmount!=null&&!nonNegative(p.lockAmount))errors.push("lockAmount ei voi olla negatiivinen.")}if(raw.partType==="endPlug"){need("width");need("height");need("wall");need("insertDepth");if(positive(p.width)&&positive(p.wall)&&Number(p.width)<=2*Number(p.wall))errors.push("Tulpan width on liian pieni suhteessa wall-arvoon.");if(positive(p.height)&&positive(p.wall)&&Number(p.height)<=2*Number(p.wall))errors.push("Tulpan height on liian pieni suhteessa wall-arvoon.")}if(raw.partType==="adapter"){need("length");const id1=p.insideDiameter1??p.insideDiameter,id2=p.insideDiameter2??p.insideDiameter??id1,wall=Number(p.wall||0),od1=p.outsideDiameter1??p.outsideDiameter,od2=p.outsideDiameter2??p.outsideDiameter;if(!positive(id1))errors.push("Adapterin sisähalkaisija puuttuu.");if(!positive(id2))errors.push("Adapterin loppupään sisähalkaisija puuttuu.");if(!positive(od1)&&!(wall>0))errors.push("Adapterin alku tarvitsee outsideDiameter1/outsideDiameter- tai wall-arvon.");if(!positive(od2)&&!(wall>0))errors.push("Adapterin loppu tarvitsee outsideDiameter2/outsideDiameter- tai wall-arvon.");if(positive(od1)&&positive(id1)&&Number(od1)<=Number(id1))errors.push("Adapterin outsideDiameter1 pitää olla insideDiameter1-arvoa suurempi.");if(positive(od2)&&positive(id2)&&Number(od2)<=Number(id2))errors.push("Adapterin outsideDiameter2 pitää olla insideDiameter2-arvoa suurempi.")}if(raw.partType==="enclosure"){need("width");need("height");if(!positive(p.length)&&!positive(p.depth))errors.push("Kotelon length/depth puuttuu.");const d=p.length??p.depth,wall=p.wall??p.thickness,floor=p.floorThickness??p.thickness??p.wall;if(!positive(wall))errors.push("Kotelon wall/thickness puuttuu.");if(!positive(floor))errors.push("Kotelon floorThickness/thickness puuttuu.");if(positive(p.width)&&positive(wall)&&Number(p.width)<=2*Number(wall)+2)errors.push("Kotelon leveys on liian pieni seinämäpaksuuteen nähden.");if(positive(d)&&positive(wall)&&Number(d)<=2*Number(wall)+2)errors.push("Kotelon pituus/syvyys on liian pieni seinämäpaksuuteen nähden.");if(positive(p.height)&&positive(floor)&&Number(p.height)<=Number(floor)+2)errors.push("Kotelon korkeus on liian pieni pohjan paksuuteen nähden.")}checkMagnitude(p,warnings)}if(raw.operations!=null&&!Array.isArray(raw.operations))errors.push("operations pitää olla taulukko.");if(Array.isArray(raw.operations)&&raw.operations.length>200)warnings.push("operations sisältää yli 200 operaatiota; tarkista suunnitelman koko.");return{ok:errors.length===0,errors,warnings,schema:2}}
+ function validate(raw){if(!raw||typeof raw!=="object"||Array.isArray(raw))return{ok:false,errors:["Suunnitelma ei ole JSON-objekti."],warnings:[],schema:null};if(typeof raw.projectName!=="string"||!raw.projectName.trim())return{ok:false,errors:["Projektin nimi puuttuu."],warnings:[],schema:raw.schemaVersion};if(raw.schemaVersion===1)return validateV1(raw);if(raw.schemaVersion===2)return validateV2(raw);return{ok:false,errors:["Tuntematon schemaVersion."],warnings:[],schema:raw.schemaVersion}}
+ function gate(){const b=document.querySelector('[data-plan="chatgpt-current"]');if(!b)return;const ok=!running&&lastResult?.ok===true;b.disabled=!ok;b.classList.toggle("unsupported",!ok);if(ok)b.removeAttribute("title");else b.title=running?"Suunnitelman ennakkotarkistus on kesken.":"Suunnitelma on estetty, koska ennakkotarkistus löysi virheitä."}
+ async function run(){let box=$("planPreflight");if(!box){const side=document.querySelector(".project-sidebar");if(!side)return;box=document.createElement("div");box.id="planPreflight";box.style.margin="8px 0";box.style.padding="9px";box.style.border="1px solid #334155";box.style.borderRadius="10px";side.appendChild(box)}running=true;lastResult=null;box.textContent="⏳ Tarkistetaan ChatGPT-suunnitelmaa…";gate();try{const r=await fetch("chatgpt_plan.json?preflight="+Date.now(),{cache:"no-store"});if(!r.ok)throw Error("HTTP "+r.status);lastResult=validate(await r.json());running=false;box.textContent=lastResult.ok?(lastResult.warnings.length?`✓ Schema v${lastResult.schema} -suunnitelman rakenne OK. `+lastResult.warnings.join(" "):`✓ ChatGPT-suunnitelman rakenne OK (Schema v${lastResult.schema}).`):"⚠ ChatGPT-suunnitelma estetty: "+lastResult.errors.join(" ");gate()}catch(e){running=false;lastResult={ok:false,errors:[String(e?.message||e)],warnings:[],schema:null};box.textContent="⚠ Suunnitelman ennakkotarkistus ei onnistunut: "+lastResult.errors[0];gate()}}
+ function init(){const list=$("planList");if(list)new MutationObserver(gate).observe(list,{childList:true,subtree:true});run();document.addEventListener("click",e=>{if(e.target&&e.target.id==="btnReloadPlans")setTimeout(run,350)})}
+ window.AI3DPlanPreflight={validate,run,getLastResult:()=>lastResult};
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
