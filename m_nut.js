@@ -1,6 +1,6 @@
 "use strict";
 (()=>{
- const oldSetPart=window.AI3D?.setPart,oldGenerate=window.AI3D?.generate;if(!oldSetPart||!oldGenerate)return;
+ const oldSetPart=window.AI3D?.setPart;if(!oldSetPart)return;
  const el=id=>document.getElementById(id),num=(x,d)=>Number.isFinite(+x)?+x:d;
  let mActive=false,mBase=null;
  function area(p){let a=0;for(let i=0;i<p.length;i++){const j=(i+1)%p.length;a+=p[i][0]*p[j][1]-p[j][0]*p[i][1]}return a/2}
@@ -23,8 +23,6 @@
   const M=[[-W,-D],[-W,D],[-W*.64,D],[-W*.38,D*.28],[0,-D*.05],[W*.38,D*.28],[W*.64,D],[W,D],[W,-D],[W*.62,-D],[W*.28,-D*.42],[0,-D*.70],[-W*.28,-D*.42],[-W*.62,-D]];
   let top2=rotateTo(sample(M,N),[-W,-D]);
 
-  // Alempi piikkikartio päättyy suoraan siihen kohtaan, johon käyttäjä halusi M-kirjaimen.
-  // Yläpuolelle EI rakenneta enää toista kartiota.
   const mBottom=scalePoly(top2,.72);
   const bottomR=Math.max(W*.72,D*.72);
   const cone0=circleRing(outerAF/2*1.02,p.baseHeight-1.2,N);
@@ -32,12 +30,9 @@
   let cone2=rotateTo(cone1.map(q=>[q.x,q.y]),mBottom[0]);
   bridge(T,cone0,ring2(cone2,mStart));
 
-  // Lyhyt, lähes huomaamaton siirtymä pyöreästä kartion kärjestä M-poikkileikkaukseen.
   const zJoin=mStart+2.0;
   bridge(T,ring2(cone2,mStart),ring2(mBottom,zJoin));
 
-  // Tästä ylöspäin kappale on M-muotoinen kruunu, ei kartio.
-  // M levenee vain hieman ylöspäin, jotta liittymä näyttää pehmeältä eikä synny tiimalasia.
   const m82=scalePoly(top2,.82),m92=scalePoly(top2,.92);
   bridge(T,ring2(mBottom,zJoin),ring2(m82,mStart+p.monogramHeight*.42));
   bridge(T,ring2(m82,mStart+p.monogramHeight*.42),ring2(m92,mStart+p.monogramHeight*.72));
@@ -46,13 +41,13 @@
 
   return{triangles:T,name:"M-piikkimutterisuojus",width:Math.max(outerAF,p.monogramWidth),depth:Math.max(outerAF,p.monogramDepth),height:p.totalHeight,measure:[["Kokonaiskorkeus",p.totalHeight],["M alkaa",mStart],["M leveys",p.monogramWidth],["M syvyys",p.monogramDepth],["Ulko-AF",outerAF],["Sisä-AF",innerAF],["Mutteriosa",p.baseHeight]]};
  }
- function finish(mesh){currentFitMesh=null;currentMesh=mesh;const a=validate(mesh),ok=a.ok;el("validation").innerHTML=`<div class="check ${ok?"ok":"fail"}"><strong>${ok?"✓ Automaattitarkistus OK":"✕ Tarkistus epäonnistui"}</strong><br>${a.message}<br>Ylempi kartio on poistettu. Alempi kartio päättyy suoraan M-muotoiseen kruunuun.</div>`;el("btnDownload").disabled=!ok;el("btnFitTest").disabled=true;el("status").textContent=ok?"M-piikkimutterisuojus luotu ja tarkistettu.":"STL-lataus estetty virheen vuoksi.";el("dimensions").textContent=mesh.measure.map(([k,x])=>`${k} ${typeof x==="number"?x.toFixed(2)+" mm":x}`).join(" • ");updateMaterial();draw();setTimeout(()=>window.CentauriProfile?.check?.(),0)}
+ function finish(mesh){currentFitMesh=null;currentMesh=mesh;const a=validate(mesh),ok=a.ok;el("validation").innerHTML=`<div class="check ${ok?"ok":"fail"}"><strong>${ok?"✓ Automaattitarkistus OK":"✕ Tarkistus epäonnistui"}</strong><br>${a.message}<br>Alempi kartio päättyy suoraan M-muotoiseen kruunuun.</div>`;el("btnDownload").disabled=!ok;el("btnFitTest").disabled=true;el("status").textContent=ok?"M-piikkimutterisuojus luotu ja tarkistettu.":"STL-lataus estetty virheen vuoksi.";el("dimensions").textContent=mesh.measure.map(([k,x])=>`${k} ${typeof x==="number"?x.toFixed(2)+" mm":x}`).join(" • ");updateMaterial();draw();setTimeout(()=>window.CentauriProfile?.check?.(),0)}
  function currentValues(){const out={...(mBase||{})};for(const id of["nutAf","clearance","lockAmount","lockZ","wall","baseHeight","totalHeight","tipRadius","material"]){const e=el(id);if(e)out[id]=e.type==="number"?+e.value:e.value}out.monogram="M";return out}
  function fail(e){currentMesh=null;currentFitMesh=null;el("btnDownload").disabled=true;el("btnFitTest").disabled=true;el("dimensions").textContent="–";el("validation").innerHTML=`<div class="check fail"><strong>✕ M-mallin generointi epäonnistui</strong><br>${String(e?.message||e).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]))}</div>`;el("status").textContent="Virhe: "+(e?.message||e);try{draw()}catch{}setTimeout(()=>window.CentauriProfile?.check?.(),0)}
- function generateM(){try{finish(buildM(currentValues()))}catch(e){fail(e)}}
+ function generateM(){try{finish(buildM(currentValues()));return true}catch(e){fail(e);return false}}
  window.AI3D.setPart=(type,values={})=>{const isM=type==="spike"&&String(values.monogram||"").trim().toUpperCase()==="M";if(!isM){mActive=false;mBase=null;return oldSetPart(type,values)}mActive=true;mBase={...values,monogram:"M"};el("partType").value="spike";updateFields();for(const[k,x]of Object.entries(values))if(el(k))el(k).value=x;generateM()};
- window.AI3D.generate=()=>mActive&&el("partType")?.value==="spike"?generateM():oldGenerate();
- const generateButton=el("btnGenerate");if(generateButton)generateButton.onclick=()=>window.AI3D.generate();
+ el("btnGenerate")?.addEventListener("click",e=>{if(!mActive||el("partType")?.value!=="spike")return;e.preventDefault();e.stopImmediatePropagation();generateM()},true);
  el("partType")?.addEventListener("change",()=>{if(el("partType").value!=="spike"){mActive=false;mBase=null}});
  el("btnReset")?.addEventListener("click",()=>{mActive=false;mBase=null},true);
+ window.AI3DMNut={isActive:()=>mActive,generateIfActive:()=>mActive&&el("partType")?.value==="spike"?generateM():false};
 })();
