@@ -1,6 +1,7 @@
 "use strict";
 (()=>{
  const $=id=>document.getElementById(id),NOZZLE=.4,BUILD=[256,256,256];
+ const nonGeometryIds=new Set(["material","filamentPriceKg","ledCost","powerCost","miscCost"]);
  const materialNotes={
   PLA:"PLA sopii hyvin koekappaleisiin ja sisäkäyttöön. Tarkista käyttökohteen lämpötila slicerin materiaaliohjeista.",
   PETG:"PETG sopii hyvin käyttöosiin. Sovitus voi vaatia tulostinkohtaisen välyksen, joten tarkista kriittiset sovitteet testikappaleella.",
@@ -56,7 +57,8 @@
   const good=fits&&warnings.length===0;root.className="printer-status "+(good?"ok":"");root.innerHTML=`<b>${good?"TULOSTETTAVUUS: HYVÄ ✓":"TULOSTETTAVUUS: HUOMIO"}</b>${items.map(x=>`<span>${x}</span>`).join("")}<span>Studio ei tee slicerin lopullista tukianalyysiä eikä muuta STL:n orientaatiota automaattisesti.</span>`
  }
  function dirty(){const root=$("printabilityState");if(root){root.className="printer-status";root.innerHTML='<b>Tarkista malli uudelleen.</b><span>Mitat muuttuivat, joten edellinen tulostettavuusarvio vanheni.</span>'}}
- function init(){inject();$("btnGenerate")?.addEventListener("click",()=>setTimeout(render,180));document.addEventListener("input",e=>{if(e.target?.closest?.(".controls")&&e.target?.matches?.("input,select,textarea"))dirty()},true);$("material")?.addEventListener("change",()=>setTimeout(render,50));document.addEventListener("visibilitychange",()=>{if(!document.hidden)setTimeout(()=>{if(!$("btnDownload")?.disabled)render()},80)});const v=$("validation");if(v)new MutationObserver(()=>setTimeout(render,40)).observe(v,{childList:true,subtree:true});setTimeout(()=>{if(!$("btnDownload")?.disabled)render()},300)}
+ function isGeometryControl(target){return!!target?.matches?.("input,select,textarea")&&!!target.closest?.(".controls")&&!nonGeometryIds.has(target.id)}
+ function init(){inject();$("btnGenerate")?.addEventListener("click",()=>setTimeout(render,180));document.addEventListener("input",e=>{if(isGeometryControl(e.target))dirty()},true);$("material")?.addEventListener("change",()=>setTimeout(render,50));document.addEventListener("visibilitychange",()=>{if(!document.hidden)setTimeout(()=>{if(!$("btnDownload")?.disabled)render()},80)});const v=$("validation");if(v)new MutationObserver(()=>setTimeout(render,40)).observe(v,{childList:true,subtree:true});setTimeout(()=>{if(!$("btnDownload")?.disabled)render()},300)}
  window.AI3DPrintability={render,componentInfo};
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
