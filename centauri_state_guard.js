@@ -1,9 +1,10 @@
 "use strict";
 (()=>{
  const $=id=>document.getElementById(id);
+ const nonGeometryIds=new Set(["material","filamentPriceKg","ledCost","powerCost","miscCost"]);
  let timer=0,dirty=false;
  function refresh(clearDirty=false){clearTimeout(timer);timer=setTimeout(()=>{window.CentauriProfile?.check?.();if(clearDirty)dirty=false},0)}
- function geometryInput(target){return!!(target?.closest?.(".part-fields")||target?.id==="partType")}
+ function geometryInput(target){return!!target&&!nonGeometryIds.has(target.id)&&!!(target.closest?.(".part-fields")||target.id==="partType")}
  function markGeometryDirty(){
   dirty=true;
   const root=$("centauriStatus"),button=$("btnCentauriStl");
