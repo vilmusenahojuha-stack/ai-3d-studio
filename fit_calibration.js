@@ -17,9 +17,9 @@
  function correction(){return state.corrections[material()]?.correction}
  function suggestion(){const c=clearance(),k=correction();return Number.isFinite(c)&&Number.isFinite(k)?c+k:NaN}
  function inject(){
-  if($("fitCalibrationPanel"))return;const anchor=$("printabilitySummary")||$("centauriPanel")||document.querySelector(".preview-panel");if(!anchor)return;
+  if($("fitCalibrationPanel"))return;const preview=document.querySelector(".preview-panel");if(!preview)return;
   const box=document.createElement("div");box.id="fitCalibrationPanel";box.className="centauri-panel";box.innerHTML=`<div class="section-title">Minun Centaurini – sovitus</div><div id="fitCalibrationState" class="printer-status"></div><div class="grid"><label>Sovituksen korjaus / puoli (mm)<input id="fitCorrection" type="number" min="-1" max="1" step="0.05" inputmode="decimal" placeholder="esim. 0.10"></label></div><div class="centauri-actions"><button id="btnSaveFitCalibration" class="tool" type="button">TALLENNA KALIBROINTI</button><button id="btnClearFitCalibration" class="ghost" type="button">POISTA KALIBROINTI</button></div><small class="centauri-note">Syötä arvo vasta tulostetun sovitustestin perusteella. Positiivinen arvo lisää välystä, negatiivinen pienentää sitä. Studio ei arvaa eikä muuta mallin välystä automaattisesti.</small>`;
-  anchor.after(box);$("btnSaveFitCalibration").addEventListener("click",saveCurrent);$("btnClearFitCalibration").addEventListener("click",clearCurrent)
+  preview.appendChild(box);$("btnSaveFitCalibration").addEventListener("click",saveCurrent);$("btnClearFitCalibration").addEventListener("click",clearCurrent)
  }
  function render(){
   inject();const panel=$("fitCalibrationPanel"),root=$("fitCalibrationState"),input=$("fitCorrection");if(!panel||!root||!input)return;
