@@ -23,23 +23,31 @@
    }
   }catch(e){state.error=e?.message||String(e)}
  }
- function recover(){
-  state.checked=true;
-  let mainRaw=null,backupRaw=null;
-  try{mainRaw=localStorage.getItem(KEY);backupRaw=localStorage.getItem(BACKUP)}catch(e){state.error=e?.message||String(e);return}
-  if(mainRaw==null)return;
-  const main=parse(mainRaw);
-  if(main){repairActive(main);return}
-  const backup=parse(backupRaw||"");
-  if(!backup){state.reason="Projektitallennus on vioittunut eikä rakenteellisesti kelvollista paikallista varmuuskopiota löytynyt.";return}
+ function restoreBackup(backup,reason){
   try{
-   try{if(mainRaw.length<=2_000_000)localStorage.setItem(CORRUPT,mainRaw)}catch{}
    localStorage.setItem(KEY,JSON.stringify(backup));
    const ids=validIdSet(backup),active=localStorage.getItem(KEY+":active")||"";
    if(!ids.has(active))localStorage.setItem(KEY+":active",backup[0]?.id||"");
    state.recovered=true;
-   state.reason=`Vioittunut projektitallennus palautettiin rakenteellisesti tarkistetusta paikallisesta varmuuskopiosta (${backup.length} projektia).`;
-  }catch(e){state.error=e?.message||String(e);state.reason="Projektivarmuuskopion automaattinen palautus epäonnistui."}
+   state.reason=reason||`Projektitallennus palautettiin rakenteellisesti tarkistetusta paikallisesta varmuuskopiosta (${backup.length} projektia).`;
+   return true
+  }catch(e){state.error=e?.message||String(e);state.reason="Projektivarmuuskopion automaattinen palautus epäonnistui.";return false}
+ }
+ function recover(){
+  state.checked=true;
+  let mainRaw=null,backupRaw=null;
+  try{mainRaw=localStorage.getItem(KEY);backupRaw=localStorage.getItem(BACKUP)}catch(e){state.error=e?.message||String(e);return}
+  if(mainRaw==null){
+   const backup=parse(backupRaw||"");
+   if(backup)restoreBackup(backup,`Puuttuva projektitallennus palautettiin rakenteellisesti tarkistetusta paikallisesta varmuuskopiosta (${backup.length} projektia).`);
+   return
+  }
+  const main=parse(mainRaw);
+  if(main){repairActive(main);return}
+  const backup=parse(backupRaw||"");
+  if(!backup){state.reason="Projektitallennus on vioittunut eikä rakenteellisesti kelvollista paikallista varmuuskopiota löytynyt.";return}
+  try{if(mainRaw.length<=2_000_000)localStorage.setItem(CORRUPT,mainRaw)}catch{}
+  restoreBackup(backup,`Vioittunut projektitallennus palautettiin rakenteellisesti tarkistetusta paikallisesta varmuuskopiosta (${backup.length} projektia).`)
  }
  recover();
  window.AI3DStorageRecovery=state;
