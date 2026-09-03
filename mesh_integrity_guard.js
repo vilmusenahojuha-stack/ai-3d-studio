@@ -20,6 +20,11 @@
   }
   const dims=[maxX-minX,maxY-minY,maxZ-minZ];
   if(!dims.every(Number.isFinite)||dims.some(x=>x<=0))return"Meshin todellisia ulkomittoja ei voitu vahvistaa.";
+  try{
+   if(typeof validate!=="function")return"Varsinainen mesh-validointi ei ole käytettävissä.";
+   const topology=validate(m);
+   if(!topology||topology.ok!==true)return topology?.message?"Mesh ei läpäissyt topologiatarkistusta: "+topology.message:"Mesh ei läpäissyt topologiatarkistusta."
+  }catch(e){return"Meshin topologiatarkistus epäonnistui: "+(e?.message||e)}
   return""
  }
  function block(issue){
