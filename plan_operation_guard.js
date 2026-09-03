@@ -17,6 +17,7 @@
   if(style==="round"){const r=Math.max(0,Math.min(size,L/2,W/2));if(ax<=L/2-r||ay<=W/2-r)return true;return Math.hypot(ax-(L/2-r),ay-(W/2-r))<=r+1e-7}
   return true
  }
+ function holeFits(h,L,W,style,size,margin=.6){const r=h.d/2+margin;for(let i=0;i<36;i++){const a=i*2*Math.PI/36;if(!insidePlate(h.x+r*Math.cos(a),h.y+r*Math.sin(a),L,W,style,size))return false}return true}
  function validatePlateGeometry(raw,errors,warnings){
   const p=raw.parameters||{},L=Number(p.length),W=Number(p.width),holes=plateHoles(raw),cornerRaw=p.cornerRadius,chamferRaw=p.chamfer,cornerRadius=Math.max(0,Number(cornerRaw)||0),chamfer=Math.max(0,Number(chamferRaw)||0),style=cornerRadius>0?"round":chamfer>0?"chamfer":"square",size=cornerRadius||chamfer||0;
   if(!positive(L)||!positive(W))return;
@@ -28,8 +29,7 @@
   if(size>Math.min(L,W)/2-.2)errors.push("Levyn pyöristys/viiste on liian suuri levyn mitoille.");
   for(let i=0;i<holes.length&&i<=MAX_HOLES;i++){
    const h=holes[i];if(h.invalid||!finite(h.x)||!finite(h.y)||!positive(h.d)){errors.push(`Reikä ${i+1}: x, y ja positiivinen diameter vaaditaan.`);continue}
-   const rr=h.d/2+.6,tests=[[h.x+rr,h.y],[h.x-rr,h.y],[h.x,h.y+rr],[h.x,h.y-rr]];
-   if(!tests.every(([x,y])=>insidePlate(x,y,L,W,style,size)))errors.push(`Reikä ${i+1} on liian lähellä levyn reunaa tai kulmaa; CAD tarvitsee vähintään 0,6 mm reunamarginaalin.`)
+   if(!holeFits(h,L,W,style,size))errors.push(`Reikä ${i+1} on liian lähellä levyn todellista reunaa tai kulmaa; CAD tarvitsee vähintään 0,6 mm reunamarginaalin.`)
   }
   const limit=Math.min(holes.length,MAX_HOLES);for(let i=0;i<limit;i++)for(let j=i+1;j<limit;j++){
    const a=holes[i],b=holes[j];if(a.invalid||b.invalid||![a.x,a.y,a.d,b.x,b.y,b.d].every(Number.isFinite)||a.d<=0||b.d<=0)continue;
