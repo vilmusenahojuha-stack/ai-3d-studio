@@ -2,6 +2,8 @@
 (()=>{
  const $=id=>document.getElementById(id);
  const fn=x=>typeof x==="function";
+ const EAR_FALLBACK="https://unpkg.com/earcut@2.2.4/dist/earcut.min.js";
+ let earcutFallbackState="idle",earcutFallbackAttempts=0;
  const checks=[
   ["CAD-moottori",()=>fn(window.AI3D?.setPart)],
   ["projektit",()=>fn(window.AI3DProjects?.active)],
@@ -19,6 +21,15 @@
   ["Earcut-geometriakirjasto",()=>fn(window.earcut)]
  ];
  let timer=0,attempts=0,last="";
+ function loadEarcutFallback(){
+  if(fn(window.earcut)){earcutFallbackState="ready";return true}
+  if(earcutFallbackState==="loading"||earcutFallbackAttempts>=2)return false;
+  earcutFallbackAttempts++;earcutFallbackState="loading";
+  const s=document.createElement("script");s.src=EAR_FALLBACK;s.async=true;s.dataset.ai3dEarcutFallback="1";
+  s.onload=()=>{earcutFallbackState=fn(window.earcut)?"ready":"failed";start()};
+  s.onerror=()=>{earcutFallbackState="failed";start()};
+  document.head.appendChild(s);return true
+ }
  function box(){
   let e=$("runtimeHealthWarning");if(e)return e;
   const anchor=$("projectPrintInfo")||$("projectDescription")||document.querySelector(".project-summary");if(!anchor)return null;
@@ -32,8 +43,12 @@
   const text="⚠ Sovelluksen osa jäi latautumatta tai on vanhentunut: "+miss.join(", ")+". Päivitä sivu. Jos ongelma jatkuu, tarkista verkkoyhteys ennen mallin vientiä.";
   if(text!==last){e.textContent=text;last=text}e.hidden=false;return false
  }
- function start(){clearTimeout(timer);attempts=0;const tick=()=>{attempts++;if(render(false))return;if(attempts>=20){render(true);return}timer=setTimeout(tick,250)};timer=setTimeout(tick,150)}
- function init(){start();document.addEventListener("visibilitychange",()=>{if(!document.hidden)start()});window.addEventListener("online",start)}
- window.AI3DRuntimeHealth={check:()=>render(true),missing};
+ function start(){
+  clearTimeout(timer);attempts=0;
+  if(!fn(window.earcut))loadEarcutFallback();
+  const tick=()=>{attempts++;if(render(false))return;if(attempts>=20){render(true);return}timer=setTimeout(tick,250)};timer=setTimeout(tick,150)
+ }
+ function init(){start();document.addEventListener("visibilitychange",()=>{if(!document.hidden)start()});window.addEventListener("online",()=>{if(!fn(window.earcut)&&earcutFallbackState==="failed")earcutFallbackState="idle";start()})}
+ window.AI3DRuntimeHealth={check:()=>render(true),missing,retryDependencies:()=>{if(!fn(window.earcut)&&earcutFallbackState!=="loading")earcutFallbackState="idle";loadEarcutFallback();start()},dependencyState:()=>({earcut:fn(window.earcut)?"ready":earcutFallbackState,earcutFallbackAttempts})};
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
