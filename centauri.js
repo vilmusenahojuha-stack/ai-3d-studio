@@ -19,15 +19,16 @@
   if(!valid||totalArea<=0)return null;const overhangPct=100*severeArea/totalArea,downPct=100*downArea/totalArea,bedPct=100*bedArea/totalArea,footprint=Math.max(.01,b.dims[0]*b.dims[1]),bedFootprintPct=Math.min(100,100*bedArea/footprint);return{overhangPct,downPct,bedPct,bedArea,bedFootprintPct,validTriangles:valid}
  }
  function activeValues(){return window.AI3DProjects?.active?.()?.values||{}}
+ function liveNumber(id,fallback){const e=$(id);if(e){const x=e.type==="number"?e.valueAsNumber:Number(e.value);if(Number.isFinite(x))return x}const y=Number(fallback);return Number.isFinite(y)?y:NaN}
  function thinFeature(){
   const type=$("partType")?.value||"",v=activeValues(),c=[];
   const add=(name,x)=>{x=+x;if(Number.isFinite(x)&&x>0)c.push([name,x])};
-  if(type==="adapter"){add("seinämä alussa",(+v.adapterOD1-+v.adapterID1)/2);add("seinämä lopussa",(+v.adapterOD2-+v.adapterID2)/2)}
-  else if(type==="enclosure"){add("seinämä",v.enclosureWall);add("pohja",v.enclosureFloor)}
-  else if(type==="sleeve")add("seinämä",v.sleeveWall);
-  else if(type==="plate")add("levyn paksuus",v.plateT);
-  else if(type==="spike")add("seinämä",v.wall);
-  else if(type==="plug")add("päätylevy",v.capThickness);
+  if(type==="adapter"){const od1=liveNumber("adapterOD1",v.adapterOD1),id1=liveNumber("adapterID1",v.adapterID1),od2=liveNumber("adapterOD2",v.adapterOD2),id2=liveNumber("adapterID2",v.adapterID2);add("seinämä alussa",(od1-id1)/2);add("seinämä lopussa",(od2-id2)/2)}
+  else if(type==="enclosure"){add("seinämä",liveNumber("enclosureWall",v.enclosureWall));add("pohja",liveNumber("enclosureFloor",v.enclosureFloor))}
+  else if(type==="sleeve")add("seinämä",liveNumber("sleeveWall",v.sleeveWall));
+  else if(type==="plate")add("levyn paksuus",liveNumber("plateT",v.plateT));
+  else if(type==="spike")add("seinämä",liveNumber("wall",v.wall));
+  else if(type==="plug")add("päätylevy",liveNumber("capThickness",v.capThickness));
   if(!c.length)return null;c.sort((a,b)=>a[1]-b[1]);return c[0]
  }
  function printNotes(pa,b){const notes=[];if(!pa||!b)return notes;if(pa.overhangPct>=18)notes.push(`⚠ Arvioitu jyrkkä alaspäin suuntautuva pinta-ala ${pa.overhangPct.toFixed(1)} %. Tuet tai toinen orientaatio voivat olla tarpeen.`);else if(pa.overhangPct>=6)notes.push(`ℹ Jyrkkää alaspäin suuntautuvaa pinta-alaa noin ${pa.overhangPct.toFixed(1)} %. Tarkista tuet slicerissa.`);else notes.push(`✓ Jyrkkää alaspäin suuntautuvaa pinta-alaa vähän (${pa.overhangPct.toFixed(1)} %).`);if(pa.bedArea<1)notes.push("⚠ Mallista ei tunnistettu selvää vaakasuoraa pohjapintaa nykyisessä orientaatiossa. Tarkista alusta-asento slicerissa.");else if(pa.bedFootprintPct<2&&b.dims[2]>20)notes.push(`⚠ Alustakosketus näyttää pieneltä (arvio ${pa.bedArea.toFixed(1)} mm²). Brim tai toinen orientaatio voi parantaa vakautta.`);else notes.push(`ℹ Arvioitu vaakasuora alustakosketus ${pa.bedArea.toFixed(1)} mm².`);return notes}
