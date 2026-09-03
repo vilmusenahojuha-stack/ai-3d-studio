@@ -19,25 +19,32 @@
   }
   setTimeout(()=>window.CentauriProfile?.check?.(),0);
   setTimeout(()=>window.CentauriOrientation?.render&&$("orientationResult")?window.CentauriOrientation.render():null,0);
+  setTimeout(()=>window.AI3DPrintability?.render?.(),0);
   lastError=reason||lastError;
   clearing=false
  }
+ function failureReason(){
+  const status=$("status")?.textContent?.trim()||"",validation=$("validation");
+  if(/^Virhe\s*:/i.test(status))return status;
+  if(/generointi epäonnistui|STL-lataus estetty/i.test(status))return status;
+  const fail=validation?.querySelector?.(".check.fail");
+  if(fail)return fail.textContent?.trim()||"Mallin tarkistus epäonnistui.";
+  return""
+ }
  function inspect(){
-  const status=$("status")?.textContent?.trim()||"";
-  if(status.startsWith("Virhe:")){
-   if(status!==lastError)clearPreview(status);
-   else if(!clearing){
-    try{if(currentMesh||currentFitMesh)clearPreview(status)}catch{}
-   }
+  const reason=failureReason();
+  if(!reason){lastError="";return}
+  if(reason!==lastError)clearPreview(reason);
+  else if(!clearing){
+   try{if(currentMesh||currentFitMesh)clearPreview(reason)}catch{}
   }
  }
  function init(){
-  const status=$("status");
-  if(!status)return;
-  const obs=new MutationObserver(inspect);
-  obs.observe(status,{childList:true,subtree:true,characterData:true});
+  const status=$("status"),validation=$("validation");
+  if(status)new MutationObserver(inspect).observe(status,{childList:true,subtree:true,characterData:true});
+  if(validation)new MutationObserver(inspect).observe(validation,{childList:true,subtree:true,characterData:true});
   inspect()
  }
- window.AI3DPreviewGuard={clear:clearPreview,check:inspect};
+ window.AI3DPreviewGuard={clear:clearPreview,check:inspect,failureReason};
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
