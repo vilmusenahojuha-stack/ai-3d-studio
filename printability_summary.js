@@ -20,7 +20,7 @@
   const type=$("partType")?.value||"",out=[],add=(name,x)=>{if(finite(x)&&Number(x)>0)out.push([name,Number(x)])};
   if(type==="spike")add("seinämä",live("wall"));
   else if(type==="sleeve")add("seinämä",live("sleeveWall"));
-  else if(type==="plug"){add("päätylevy",live("capThickness"));const W=live("tubeW"),H=live("tubeH"),tw=live("tubeWall"),c=live("plugClear");if([W,H,tw,c].every(Number.isFinite)){add("tulpan sivuseinämä",Math.min(W-2*tw-2*c,H-2*tw-2*c)/2)}}
+  else if(type==="plug")add("päätylevy",live("capThickness"));
   else if(type==="plate")add("levyn paksuus",live("plateT"));
   else if(type==="adapter"){const a=[live("adapterOD1"),live("adapterID1"),live("adapterOD2"),live("adapterID2")];if(a.every(Number.isFinite)){add("seinämä alussa",(a[0]-a[1])/2);add("seinämä lopussa",(a[2]-a[3])/2)}}
   else if(type==="enclosure"){add("seinämä",live("enclosureWall"));add("pohja",live("enclosureFloor"))}
@@ -46,7 +46,7 @@
   inject();const root=$("printabilityState");if(!root)return;const m=mesh(),approved=!$("btnDownload")?.disabled;
   if(!m||!approved){root.className="printer-status";root.innerHTML='<b>Tarkista malli ensin.</b><span>Mitan muuttamisen jälkeen vanhaa tulostettavuusarviota ei käytetä.</span>';return}
   const b=bounds(m);if(!b){root.className="printer-status fail";root.innerHTML='<b>TULOSTETTAVUUS: EI VOITU ARVIOIDA</b><span>Meshin todellisia mittoja ei saatu vahvistettua. STL-tarkistus ratkaisee viennin.</span>';return}
-  const build=Array.isArray(window.CentauriProfile?.build)?window.CentauriProfile.build:BUILD,fits=b.dims.every((x,i)=>x<=build[i]+1e-6),pa=printability(m,b),thin=thinnestKnown(),comp=componentInfo(m),ori=orientation(),mat=$("material")?.value||"PETG",items=[],warnings=[];
+  const type=$("partType")?.value||"",build=Array.isArray(window.CentauriProfile?.build)?window.CentauriProfile.build:BUILD,fits=b.dims.every((x,i)=>x<=build[i]+1e-6),pa=printability(m,b),thin=thinnestKnown(),comp=type==="lightSign"?null:componentInfo(m),ori=orientation(),mat=$("material")?.value||"PETG",items=[],warnings=[];
   items.push(fits?`✓ Mahtuu Centauriin (${b.dims.map(x=>x.toFixed(1)).join(" × ")} mm)`:`✕ Ylittää Centaurin ${build.join(" × ")} mm tulostusalueen`);if(!fits)warnings.push("size");
   if(thin){if(thin[1]<NOZZLE*2){items.push(`⚠ ${thin[0]} on hyvin ohut (${thin[1].toFixed(2)} mm)`);warnings.push("thin")}else items.push(`✓ Tunnettu minimipaksuus on järkevä 0,4 mm suuttimelle (${thin[0]} ${thin[1].toFixed(2)} mm)`)}else items.push("ℹ Kaikkien paikallisten seinämäpaksuuksien automaattinen mittaus ei ole vielä mahdollinen.");
   if(pa){if(pa.overhangPct>=18){items.push(`⚠ Vaikeita alaspäin suuntautuvia pintoja on arviolta ${pa.overhangPct.toFixed(1)} % – tukia tai toinen asento voi olla tarpeen`);warnings.push("overhang")}else if(pa.overhangPct>=6){items.push(`⚠ Ylityksiä on jonkin verran (${pa.overhangPct.toFixed(1)} %) – tarkista slicerissa`);warnings.push("overhang")}else items.push(`✓ Ei havaittu paljon vaikeita ylityksiä (${pa.overhangPct.toFixed(1)} %)`);if(pa.bedArea<1){items.push("⚠ Selvää vaakasuoraa pohjakosketusta ei tunnistettu");warnings.push("bed")}else items.push(`✓ Alustakosketusta tunnistettiin noin ${pa.bedArea.toFixed(1)} mm²`)}else items.push("ℹ Ylitysarviota ei saatu muodostettua.");
