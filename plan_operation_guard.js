@@ -11,7 +11,27 @@
   const p=raw.parameters||{};(p.holes||[]).forEach((h,i)=>add(h,`parameters.holes ${i+1}`));if(p.centerHole)add(typeof p.centerHole==="number"?{x:0,y:0,diameter:p.centerHole}:p.centerHole,"parameters.centerHole");
   for(const op of raw.operations||[]){if(op?.type==="hole")add(op,"hole");if(op?.type==="holes"&&Array.isArray(op.holes))op.holes.forEach((h,i)=>add(h,`holes ${i+1}`))}return out
  }
- function validatePlateGeometry(raw,errors,warnings){const p=raw.parameters||{},L=Number(p.length),W=Number(p.width),holes=plateHoles(raw);if(!positive(L)||!positive(W))return;for(let i=0;i<holes.length;i++){const h=holes[i];if(h.invalid||!finite(h.x)||!finite(h.y)||!positive(h.d)){errors.push(`Reikä ${i+1}: x, y ja positiivinen diameter vaaditaan.`);continue}const r=h.d/2;if(Math.abs(h.x)+r>L/2||Math.abs(h.y)+r>W/2)errors.push(`Reikä ${i+1} (Ø${h.d}) ulottuu levyn ulkopuolelle.`);else if(Math.abs(h.x)+r+0.6>L/2||Math.abs(h.y)+r+0.6>W/2)errors.push(`Reikä ${i+1} on liian lähellä levyn reunaa; CAD tarvitsee vähintään 0,6 mm reunamarginaalin.`)}for(let i=0;i<holes.length;i++)for(let j=i+1;j<holes.length;j++){const a=holes[i],b=holes[j];if(a.invalid||b.invalid||![a.x,a.y,a.d,b.x,b.y,b.d].every(Number.isFinite)||a.d<=0||b.d<=0)continue;const gap=Math.hypot(a.x-b.x,a.y-b.y)-(a.d+b.d)/2;if(gap<0)errors.push(`Reiät ${i+1} ja ${j+1} menevät päällekkäin.`);else if(gap<1)warnings.push(`Reikien ${i+1} ja ${j+1} väli on alle 1 mm.`)}}
+ function insidePlate(x,y,L,W,style,size){
+  const ax=Math.abs(x),ay=Math.abs(y);if(ax>L/2||ay>W/2)return false;
+  if(style==="chamfer")return ax+ay<=L/2+W/2-size+1e-7;
+  if(style==="round"){const r=Math.max(0,Math.min(size,L/2,W/2));if(ax<=L/2-r||ay<=W/2-r)return true;return Math.hypot(ax-(L/2-r),ay-(W/2-r))<=r+1e-7}
+  return true
+ }
+ function validatePlateGeometry(raw,errors,warnings){
+  const p=raw.parameters||{},L=Number(p.length),W=Number(p.width),holes=plateHoles(raw),cornerRadius=Math.max(0,Number(p.cornerRadius)||0),chamfer=Math.max(0,Number(p.chamfer)||0),style=cornerRadius>0?"round":chamfer>0?"chamfer":"square",size=cornerRadius||chamfer||0;
+  if(!positive(L)||!positive(W))return;
+  if(size>Math.min(L,W)/2-.2)errors.push("Levyn pyöristys/viiste on liian suuri levyn mitoille.");
+  for(let i=0;i<holes.length;i++){
+   const h=holes[i];if(h.invalid||!finite(h.x)||!finite(h.y)||!positive(h.d)){errors.push(`Reikä ${i+1}: x, y ja positiivinen diameter vaaditaan.`);continue}
+   const rr=h.d/2+.6,tests=[[h.x+rr,h.y],[h.x-rr,h.y],[h.x,h.y+rr],[h.x,h.y-rr]];
+   if(!tests.every(([x,y])=>insidePlate(x,y,L,W,style,size)))errors.push(`Reikä ${i+1} on liian lähellä levyn reunaa tai kulmaa; CAD tarvitsee vähintään 0,6 mm reunamarginaalin.`)
+  }
+  for(let i=0;i<holes.length;i++)for(let j=i+1;j<holes.length;j++){
+   const a=holes[i],b=holes[j];if(a.invalid||b.invalid||![a.x,a.y,a.d,b.x,b.y,b.d].every(Number.isFinite)||a.d<=0||b.d<=0)continue;
+   const gap=Math.hypot(a.x-b.x,a.y-b.y)-(a.d+b.d)/2;
+   if(gap<1)errors.push(`Reikien ${i+1} ja ${j+1} väli on alle 1 mm; CAD estää näin lähellä olevat reiät.`);else if(gap<2)warnings.push(`Reikien ${i+1} ja ${j+1} väli on alle 2 mm; tarkista mekaaninen kestävyys.`)
+  }
+ }
  function validate(raw){const errors=[],warnings=[];if(!raw||raw.schemaVersion!==2)return{ok:true,errors,warnings};const ops=raw.operations;if(ops!=null&&!Array.isArray(ops))return{ok:false,errors:["operations pitää olla taulukko."],warnings};if(Array.isArray(ops)&&ops.length>200)warnings.push("operations sisältää yli 200 operaatiota.");const allowed=support[raw.partType]||new Set();for(const [i,op] of (ops||[]).entries()){if(!op||typeof op!=="object"||Array.isArray(op)){errors.push(`Operaatio ${i+1} ei ole kelvollinen objekti.`);continue}const type=String(op.type||"").trim();if(!type){errors.push(`Operaatio ${i+1}: type puuttuu.`);continue}if(!allowed.has(type))errors.push(`Operaatiota ”${type}” ei toteuteta ${raw.partType||"tämän"}-editorissa.`);if(type==="holes"&&!Array.isArray(op.holes))errors.push(`Operaatio ${i+1}: holes-taulukko puuttuu.`)}if(raw.partType==="mountingPlate")validatePlateGeometry(raw,errors,warnings);return{ok:errors.length===0,errors:[...new Set(errors)],warnings:[...new Set(warnings)]}}
  function sameRevision(){const base=window.AI3DPlanPreflight?.getLastResult?.();return!!(base?.fingerprint&&last.fingerprint&&base.fingerprint===last.fingerprint)}
  function allowed(){const base=window.AI3DPlanPreflight?.getLastResult?.();return !running&&last.ok&&base?.ok===true&&sameRevision()}
