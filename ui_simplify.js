@@ -2,6 +2,7 @@
 (()=>{
  const $=id=>document.getElementById(id);
  const fieldMapByType={
+  lightSign:{"Halkaisija":"signDiameter","Kehä":"signRingWidth","Syvyys":"signDepth","Diffuusori":"diffuserThickness"},
   spike:{"Kokonaiskorkeus":"totalHeight","Korkeus":"totalHeight","Mutteriosa":"baseHeight","M leveys":"monogramWidth","M syvyys":"monogramDepth"},
   plug:{"Upotus":"insertDepth","Päätylevy":"capThickness","Putki":"tubeW"},
   sleeve:{"Sisä Ø":"sleeveID","Seinämä":"sleeveWall","Pituus":"sleeveLength"},
