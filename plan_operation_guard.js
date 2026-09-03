@@ -18,8 +18,11 @@
   return true
  }
  function validatePlateGeometry(raw,errors,warnings){
-  const p=raw.parameters||{},L=Number(p.length),W=Number(p.width),holes=plateHoles(raw),cornerRadius=Math.max(0,Number(p.cornerRadius)||0),chamfer=Math.max(0,Number(p.chamfer)||0),style=cornerRadius>0?"round":chamfer>0?"chamfer":"square",size=cornerRadius||chamfer||0;
+  const p=raw.parameters||{},L=Number(p.length),W=Number(p.width),holes=plateHoles(raw),cornerRaw=p.cornerRadius,chamferRaw=p.chamfer,cornerRadius=Math.max(0,Number(cornerRaw)||0),chamfer=Math.max(0,Number(chamferRaw)||0),style=cornerRadius>0?"round":chamfer>0?"chamfer":"square",size=cornerRadius||chamfer||0;
   if(!positive(L)||!positive(W))return;
+  if(cornerRaw!=null&&(!finite(cornerRaw)||Number(cornerRaw)<0))errors.push("cornerRadius pitää olla nolla tai positiivinen luku.");
+  if(chamferRaw!=null&&(!finite(chamferRaw)||Number(chamferRaw)<0))errors.push("chamfer pitää olla nolla tai positiivinen luku.");
+  if(positive(cornerRaw)&&positive(chamferRaw))errors.push("Levylle ei voi määrittää yhtä aikaa sekä cornerRadius- että chamfer-arvoa; valitse yksi kulmatyyli.");
   if(Array.isArray(p.holes)&&p.holes.length>MAX_HOLES)errors.push(`parameters.holes sisältää yli ${MAX_HOLES} reikää.`);
   let holeBudget=(Array.isArray(p.holes)?p.holes.length:0)+(p.centerHole?1:0);for(const op of (raw.operations||[]).slice(0,MAX_OPS+1)){if(op?.type==="hole")holeBudget++;if(op?.type==="holes"&&Array.isArray(op.holes)){holeBudget+=op.holes.length;if(op.holes.length>MAX_HOLES)errors.push(`Yksi holes-operaatio sisältää yli ${MAX_HOLES} reikää.`)}}if(holeBudget>MAX_HOLES)errors.push(`Suunnitelmassa on yhteensä yli ${MAX_HOLES} reikää; jaa työ pienempiin osiin.`);
   if(size>Math.min(L,W)/2-.2)errors.push("Levyn pyöristys/viiste on liian suuri levyn mitoille.");
