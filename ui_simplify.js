@@ -1,6 +1,7 @@
 "use strict";
 (()=>{
  const $=id=>document.getElementById(id);
+ const nonGeometryIds=new Set(["material","filamentPriceKg","ledCost","powerCost","miscCost"]);
  const fieldMapByType={
   lightSign:{"Halkaisija":"signDiameter","Kehä":"signRingWidth","Syvyys":"signDepth","Diffuusori":"diffuserThickness"},
   spike:{"Kokonaiskorkeus":"totalHeight","Korkeus":"totalHeight","Mutteriosa":"baseHeight","M leveys":"monogramWidth","M syvyys":"monogramDepth"},
@@ -29,7 +30,8 @@
   const update=()=>{if(syncing)return;syncing=true;const dl=$("btnDownload"),text=v.textContent||"",hasFail=!!v.querySelector(".check.fail");if((dl&&!dl.disabled)||hasFail)dirty=false;const ready=dl&&!dl.disabled&&!dirty;if(dirty){setSummary("","Mitat muuttuivat. Tarkista malli uudelleen.")}else if(ready){setSummary("ok","✓ Malli on teknisesti ehjä ja voidaan viedä STL-tiedostoksi.")}else if(hasFail||text.trim()){setSummary("fail","✕ Mallissa on ongelma. STL-vienti on estetty.")}else{setSummary("","Malli odottaa tarkistusta.")}syncPrimaryAction();syncing=false};
   new MutationObserver(update).observe(v,{childList:true,subtree:true,characterData:true});window.AI3DGuidedUI={refreshValidation:update};update()}
  function linkMeasures(){const overlay=$("measureOverlay");if(!overlay)return;const bind=()=>{const type=$("partType")?.value||"";const map=fieldMapByType[type]||{};overlay.querySelectorAll("span").forEach(s=>{delete s.dataset.bound;delete s.dataset.field;s.removeAttribute("title");s.onclick=null;const label=(s.childNodes[0]?.textContent||s.textContent||"").trim();const key=Object.keys(map).sort((a,b)=>b.length-a.length).find(k=>label.startsWith(k));const id=key&&map[key],input=id&&$(id);if(!input)return;s.dataset.bound="1";s.dataset.field=id;s.title="Avaa tätä mittaa vastaava syöttökenttä";s.onclick=()=>{const adv=input.closest("details");if(adv)adv.open=true;input.scrollIntoView({behavior:"smooth",block:"center"});setTimeout(()=>input.focus(),250)}})};new MutationObserver(bind).observe(overlay,{childList:true,subtree:true});$("partType")?.addEventListener("change",()=>setTimeout(bind,0));bind()}
- function watchInputs(){document.addEventListener("input",e=>{if(!e.target?.matches?.("input,select,textarea")||!e.target.closest(".controls"))return;dirty=true;const dl=$("btnDownload");if(dl&&!dl.disabled)dl.disabled=true;setSummary("","Mitat muuttuivat. Tarkista malli uudelleen.");syncPrimaryAction();setStage("design")},true);$("btnGenerate")?.addEventListener("click",()=>{dirty=false;setStage("check");setTimeout(()=>window.AI3DGuidedUI?.refreshValidation?.(),0)},true)}
+ function isGeometryControl(target){return!!target?.matches?.("input,select,textarea")&&!!target.closest?.(".controls")&&!nonGeometryIds.has(target.id)}
+ function watchInputs(){document.addEventListener("input",e=>{if(!isGeometryControl(e.target))return;dirty=true;const dl=$("btnDownload");if(dl&&!dl.disabled)dl.disabled=true;setSummary("","Mitat muuttuivat. Tarkista malli uudelleen.");syncPrimaryAction();setStage("design")},true);$("btnGenerate")?.addEventListener("click",()=>{dirty=false;setStage("check");setTimeout(()=>window.AI3DGuidedUI?.refreshValidation?.(),0)},true)}
  function init(){injectWorkflow();simplifySpike();simplifyPlug();simplifyActions();simplifyValidation();linkMeasures();watchInputs();syncPrimaryAction()}
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180));else setTimeout(init,180);
 })();
