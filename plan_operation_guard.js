@@ -21,7 +21,7 @@
   const p=raw.parameters||{},L=Number(p.length),W=Number(p.width),holes=plateHoles(raw),cornerRadius=Math.max(0,Number(p.cornerRadius)||0),chamfer=Math.max(0,Number(p.chamfer)||0),style=cornerRadius>0?"round":chamfer>0?"chamfer":"square",size=cornerRadius||chamfer||0;
   if(!positive(L)||!positive(W))return;
   if(Array.isArray(p.holes)&&p.holes.length>MAX_HOLES)errors.push(`parameters.holes sisältää yli ${MAX_HOLES} reikää.`);
-  let holeBudget=(Array.isArray(p.holes)?p.holes.length:0)+(p.centerHole?1:0);for(const op of raw.operations||[]){if(op?.type==="hole")holeBudget++;if(op?.type==="holes"&&Array.isArray(op.holes)){holeBudget+=op.holes.length;if(op.holes.length>MAX_HOLES)errors.push(`Yksi holes-operaatio sisältää yli ${MAX_HOLES} reikää.`)}}if(holeBudget>MAX_HOLES)errors.push(`Suunnitelmassa on yhteensä yli ${MAX_HOLES} reikää; jaa työ pienempiin osiin.`);
+  let holeBudget=(Array.isArray(p.holes)?p.holes.length:0)+(p.centerHole?1:0);for(const op of (raw.operations||[]).slice(0,MAX_OPS+1)){if(op?.type==="hole")holeBudget++;if(op?.type==="holes"&&Array.isArray(op.holes)){holeBudget+=op.holes.length;if(op.holes.length>MAX_HOLES)errors.push(`Yksi holes-operaatio sisältää yli ${MAX_HOLES} reikää.`)}}if(holeBudget>MAX_HOLES)errors.push(`Suunnitelmassa on yhteensä yli ${MAX_HOLES} reikää; jaa työ pienempiin osiin.`);
   if(size>Math.min(L,W)/2-.2)errors.push("Levyn pyöristys/viiste on liian suuri levyn mitoille.");
   for(let i=0;i<holes.length&&i<=MAX_HOLES;i++){
    const h=holes[i];if(h.invalid||!finite(h.x)||!finite(h.y)||!positive(h.d)){errors.push(`Reikä ${i+1}: x, y ja positiivinen diameter vaaditaan.`);continue}
