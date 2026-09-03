@@ -4,11 +4,15 @@
  const fn=x=>typeof x==="function";
  const EAR_FALLBACK="https://unpkg.com/earcut@2.2.4/dist/earcut.min.js";
  let earcutFallbackState="idle",earcutFallbackAttempts=0;
+ const parametricReady=()=>fn(window.AI3DParametric?.generate)&&!!$("fields-adapter")&&!!$("fields-enclosure")&&!!$("partType")?.querySelector?.('option[value="adapter"]')&&!!$("partType")?.querySelector?.('option[value="enclosure"]');
+ const customPlateReady=()=>!!$("plateCustomHoles")&&!!$("plateHolePattern")?.querySelector?.('option[value="custom"]');
  const checks=[
   ["CAD-moottori",()=>fn(window.AI3D?.setPart)],
   ["projektit",()=>fn(window.AI3DProjects?.active)],
-  ["ChatGPT-ennakkotarkistus",()=>!!window.AI3DPlanPreflight],
-  ["ChatGPT-operaatiotarkistus",()=>!!window.AI3DPlanOperationGuard],
+  ["ChatGPT-ennakkotarkistus",()=>fn(window.AI3DPlanPreflight?.validate)&&fn(window.AI3DPlanPreflight?.run)&&fn(window.AI3DPlanPreflight?.getLastResult)],
+  ["ChatGPT-operaatiotarkistus",()=>fn(window.AI3DPlanOperationGuard?.validate)&&fn(window.AI3DPlanOperationGuard?.run)&&fn(window.AI3DPlanOperationGuard?.getLastResult)&&fn(window.AI3DPlanOperationGuard?.isAllowed)],
+  ["parametriset CAD-osat",parametricReady],
+  ["mukautetut levyreiät",customPlateReady],
   ["projektitallennuksen varmennus",()=>fn(window.AI3DStorageCommitGuard?.verify)],
   ["3D-esikatselun suojaus",()=>fn(window.AI3DPreviewGuard?.clear)],
   ["mesh-eheystarkistus",()=>fn(window.AI3DMeshIntegrity?.check)],
@@ -49,6 +53,6 @@
   const tick=()=>{attempts++;if(render(false))return;if(attempts>=20){render(true);return}timer=setTimeout(tick,250)};timer=setTimeout(tick,150)
  }
  function init(){start();document.addEventListener("visibilitychange",()=>{if(!document.hidden)start()});window.addEventListener("online",()=>{if(!fn(window.earcut)&&earcutFallbackState==="failed")earcutFallbackState="idle";start()})}
- window.AI3DRuntimeHealth={check:()=>render(true),missing,retryDependencies:()=>{if(!fn(window.earcut)&&earcutFallbackState!=="loading")earcutFallbackState="idle";loadEarcutFallback();start()},dependencyState:()=>({earcut:fn(window.earcut)?"ready":earcutFallbackState,earcutFallbackAttempts})};
+ window.AI3DRuntimeHealth={check:()=>render(true),missing,retryDependencies:()=>{if(!fn(window.earcut)&&earcutFallbackState!=="loading")earcutFallbackState="idle";loadEarcutFallback();start()},dependencyState:()=>({earcut:fn(window.earcut)?"ready":earcutFallbackState,earcutFallbackAttempts,parametric:parametricReady()?"ready":"missing",customPlate:customPlateReady()?"ready":"missing"})};
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
