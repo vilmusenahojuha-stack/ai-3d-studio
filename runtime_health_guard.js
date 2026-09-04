@@ -3,7 +3,11 @@
  const $=id=>document.getElementById(id);
  const fn=x=>typeof x==="function";
  const EAR_FALLBACK="https://unpkg.com/earcut@2.2.4/dist/earcut.min.js";
- let earcutFallbackState="idle",earcutFallbackAttempts=0;
+ const CAD_FALLBACKS=[
+  ["parametric",()=>!parametricReady(),"parametric_parts.js?v=1.6"],
+  ["customPlate",()=>!customPlateReady(),"plate_custom.js?v=1.6"]
+ ];
+ let earcutFallbackState="idle",earcutFallbackAttempts=0,cadFallbackAttempts={parametric:0,customPlate:0};
  const parametricReady=()=>fn(window.AI3DParametric?.generate)&&!!$("fields-adapter")&&!!$("fields-enclosure")&&!!$("partType")?.querySelector?.('option[value="adapter"]')&&!!$("partType")?.querySelector?.('option[value="enclosure"]');
  const customPlateReady=()=>!!$("plateCustomHoles")&&!!$("plateHolePattern")?.querySelector?.('option[value="custom"]');
  const checks=[
@@ -34,6 +38,17 @@
   s.onerror=()=>{earcutFallbackState="failed";start()};
   document.head.appendChild(s);return true
  }
+ function loadCadFallbacks(){
+  let started=false;
+  for(const [key,needed,src] of CAD_FALLBACKS){
+   let missing=false;try{missing=needed()}catch{missing=true}
+   if(!missing||cadFallbackAttempts[key]>=1)continue;
+   cadFallbackAttempts[key]++;started=true;
+   const s=document.createElement("script");s.src=src+"&healthRetry="+Date.now();s.async=true;s.dataset.ai3dCadFallback=key;
+   s.onload=()=>start();s.onerror=()=>start();document.body.appendChild(s)
+  }
+  return started
+ }
  function box(){
   let e=$("runtimeHealthWarning");if(e)return e;
   const anchor=$("projectPrintInfo")||$("projectDescription")||document.querySelector(".project-summary");if(!anchor)return null;
@@ -50,9 +65,9 @@
  function start(){
   clearTimeout(timer);attempts=0;
   if(!fn(window.earcut))loadEarcutFallback();
-  const tick=()=>{attempts++;if(render(false))return;if(attempts>=20){render(true);return}timer=setTimeout(tick,250)};timer=setTimeout(tick,150)
+  const tick=()=>{attempts++;if(render(false))return;if(attempts>=20){if(loadCadFallbacks())return;render(true);return}timer=setTimeout(tick,250)};timer=setTimeout(tick,150)
  }
  function init(){start();document.addEventListener("visibilitychange",()=>{if(!document.hidden)start()});window.addEventListener("online",()=>{if(!fn(window.earcut)&&earcutFallbackState==="failed")earcutFallbackState="idle";start()})}
- window.AI3DRuntimeHealth={check:()=>render(true),missing,retryDependencies:()=>{if(!fn(window.earcut)&&earcutFallbackState!=="loading")earcutFallbackState="idle";loadEarcutFallback();start()},dependencyState:()=>({earcut:fn(window.earcut)?"ready":earcutFallbackState,earcutFallbackAttempts,parametric:parametricReady()?"ready":"missing",customPlate:customPlateReady()?"ready":"missing"})};
+ window.AI3DRuntimeHealth={check:()=>render(true),missing,retryDependencies:()=>{if(!fn(window.earcut)&&earcutFallbackState!=="loading")earcutFallbackState="idle";loadEarcutFallback();loadCadFallbacks();start()},dependencyState:()=>({earcut:fn(window.earcut)?"ready":earcutFallbackState,earcutFallbackAttempts,parametric:parametricReady()?"ready":"missing",customPlate:customPlateReady()?"ready":"missing",cadFallbackAttempts:{...cadFallbackAttempts}})};
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
