@@ -1,7 +1,7 @@
 "use strict";
 (()=>{
  const el=id=>document.getElementById(id),N=64,HN=32;
- const num=(v,d=0)=>Number.isFinite(+v)?+v:d;
+ const num=(v,d=0)=>Number.isFinite(+v)?+v:Number.isFinite(+d)?+d:0;
  const ring=(r,z,n=N)=>Array.from({length:n},(_,i)=>v(r*Math.cos(i*2*Math.PI/n),r*Math.sin(i*2*Math.PI/n),z));
  const rect=(w,d,z)=>[v(-w/2,-d/2,z),v(w/2,-d/2,z),v(w/2,d/2,z),v(-w/2,d/2,z)];
  function roundedRect(w,d,z,r,n=N){r=Math.max(0,Math.min(r,w/2-.1,d/2-.1));if(r<.001){const pts=rect(w,d,z),out=[];for(let s=0;s<4;s++){const a=pts[s],b=pts[(s+1)%4];for(let i=0;i<n/4;i++){const t=i/(n/4);out.push(v(a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t,z))}}return out}const out=[],per=n/4,c=[[w/2-r,-d/2+r,-Math.PI/2,0],[w/2-r,d/2-r,0,Math.PI/2],[-w/2+r,d/2-r,Math.PI/2,Math.PI],[-w/2+r,-d/2+r,Math.PI,1.5*Math.PI]];for(const[cx,cy,a0,a1]of c)for(let i=0;i<per;i++){const a=a0+(a1-a0)*i/per;out.push(v(cx+r*Math.cos(a),cy+r*Math.sin(a),z))}return out}
