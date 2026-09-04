@@ -23,7 +23,14 @@
   lastError=reason||lastError;
   clearing=false
  }
+ function projectFailureReason(){
+  const sync=$("planSyncStatus")?.textContent?.trim()||"";
+  if(!sync||typeof window.AI3DProjects?.active!=="function"||window.AI3DProjects.active())return"";
+  if(/eikä projektia tallennettu|ei löytynyt avattavaa CAD-mallia/i.test(sync))return sync;
+  return""
+ }
  function failureReason(){
+  const projectFailure=projectFailureReason();if(projectFailure)return projectFailure;
   const status=$("status")?.textContent?.trim()||"",validation=$("validation");
   if(/^Virhe\s*:/i.test(status))return status;
   if(/generointi epäonnistui|STL-lataus estetty/i.test(status))return status;
@@ -40,9 +47,10 @@
   }
  }
  function init(){
-  const status=$("status"),validation=$("validation");
+  const status=$("status"),validation=$("validation"),sync=$("planSyncStatus");
   if(status)new MutationObserver(inspect).observe(status,{childList:true,subtree:true,characterData:true});
   if(validation)new MutationObserver(inspect).observe(validation,{childList:true,subtree:true,characterData:true});
+  if(sync)new MutationObserver(inspect).observe(sync,{childList:true,subtree:true,characterData:true});
   inspect()
  }
  window.AI3DPreviewGuard={clear:clearPreview,check:inspect,failureReason};
