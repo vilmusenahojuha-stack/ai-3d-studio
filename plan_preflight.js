@@ -16,6 +16,7 @@
   const errors=[],warnings=[],v=raw.values;
   if(raw.status!=null&&!["ready","approved"].includes(raw.status))errors.push("status pitää olla ready tai approved.");
   if(raw.material!=null&&!materials.has(raw.material))errors.push("Materiaali pitää olla PLA, PETG tai ASA.");
+  if(raw.material==null&&v?.material!=null&&!materials.has(v.material))errors.push("values.material pitää olla PLA, PETG tai ASA.");
   if(!supportedV1.has(raw.partType))errors.push("Schema v1 -osatyyppiä ei tueta.");
   if(!v||typeof v!=="object"||Array.isArray(v))errors.push("values-objekti puuttuu.");
   checkFlatValues(v,errors);
