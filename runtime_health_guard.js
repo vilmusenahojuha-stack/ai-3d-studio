@@ -38,6 +38,9 @@
   s.onerror=()=>{earcutFallbackState="failed";start()};
   document.head.appendChild(s);return true
  }
+ function resetMissingCadRetries(){
+  for(const [key,needed] of CAD_FALLBACKS){let missing=false;try{missing=needed()}catch{missing=true}if(missing)cadFallbackAttempts[key]=0}
+ }
  function loadCadFallbacks(){
   let started=false;
   for(const [key,needed,src] of CAD_FALLBACKS){
@@ -67,7 +70,7 @@
   if(!fn(window.earcut))loadEarcutFallback();
   const tick=()=>{attempts++;if(render(false))return;if(attempts>=20){if(loadCadFallbacks())return;render(true);return}timer=setTimeout(tick,250)};timer=setTimeout(tick,150)
  }
- function init(){start();document.addEventListener("visibilitychange",()=>{if(!document.hidden)start()});window.addEventListener("online",()=>{if(!fn(window.earcut)&&earcutFallbackState==="failed")earcutFallbackState="idle";start()})}
- window.AI3DRuntimeHealth={check:()=>render(true),missing,retryDependencies:()=>{if(!fn(window.earcut)&&earcutFallbackState!=="loading")earcutFallbackState="idle";loadEarcutFallback();loadCadFallbacks();start()},dependencyState:()=>({earcut:fn(window.earcut)?"ready":earcutFallbackState,earcutFallbackAttempts,parametric:parametricReady()?"ready":"missing",customPlate:customPlateReady()?"ready":"missing",cadFallbackAttempts:{...cadFallbackAttempts}})};
+ function init(){start();document.addEventListener("visibilitychange",()=>{if(!document.hidden)start()});window.addEventListener("online",()=>{if(!fn(window.earcut)&&earcutFallbackState==="failed")earcutFallbackState="idle";resetMissingCadRetries();start()})}
+ window.AI3DRuntimeHealth={check:()=>render(true),missing,retryDependencies:()=>{if(!fn(window.earcut)&&earcutFallbackState!=="loading")earcutFallbackState="idle";resetMissingCadRetries();loadEarcutFallback();loadCadFallbacks();start()},dependencyState:()=>({earcut:fn(window.earcut)?"ready":earcutFallbackState,earcutFallbackAttempts,parametric:parametricReady()?"ready":"missing",customPlate:customPlateReady()?"ready":"missing",cadFallbackAttempts:{...cadFallbackAttempts}})};
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
