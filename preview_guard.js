@@ -7,11 +7,16 @@
   clearing=true;
   try{currentMesh=null}catch{}
   try{currentFitMesh=null}catch{}
-  const download=$("btnDownload"),fit=$("btnFitTest"),dims=$("dimensions"),overlay=$("measureOverlay");
+  const download=$("btnDownload"),fit=$("btnFitTest"),dims=$("dimensions"),overlay=$("measureOverlay"),validation=$("validation");
   if(download)download.disabled=true;
   if(fit)fit.disabled=true;
   if(dims)dims.textContent="–";
   if(overlay){overlay.innerHTML="";overlay.hidden=true}
+  if(validation&&reason&&!validation.querySelector?.(".check.fail")){
+   validation.innerHTML="";
+   const box=document.createElement("div"),title=document.createElement("strong");
+   box.className="check fail";title.textContent="✕ Tarkistus epäonnistui";box.append(title,document.createElement("br"),document.createTextNode(reason));validation.appendChild(box)
+  }
   try{draw()}catch{
    const canvas=$("preview");
    const ctx=canvas?.getContext?.("2d");
