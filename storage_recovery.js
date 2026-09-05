@@ -7,7 +7,8 @@
  function validValues(v){if(!v||typeof v!=="object"||Array.isArray(v))return false;const e=Object.entries(v);if(e.length>100)return false;return e.every(([k,x])=>!BLOCKED_KEYS.has(k)&&(x===null||["string","number","boolean"].includes(typeof x))&&(typeof x!=="number"||Number.isFinite(x)))}
  function validProject(p){return!!(p&&typeof p==="object"&&!Array.isArray(p)&&typeof p.id==="string"&&p.id&&ALLOWED.has(p.type)&&validValues(p.values))}
  function parseArray(raw){try{const v=JSON.parse(raw);return Array.isArray(v)?v:null}catch{return null}}
- function parse(raw){const v=parseArray(raw);return v&&v.every(validProject)?v:null}
+ function uniqueValidItems(items){const ids=new Set(),out=[];for(const p of items||[]){if(!validProject(p)||ids.has(p.id))continue;ids.add(p.id);out.push(p)}return out}
+ function parse(raw){const v=parseArray(raw);if(!v)return null;return uniqueValidItems(v).length===v.length?v:null}
  function validIdSet(items){return new Set((items||[]).map(p=>p.id))}
  function repairActive(items){
   const ids=validIdSet(items),fallback=items[0]?.id||"";
@@ -37,12 +38,12 @@
  }
  function salvageValid(raw){
   const all=parseArray(raw||"");if(!all)return false;
-  const valid=all.filter(validProject);if(!valid.length||valid.length===all.length)return false;
+  const valid=uniqueValidItems(all);if(!valid.length||valid.length===all.length)return false;
   try{
    preserveCorrupt(raw);
    localStorage.setItem(KEY,JSON.stringify(valid));
    state.recovered=true;
-   state.reason=`Projektitallennuksesta pelastettiin ${valid.length}/${all.length} rakenteellisesti kelvollista projektia. Alkuperäinen vioittunut data säilytettiin palautusta varten.`;
+   state.reason=`Projektitallennuksesta pelastettiin ${valid.length}/${all.length} rakenteellisesti kelvollista ja yksilöllistä projektia. Alkuperäinen vioittunut data säilytettiin palautusta varten.`;
    repairActive(valid);
    return true
   }catch(e){state.error=e?.message||String(e);state.reason="Kelvollisten projektien automaattinen pelastus epäonnistui.";return false}
