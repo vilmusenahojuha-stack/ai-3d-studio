@@ -25,6 +25,8 @@ Selainpohjainen parametrinen 3D-suunnittelutyökalu, jossa ChatGPTissa tehty suu
 
 ChatGPT-suunnitelmien Schema v1 sekä Schema v2:n `sleeve`, `spike`, `endPlug`, `mountingPlate`, `adapter` ja `enclosure` voidaan tuoda muokattaviksi projekteiksi. Tunnistettu mutta vielä tukematon osatyyppi näytetään suunnitelmalistassa selvästi eikä sitä yritetä avata väärällä editorilla.
 
+Schema v2:n erillisinä CAD-operaatioina sovellus toteuttaa tällä hetkellä turvallisesti vain `mountingPlate`-mallin `hole`- ja `holes`-operaatiot. Levyn pyöristys ja viiste annetaan `cornerRadius`- tai `chamfer`-parametrina. Boolean-operaatioita (`union`, `subtract`, `intersect`) tai yleisiä `fillet`/`chamfer`-operaatioita ei vielä pidä tuottaa `operations`-taulukkoon, koska niitä ei voida säilyttää nykyisessä parametrisesti muokattavassa editorissa.
+
 ## Projektien tallennus
 
 Projektit tallennetaan selaimen `localStorage`-muistiin. Sovellus siirtää vanhan v1/v2 projektivaraston v3-muotoon ensimmäisellä käynnistyksellä, jos uutta varastoa ei vielä ole.
