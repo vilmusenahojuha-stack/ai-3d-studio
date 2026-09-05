@@ -1,6 +1,6 @@
 "use strict";
 (()=>{
- function loadCentauri(){if(window.CentauriProfile||document.querySelector('script[data-ai3d-centauri],script[src^="centauri.js"]'))return;const loader=document.createElement("script");loader.src="centauri.js?v=1.8";loader.dataset.ai3dCentauri="1";loader.onerror=()=>setTimeout(()=>setSync("⚠ Centauri-tarkistuksen lataus epäonnistui. Muut projektit säilyvät käytettävissä, mutta tarkista yhteys ennen STL-vientiä.","warn"),0);document.head.appendChild(loader)}
+ function loadCentauri(){if(window.CentauriProfile||document.querySelector('script[data-ai3d-centauri],script[src^="centauri.js"]'))return;const loader=document.createElement("script");loader.src="centauri.js?v=1.9";loader.dataset.ai3dCentauri="1";loader.onerror=()=>setTimeout(()=>setSync("⚠ Centauri-tarkistuksen lataus epäonnistui. Muut projektit säilyvät käytettävissä, mutta tarkista yhteys ennen STL-vientiä.","warn"),0);document.head.appendChild(loader)}
  loadCentauri();
  const KEY="ai3d:projects:v3",BACKUP=KEY+":backup",OLD_KEYS=["ai3d:projects:v2","ai3d:projects:v1"],$=id=>document.getElementById(id),esc=s=>String(s??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
  const ALLOWED_TYPES=new Set(["lightSign","spike","plug","sleeve","plate","adapter","enclosure"]),BLOCKED_KEYS=new Set(["__proto__","prototype","constructor"]);
