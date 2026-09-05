@@ -16,11 +16,11 @@
   try{
    const active=localStorage.getItem(KEY+":active")||"";
    if((active&&!ids.has(active))||(!active&&fallback)){
-    localStorage.setItem(KEY+":active",fallback);
+    writeVerified(KEY+":active",fallback);
     state.repairedActive=true;
     if(!state.reason)state.reason=fallback?"Aktiivisen projektin vanhentunut tunnus korjattiin ensimmäiseen kelvolliseen projektiin.":"Aktiivisen projektin vanhentunut tunnus tyhjennettiin."
    }else if(!fallback&&active){
-    localStorage.setItem(KEY+":active","");
+    writeVerified(KEY+":active","");
     state.repairedActive=true;
     if(!state.reason)state.reason="Aktiivisen projektin tunnus tyhjennettiin, koska projekteja ei ole."
    }
@@ -32,7 +32,7 @@
    const restored=JSON.stringify(backup);
    writeVerified(KEY,restored);
    const ids=validIdSet(backup),active=localStorage.getItem(KEY+":active")||"";
-   if(!ids.has(active))localStorage.setItem(KEY+":active",backup[0]?.id||"");
+   if(!ids.has(active))writeVerified(KEY+":active",backup[0]?.id||"");
    state.recovered=true;
    state.reason=reason||`Projektitallennus palautettiin rakenteellisesti tarkistetusta paikallisesta varmuuskopiosta (${backup.length} projektia).`;
    return true
