@@ -10,6 +10,7 @@
  function uniqueValidItems(items){const ids=new Set(),out=[];for(const p of items||[]){if(!validProject(p)||ids.has(p.id))continue;ids.add(p.id);out.push(p)}return out}
  function parse(raw){const v=parseArray(raw);if(!v)return null;return uniqueValidItems(v).length===v.length?v:null}
  function validIdSet(items){return new Set((items||[]).map(p=>p.id))}
+ function writeVerified(key,value){localStorage.setItem(key,value);if(localStorage.getItem(key)!==value)throw Error("Palautetun projektitallennuksen varmennus epäonnistui.")}
  function repairActive(items){
   const ids=validIdSet(items),fallback=items[0]?.id||"";
   try{
@@ -28,7 +29,8 @@
  function preserveCorrupt(raw){try{if(typeof raw==="string"&&raw.length<=2_000_000)localStorage.setItem(CORRUPT,raw)}catch{}}
  function restoreBackup(backup,reason){
   try{
-   localStorage.setItem(KEY,JSON.stringify(backup));
+   const restored=JSON.stringify(backup);
+   writeVerified(KEY,restored);
    const ids=validIdSet(backup),active=localStorage.getItem(KEY+":active")||"";
    if(!ids.has(active))localStorage.setItem(KEY+":active",backup[0]?.id||"");
    state.recovered=true;
@@ -41,7 +43,7 @@
   const valid=uniqueValidItems(all);if(!valid.length||valid.length===all.length)return false;
   try{
    preserveCorrupt(raw);
-   localStorage.setItem(KEY,JSON.stringify(valid));
+   writeVerified(KEY,JSON.stringify(valid));
    state.recovered=true;
    state.reason=`Projektitallennuksesta pelastettiin ${valid.length}/${all.length} rakenteellisesti kelvollista ja yksilöllistä projektia. Alkuperäinen vioittunut data säilytettiin palautusta varten.`;
    repairActive(valid);
