@@ -73,7 +73,7 @@
     }
     if(pattern==="custom")holes=parseCustomHoles(el("plateCustomHoles")?.value);
 
-    for(const h of holes){const rr=h.d/2+.6;for(const[tx,ty]of[[h.x+rr,h.y],[h.x-rr,h.y],[h.x,h.y+rr],[h.x,h.y-rr]])if(!insideOuter(tx,ty,L,W,style,size))throw Error("Reikä on liian lähellä levyn reunaa tai kulmaa.")}
+    for(const h of holes){const rr=h.d/2+.6;for(let i=0;i<36;i++){const a=i*2*Math.PI/36;if(!insideOuter(h.x+rr*Math.cos(a),h.y+rr*Math.sin(a),L,W,style,size))throw Error("Reikä on liian lähellä levyn reunaa tai kulmaa.")}}
     for(let i=0;i<holes.length;i++)for(let j=i+1;j<holes.length;j++)if(Math.hypot(holes[i].x-holes[j].x,holes[i].y-holes[j].y)<=(holes[i].d+holes[j].d)/2+1)throw Error("Reiät ovat liian lähellä toisiaan.");
 
     const o0=outerRing(L,W,0,style,size),o1=o0.map(p=>v(p.x,p.y,T));
