@@ -62,6 +62,7 @@
   const backup=parse(backupRaw||"");
   if(backup){preserveCorrupt(mainRaw);restoreBackup(backup,`Vioittunut projektitallennus palautettiin rakenteellisesti tarkistetusta paikallisesta varmuuskopiosta (${backup.length} projektia).`);return}
   if(salvageValid(mainRaw))return;
+  preserveCorrupt(mainRaw);
   state.reason="Projektitallennus on vioittunut eikä rakenteellisesti kelvollista paikallista varmuuskopiota tai pelastettavaa projektia löytynyt."
  }
  recover();
