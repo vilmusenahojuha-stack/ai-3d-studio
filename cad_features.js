@@ -52,8 +52,9 @@
   }
 
   function parseCustomHoles(raw){
-    const holes=[];for(const [i,line] of String(raw||"").split(/\r?\n/).entries()){
-      const s=line.trim();if(!s)continue;const parts=s.replace(/,/g,".").split(/[;\s]+/).filter(Boolean);if(parts.length!==3)throw Error(`Mukautettu reikä rivillä ${i+1}: käytä muotoa X;Y;Ø.`);const [x,y,d]=parts.map(Number);if(![x,y,d].every(Number.isFinite)||d<=0)throw Error(`Mukautettu reikä rivillä ${i+1}: tarkista numerot ja halkaisija.`);holes.push({x,y,d})
+    const text=String(raw||"");if(text.length>50000)throw Error("Mukautettujen reikien syöte on liian pitkä.");
+    const holes=[];for(const [i,line] of text.split(/\r?\n/).entries()){
+      const s=line.trim();if(!s)continue;if(holes.length>=200)throw Error("Mukautettuja reikiä voi olla enintään 200.");const parts=s.replace(/,/g,".").split(/[;\s]+/).filter(Boolean);if(parts.length!==3)throw Error(`Mukautettu reikä rivillä ${i+1}: käytä muotoa X;Y;Ø.`);const [x,y,d]=parts.map(Number);if(![x,y,d].every(Number.isFinite)||d<=0)throw Error(`Mukautettu reikä rivillä ${i+1}: tarkista numerot ja halkaisija.`);holes.push({x,y,d})
     }return holes
   }
 
