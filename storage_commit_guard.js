@@ -6,8 +6,8 @@
  function validValues(v){if(!v||typeof v!=="object"||Array.isArray(v))return false;const entries=Object.entries(v);if(entries.length>100)return false;return entries.every(([k,x])=>!BLOCKED_KEYS.has(k)&&(x===null||["string","number","boolean"].includes(typeof x))&&(typeof x!=="number"||Number.isFinite(x)))}
  function validProject(p){return!!(p&&typeof p==="object"&&!Array.isArray(p)&&typeof p.id==="string"&&p.id&&ALLOWED.has(p.type)&&validValues(p.values))}
  function read(){try{const v=JSON.parse(localStorage.getItem(KEY)||"[]");return Array.isArray(v)&&v.every(validProject)?v:null}catch{return null}}
- function warn(text){lastIssue=text;const box=$("planSyncStatus");if(box){box.dataset.storageGuardWarning="1";box.textContent="⚠ "+text;box.className="plan-sync-status warn"}}
- function clearOwnWarning(){const box=$("planSyncStatus");if(box?.dataset.storageGuardWarning==="1"){delete box.dataset.storageGuardWarning;box.textContent="✓ Projektin paikallinen tallennus varmistettu.";box.className="plan-sync-status ok"}}
+ function warn(text){lastIssue=text;const box=$("planSyncStatus");if(box){const message="⚠ "+text;box.dataset.storageGuardWarning="1";box.dataset.storageGuardWarningText=message;box.textContent=message;box.className="plan-sync-status warn"}}
+ function clearOwnWarning(){const box=$("planSyncStatus");if(box?.dataset.storageGuardWarning==="1"){const ownMessage=box.dataset.storageGuardWarningText||"";delete box.dataset.storageGuardWarning;delete box.dataset.storageGuardWarningText;if(!ownMessage||box.textContent===ownMessage){box.textContent="✓ Projektin paikallinen tallennus varmistettu.";box.className="plan-sync-status ok"}}}
  function same(a,b){if(typeof a==="number"||typeof b==="number"){const x=Number(a),y=Number(b);return Number.isFinite(x)&&Number.isFinite(y)&&Math.abs(x-y)<1e-9}return String(a??"")===String(b??"")}
  function liveValues(type){const out={};for(const id of MAP[type]||[]){const e=$(id);if(!e)continue;if(e.type==="number"){if(Number.isFinite(e.valueAsNumber))out[id]=e.valueAsNumber}else out[id]=e.value}return out}
  function verify(requireLive=false){
