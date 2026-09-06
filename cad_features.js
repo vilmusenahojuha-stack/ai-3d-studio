@@ -60,8 +60,12 @@
 
   function enhancedBuildPlate(){
     const L=+el("plateL").value,W=+el("plateW").value,T=+el("plateT").value;
-    const pattern=el("plateHolePattern")?.value||"none",holeD=Math.max(0,+el("plateHoleD").value||0),edge=Math.max(0,+el("plateHoleEdge")?.value||0),style=el("plateCornerStyle").value,size=Math.max(0,+el("plateCornerSize").value||0);
+    const pattern=el("plateHolePattern")?.value||"none",holeD=+el("plateHoleD").value,edge=+el("plateHoleEdge")?.value,style=el("plateCornerStyle").value,size=+el("plateCornerSize").value;
+    if(![L,W,T,holeD,edge,size].every(Number.isFinite))throw Error("Levyn mitoissa on virheellinen numeroarvo.");
+    if(!["none","center","four","custom"].includes(pattern))throw Error("Reikäjakoa ei tunnistettu.");
+    if(!["square","round","chamfer"].includes(style))throw Error("Kulmien muotoa ei tunnistettu.");
     if(L<=2||W<=2||T<1)throw Error("Levyn mitat eivät ole mahdollisia.");
+    if(holeD<0||edge<0||size<0)throw Error("Reikä-, reuna- tai kulma-arvo ei voi olla negatiivinen.");
     if(size>Math.min(L,W)/2-.2)throw Error("Pyöristys/viiste on liian suuri levylle.");
     if(pattern!=="none"&&pattern!=="custom"&&holeD<=0)throw Error("Anna reiän halkaisija.");
 
