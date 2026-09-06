@@ -1,10 +1,12 @@
 "use strict";
 (()=>{
- const $=id=>document.getElementById(id),MAX_OPS=200,MAX_HOLES=200;
+ const $=id=>document.getElementById(id),MAX_OPS=200,MAX_HOLES=200,MAX_MM=5000;
  const support={mountingPlate:new Set(["hole","holes"]),sleeve:new Set(),spike:new Set(),endPlug:new Set(),adapter:new Set(),enclosure:new Set()};
  let running=true,last={ok:false,errors:["Tarkistus ei ole vielä valmis."],fingerprint:null};
  const finite=v=>Number.isFinite(Number(v));
  const positive=v=>finite(v)&&Number(v)>0;
+ const withinMm=v=>finite(v)&&Math.abs(Number(v))<=MAX_MM;
+ const positiveMm=v=>positive(v)&&Number(v)<=MAX_MM;
  function fingerprint(raw){try{return JSON.stringify(raw)}catch{return null}}
  function plateHoles(raw){
   const out=[],add=(h,label)=>{if(out.length>=MAX_HOLES+1)return;if(!h||typeof h!=="object"||Array.isArray(h)){out.push({invalid:true,label});return}const x=Number(h.x??0),y=Number(h.y??0),d=Number(h.diameter??h.d);out.push({x,y,d,label})};
@@ -21,14 +23,15 @@
  function validatePlateGeometry(raw,errors,warnings){
   const p=raw.parameters||{},L=Number(p.length),W=Number(p.width),holes=plateHoles(raw),cornerRaw=p.cornerRadius,chamferRaw=p.chamfer,cornerRadius=Math.max(0,Number(cornerRaw)||0),chamfer=Math.max(0,Number(chamferRaw)||0),style=cornerRadius>0?"round":chamfer>0?"chamfer":"square",size=cornerRadius||chamfer||0;
   if(!positive(L)||!positive(W))return;
-  if(cornerRaw!=null&&(!finite(cornerRaw)||Number(cornerRaw)<0))errors.push("cornerRadius pitää olla nolla tai positiivinen luku.");
-  if(chamferRaw!=null&&(!finite(chamferRaw)||Number(chamferRaw)<0))errors.push("chamfer pitää olla nolla tai positiivinen luku.");
+  if(!positiveMm(L)||!positiveMm(W))errors.push(`Levyn pituus ja leveys saavat olla enintään ${MAX_MM} mm.`);
+  if(cornerRaw!=null&&(!finite(cornerRaw)||Number(cornerRaw)<0||Number(cornerRaw)>MAX_MM))errors.push(`cornerRadius pitää olla välillä 0…${MAX_MM} mm.`);
+  if(chamferRaw!=null&&(!finite(chamferRaw)||Number(chamferRaw)<0||Number(chamferRaw)>MAX_MM))errors.push(`chamfer pitää olla välillä 0…${MAX_MM} mm.`);
   if(positive(cornerRaw)&&positive(chamferRaw))errors.push("Levylle ei voi määrittää yhtä aikaa sekä cornerRadius- että chamfer-arvoa; valitse yksi kulmatyyli.");
   if(Array.isArray(p.holes)&&p.holes.length>MAX_HOLES)errors.push(`parameters.holes sisältää yli ${MAX_HOLES} reikää.`);
   let holeBudget=(Array.isArray(p.holes)?p.holes.length:0)+(p.centerHole?1:0);for(const op of (raw.operations||[]).slice(0,MAX_OPS+1)){if(op?.type==="hole")holeBudget++;if(op?.type==="holes"&&Array.isArray(op.holes)){holeBudget+=op.holes.length;if(op.holes.length>MAX_HOLES)errors.push(`Yksi holes-operaatio sisältää yli ${MAX_HOLES} reikää.`)}}if(holeBudget>MAX_HOLES)errors.push(`Suunnitelmassa on yhteensä yli ${MAX_HOLES} reikää; jaa työ pienempiin osiin.`);
   if(size>Math.min(L,W)/2-.2)errors.push("Levyn pyöristys/viiste on liian suuri levyn mitoille.");
   for(let i=0;i<holes.length&&i<=MAX_HOLES;i++){
-   const h=holes[i];if(h.invalid||!finite(h.x)||!finite(h.y)||!positive(h.d)){errors.push(`Reikä ${i+1}: x, y ja positiivinen diameter vaaditaan.`);continue}
+   const h=holes[i];if(h.invalid||!withinMm(h.x)||!withinMm(h.y)||!positiveMm(h.d)){errors.push(`Reikä ${i+1}: x/y pitää olla välillä -${MAX_MM}…${MAX_MM} mm ja diameter välillä 0…${MAX_MM} mm.`);continue}
    if(!holeFits(h,L,W,style,size))errors.push(`Reikä ${i+1} on liian lähellä levyn todellista reunaa tai kulmaa; CAD tarvitsee vähintään 0,6 mm reunamarginaalin.`)
   }
   const limit=Math.min(holes.length,MAX_HOLES);for(let i=0;i<limit;i++)for(let j=i+1;j<limit;j++){
@@ -39,12 +42,14 @@
  }
  function validateAdapterGeometry(raw,errors){
   const p=raw.parameters||{},L=Number(p.length),id1=Number(p.insideDiameter1??p.insideDiameter),id2=Number(p.insideDiameter2??p.insideDiameter??id1),wall=Number(p.wall||0),od1=Number(p.outsideDiameter1??p.outsideDiameter??(id1+2*wall)),od2=Number(p.outsideDiameter2??p.outsideDiameter??(id2+2*wall));
+  if([L,id1,id2,od1,od2].some(x=>Number.isFinite(x)&&Math.abs(x)>MAX_MM))errors.push(`Adapterin mitat saavat olla enintään ${MAX_MM} mm.`);
   if(finite(L)&&L<2)errors.push("Adapterin pituuden pitää olla vähintään 2 mm.");
   if(Number.isFinite(id1)&&Number.isFinite(od1)&&od1<=id1+.8)errors.push("Adapterin alkuosan seinämän pitää olla yli 0,4 mm (ulko- ja sisähalkaisijan erotus yli 0,8 mm).");
   if(Number.isFinite(id2)&&Number.isFinite(od2)&&od2<=id2+.8)errors.push("Adapterin loppuosan seinämän pitää olla yli 0,4 mm (ulko- ja sisähalkaisijan erotus yli 0,8 mm).")
  }
  function validateEnclosureGeometry(raw,errors){
   const p=raw.parameters||{},W=Number(p.width),D=Number(p.length??p.depth),H=Number(p.height),wall=Number(p.wall??p.thickness),floor=Number(p.floorThickness??p.thickness??p.wall);
+  if([W,D,H,wall,floor].some(x=>Number.isFinite(x)&&Math.abs(x)>MAX_MM))errors.push(`Kotelon mitat saavat olla enintään ${MAX_MM} mm.`);
   if(Number.isFinite(wall)&&wall<.8)errors.push("Kotelon seinämän pitää olla vähintään 0,8 mm.");
   if(Number.isFinite(floor)&&floor<.8)errors.push("Kotelon pohjan pitää olla vähintään 0,8 mm.");
   if([W,D,wall].every(Number.isFinite)&&(W<=2*wall+2||D<=2*wall+2))errors.push("Kotelon leveys/pituus on liian pieni seinämäpaksuuteen nähden.");
