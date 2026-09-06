@@ -24,9 +24,9 @@
         "required": ["type"],
         "properties": {
           "type": { "enum": ["hole", "holes"] },
-          "x": { "type": "number" },
-          "y": { "type": "number" },
-          "z": { "type": "number" },
+          "x": { "type": "number", "minimum": -5000, "maximum": 5000 },
+          "y": { "type": "number", "minimum": -5000, "maximum": 5000 },
+          "z": { "type": "number", "minimum": -5000, "maximum": 5000 },
           "diameter": { "$ref": "#/$defs/positiveMm" },
           "holes": {
             "type": "array",
