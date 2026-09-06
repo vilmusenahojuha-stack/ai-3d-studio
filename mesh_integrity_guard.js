@@ -12,12 +12,16 @@
   for(let i=0;i<tris.length;i++){
    const t=tris[i];
    if(!Array.isArray(t)||t.length!==3)return`Kolmio ${i+1} ei sisällä kolmea pistettä.`;
+   const pts=[];
    for(const q of t){
     const x=Number(q?.x),y=Number(q?.y),z=Number(q?.z);
     if(![x,y,z].every(Number.isFinite))return`Meshissä on virheellinen koordinaatti kolmiossa ${i+1}.`;
     if(Math.max(Math.abs(x),Math.abs(y),Math.abs(z))>100000)return"Meshissä on epärealistisen suuri koordinaatti.";
+    pts.push([x,y,z]);
     minX=Math.min(minX,x);minY=Math.min(minY,y);minZ=Math.min(minZ,z);maxX=Math.max(maxX,x);maxY=Math.max(maxY,y);maxZ=Math.max(maxZ,z)
    }
+   const [a,b,c]=pts,ux=b[0]-a[0],uy=b[1]-a[1],uz=b[2]-a[2],vx=c[0]-a[0],vy=c[1]-a[1],vz=c[2]-a[2],cx=uy*vz-uz*vy,cy=uz*vx-ux*vz,cz=ux*vy-uy*vx;
+   if(Math.hypot(cx,cy,cz)<1e-10)return`Meshissä on pinta-alaton kolmio ${i+1}.`;
   }
   const dims=[maxX-minX,maxY-minY,maxZ-minZ];
   if(!dims.every(Number.isFinite)||dims.some(x=>x<=0))return"Meshin todellisia ulkomittoja ei voitu vahvistaa.";
