@@ -3,14 +3,14 @@
  const $=id=>document.getElementById(id),MAX_OPS=200,MAX_HOLES=200,MAX_MM=5000;
  const support={mountingPlate:new Set(["hole","holes"]),sleeve:new Set(),spike:new Set(),endPlug:new Set(),adapter:new Set(),enclosure:new Set()};
  let running=true,last={ok:false,errors:["Tarkistus ei ole vielä valmis."],fingerprint:null};
- const finite=v=>Number.isFinite(Number(v));
+ const finite=v=>v!==null&&v!==undefined&&!(typeof v==="string"&&!v.trim())&&Number.isFinite(Number(v));
  const positive=v=>finite(v)&&Number(v)>0;
  const withinMm=v=>finite(v)&&Math.abs(Number(v))<=MAX_MM;
  const positiveMm=v=>positive(v)&&Number(v)<=MAX_MM;
  function fingerprint(raw){try{return JSON.stringify(raw)}catch{return null}}
  function plateHoles(raw){
-  const out=[],add=(h,label)=>{if(out.length>=MAX_HOLES+1)return;if(!h||typeof h!=="object"||Array.isArray(h)){out.push({invalid:true,label});return}const x=Number(h.x??0),y=Number(h.y??0),d=Number(h.diameter??h.d);out.push({x,y,d,label})};
-  const p=raw.parameters||{},ph=p.holes;if(ph!=null&&!Array.isArray(ph))out.push({invalid:true,label:"parameters.holes"});else for(const [i,h] of (ph||[]).slice(0,MAX_HOLES+1).entries())add(h,`parameters.holes ${i+1}`);if(p.centerHole)add(typeof p.centerHole==="number"?{x:0,y:0,diameter:p.centerHole}:p.centerHole,"parameters.centerHole");
+  const out=[],add=(h,label)=>{if(out.length>=MAX_HOLES+1)return;if(!h||typeof h!=="object"||Array.isArray(h)){out.push({invalid:true,label});return}const x=h.x,y=h.y,d=h.diameter??h.d;out.push({x:Number(x),y:Number(y),d:Number(d),invalid:!finite(x)||!finite(y)||!positive(d),label})};
+  const p=raw.parameters||{},ph=p.holes;if(ph!=null&&!Array.isArray(ph))out.push({invalid:true,label:"parameters.holes"});else for(const [i,h] of (ph||[]).slice(0,MAX_HOLES+1).entries())add(h,`parameters.holes ${i+1}`);if(p.centerHole){const h=typeof p.centerHole==="number"?{x:0,y:0,diameter:p.centerHole}:{x:0,y:0,...p.centerHole};add(h,"parameters.centerHole")}
   for(const op of (raw.operations||[]).slice(0,MAX_OPS+1)){if(op?.type==="hole")add(op,"hole");if(op?.type==="holes"&&Array.isArray(op.holes))for(const [i,h] of op.holes.slice(0,MAX_HOLES+1).entries())add(h,`holes ${i+1}`)}return out
  }
  function insidePlate(x,y,L,W,style,size){
