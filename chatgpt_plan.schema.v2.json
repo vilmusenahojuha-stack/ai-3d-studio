@@ -34,6 +34,16 @@
             "items": { "$ref": "#/$defs/hole" }
           }
         },
+        "allOf": [
+          {
+            "if": { "properties": { "type": { "const": "hole" } }, "required": ["type"] },
+            "then": { "required": ["x", "y", "diameter"] }
+          },
+          {
+            "if": { "properties": { "type": { "const": "holes" } }, "required": ["type"] },
+            "then": { "required": ["holes"] }
+          }
+        ],
         "additionalProperties": true
       }
     },
