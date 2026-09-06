@@ -5,7 +5,8 @@
  const BLOCKED_KEYS=new Set(["__proto__","prototype","constructor"]),MAX_PROJECT_NAME=120,MAX_PROJECT_DESCRIPTION=1000;
  const state={checked:false,recovered:false,repairedActive:false,reason:"",error:""};
  function validValues(v){if(!v||typeof v!=="object"||Array.isArray(v))return false;const e=Object.entries(v);if(e.length>100)return false;return e.every(([k,x])=>k.length<=160&&!BLOCKED_KEYS.has(k)&&(x===null||["string","number","boolean"].includes(typeof x))&&(typeof x!=="number"||Number.isFinite(x))&&(typeof x!=="string"||x.length<=50000))}
- function validProject(p){return!!(p&&typeof p==="object"&&!Array.isArray(p)&&typeof p.id==="string"&&p.id.trim()&&p.id.length<=160&&ALLOWED.has(p.type)&&validValues(p.values)&&(p.name==null||(typeof p.name==="string"&&p.name.length<=MAX_PROJECT_NAME))&&(p.description==null||(typeof p.description==="string"&&p.description.length<=MAX_PROJECT_DESCRIPTION)))}
+ function validLegacyProject(p){return!!(p&&typeof p==="object"&&!Array.isArray(p)&&typeof p.id==="string"&&p.id.trim()&&p.id.length<=160&&ALLOWED.has(p.type)&&validValues(p.values)&&(p.name==null||typeof p.name==="string")&&(p.description==null||typeof p.description==="string"))}
+ function validProject(p){return!!(validLegacyProject(p)&&(p.name==null||p.name.length<=MAX_PROJECT_NAME)&&(p.description==null||p.description.length<=MAX_PROJECT_DESCRIPTION))}
  function parseArray(raw){try{const v=JSON.parse(raw);return Array.isArray(v)?v:null}catch{return null}}
  function uniqueValidItems(items){const ids=new Set(),out=[];for(const p of items||[]){if(!validProject(p)||ids.has(p.id))continue;ids.add(p.id);out.push(p)}return out}
  function parse(raw){const v=parseArray(raw);if(!v)return null;return uniqueValidItems(v).length===v.length?v:null}
@@ -27,6 +28,20 @@
   }catch(e){state.error=e?.message||String(e)}
  }
  function preserveCorrupt(raw){try{if(typeof raw==="string"&&raw.length<=2_000_000)localStorage.setItem(CORRUPT,raw)}catch{}}
+ function repairLegacyText(raw){
+  const all=parseArray(raw||"");if(!all?.length)return false;
+  const ids=new Set();for(const p of all){if(!validLegacyProject(p)||ids.has(p.id))return false;ids.add(p.id)}
+  if(!all.some(p=>(p.name?.length||0)>MAX_PROJECT_NAME||(p.description?.length||0)>MAX_PROJECT_DESCRIPTION))return false;
+  const repaired=all.map(p=>({...p,name:typeof p.name==="string"?p.name.slice(0,MAX_PROJECT_NAME):p.name,description:typeof p.description==="string"?p.description.slice(0,MAX_PROJECT_DESCRIPTION):p.description}));
+  try{
+   preserveCorrupt(raw);
+   writeVerified(KEY,JSON.stringify(repaired));
+   state.recovered=true;
+   state.reason="Vanhan projektitallennuksen liian pitkä nimi tai kuvaus lyhennettiin turvalliseen rajaan. Projektien CAD-arvoja ei muutettu.";
+   repairActive(repaired);
+   return true
+  }catch(e){state.error=e?.message||String(e);state.reason="Vanhan projektitekstin automaattinen migraatio epäonnistui.";return false}
+ }
  function restoreBackup(backup,reason){
   try{
    const restored=JSON.stringify(backup);
@@ -61,6 +76,7 @@
   }
   const main=parse(mainRaw);
   if(main){repairActive(main);return}
+  if(repairLegacyText(mainRaw))return;
   const backup=parse(backupRaw||"");
   if(backup){preserveCorrupt(mainRaw);restoreBackup(backup,`Vioittunut projektitallennus palautettiin rakenteellisesti tarkistetusta paikallisesta varmuuskopiosta (${backup.length} projektia).`);return}
   if(salvageValid(mainRaw))return;
