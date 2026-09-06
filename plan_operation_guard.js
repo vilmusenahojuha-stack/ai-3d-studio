@@ -7,7 +7,7 @@
  const positive=v=>finite(v)&&Number(v)>0;
  function fingerprint(raw){try{return JSON.stringify(raw)}catch{return null}}
  function plateHoles(raw){
-  const out=[],seen=new Set(),add=(h,label)=>{if(out.length>MAX_HOLES)return;if(!h||typeof h!=="object"||Array.isArray(h)){out.push({invalid:true,label});return}const x=Number(h.x??0),y=Number(h.y??0),d=Number(h.diameter??h.d),key=[x,y,d].map(v=>Number.isFinite(v)?v.toFixed(6):String(v)).join("|");if(seen.has(key))return;seen.add(key);out.push({x,y,d,label})};
+  const out=[],add=(h,label)=>{if(out.length>=MAX_HOLES+1)return;if(!h||typeof h!=="object"||Array.isArray(h)){out.push({invalid:true,label});return}const x=Number(h.x??0),y=Number(h.y??0),d=Number(h.diameter??h.d);out.push({x,y,d,label})};
   const p=raw.parameters||{},ph=p.holes;if(ph!=null&&!Array.isArray(ph))out.push({invalid:true,label:"parameters.holes"});else for(const [i,h] of (ph||[]).slice(0,MAX_HOLES+1).entries())add(h,`parameters.holes ${i+1}`);if(p.centerHole)add(typeof p.centerHole==="number"?{x:0,y:0,diameter:p.centerHole}:p.centerHole,"parameters.centerHole");
   for(const op of (raw.operations||[]).slice(0,MAX_OPS+1)){if(op?.type==="hole")add(op,"hole");if(op?.type==="holes"&&Array.isArray(op.holes))for(const [i,h] of op.holes.slice(0,MAX_HOLES+1).entries())add(h,`holes ${i+1}`)}return out
  }
