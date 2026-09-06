@@ -1,6 +1,6 @@
 "use strict";
 (() => {
-  const OUTER_N=64, HOLE_N=32, el=id=>document.getElementById(id);
+  const OUTER_N=64, HOLE_N=32, MAX_MM=5000, el=id=>document.getElementById(id);
 
   function resamplePolygon(points,n=OUTER_N){
     const seg=[];let total=0;
@@ -54,7 +54,7 @@
   function parseCustomHoles(raw){
     const text=String(raw||"");if(text.length>50000)throw Error("Mukautettujen reikien syöte on liian pitkä.");
     const holes=[];for(const [i,line] of text.split(/\r?\n/).entries()){
-      const s=line.trim();if(!s)continue;if(holes.length>=200)throw Error("Mukautettuja reikiä voi olla enintään 200.");const parts=s.replace(/,/g,".").split(/[;\s]+/).filter(Boolean);if(parts.length!==3)throw Error(`Mukautettu reikä rivillä ${i+1}: käytä muotoa X;Y;Ø.`);const [x,y,d]=parts.map(Number);if(![x,y,d].every(Number.isFinite)||d<=0)throw Error(`Mukautettu reikä rivillä ${i+1}: tarkista numerot ja halkaisija.`);holes.push({x,y,d})
+      const s=line.trim();if(!s)continue;if(holes.length>=200)throw Error("Mukautettuja reikiä voi olla enintään 200.");const parts=s.replace(/,/g,".").split(/[;\s]+/).filter(Boolean);if(parts.length!==3)throw Error(`Mukautettu reikä rivillä ${i+1}: käytä muotoa X;Y;Ø.`);const [x,y,d]=parts.map(Number);if(![x,y,d].every(Number.isFinite)||Math.abs(x)>MAX_MM||Math.abs(y)>MAX_MM||d<=0||d>MAX_MM)throw Error(`Mukautettu reikä rivillä ${i+1}: X/Y pitää olla välillä -${MAX_MM}…${MAX_MM} mm ja Ø välillä 0…${MAX_MM} mm.`);holes.push({x,y,d})
     }return holes
   }
 
@@ -62,6 +62,7 @@
     const L=+el("plateL").value,W=+el("plateW").value,T=+el("plateT").value;
     const pattern=el("plateHolePattern")?.value||"none",holeD=+el("plateHoleD").value,edge=+el("plateHoleEdge")?.value,style=el("plateCornerStyle").value,size=+el("plateCornerSize").value;
     if(![L,W,T,holeD,edge,size].every(Number.isFinite))throw Error("Levyn mitoissa on virheellinen numeroarvo.");
+    if([L,W,T,holeD,edge,size].some(x=>Math.abs(x)>MAX_MM))throw Error(`Levyn mitat, reiät ja reuna-arvot saavat olla enintään ${MAX_MM} mm.`);
     if(!["none","center","four","custom"].includes(pattern))throw Error("Reikäjakoa ei tunnistettu.");
     if(!["square","round","chamfer"].includes(style))throw Error("Kulmien muotoa ei tunnistettu.");
     if(L<=2||W<=2||T<1)throw Error("Levyn mitat eivät ole mahdollisia.");
