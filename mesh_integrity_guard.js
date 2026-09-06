@@ -3,6 +3,7 @@
  const $=id=>document.getElementById(id);
  let checking=false,lastIssue="";
  function getMesh(){try{return currentMesh||null}catch{return null}}
+ function getFitMesh(){try{return currentFitMesh||null}catch{return null}}
  function inspectMesh(m){
   const tris=m?.triangles;
   if(!Array.isArray(tris)||!tris.length)return"Meshistä puuttuvat kolmiot.";
@@ -45,6 +46,16 @@
   if(issue){block(issue);return false}
   lastIssue="";return true
  }
+ function checkFit(){
+  if(checking)return false;
+  const fit=$("btnFitTest");
+  if(!fit||fit.disabled)return true;
+  const m=getFitMesh();
+  if(!m)return true;
+  const issue=inspectMesh(m);
+  if(issue){block("Sovitustesti: "+issue);return false}
+  lastIssue="";return true
+ }
  function loadMultipart(){
   if(document.querySelector('script[data-ai3d-multipart],script[src^="multipart_projects.js"]'))return;
   const s=document.createElement("script");
@@ -63,8 +74,9 @@
   if(status)obs.observe(status,{childList:true,subtree:true,characterData:true});
   if(validation)obs.observe(validation,{childList:true,subtree:true,characterData:true});
   $("btnDownload")?.addEventListener("click",e=>{if(!check()){e.preventDefault();e.stopImmediatePropagation()}},true);
+  $("btnFitTest")?.addEventListener("click",e=>{if(!checkFit()){e.preventDefault();e.stopImmediatePropagation()}},true);
   setTimeout(check,50);loadMultipart()
  }
- window.AI3DMeshIntegrity={check,inspect:inspectMesh,get lastIssue(){return lastIssue}};
+ window.AI3DMeshIntegrity={check,checkFit,inspect:inspectMesh,get lastIssue(){return lastIssue}};
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
