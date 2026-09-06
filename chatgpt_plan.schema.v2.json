@@ -43,7 +43,7 @@
   "allOf": [
     {
       "if": { "properties": { "partType": { "const": "mountingPlate" } } },
-      "then": { "properties": { "parameters": { "required": ["length", "width", "thickness"], "properties": { "length": { "$ref": "#/$defs/positiveMm" }, "width": { "$ref": "#/$defs/positiveMm" }, "thickness": { "$ref": "#/$defs/positiveMm" }, "cornerRadius": { "$ref": "#/$defs/nonNegativeMm" }, "chamfer": { "$ref": "#/$defs/nonNegativeMm" } } } } }
+      "then": { "properties": { "parameters": { "required": ["length", "width", "thickness"], "properties": { "length": { "$ref": "#/$defs/positiveMm" }, "width": { "$ref": "#/$defs/positiveMm" }, "thickness": { "$ref": "#/$defs/positiveMm" }, "cornerRadius": { "$ref": "#/$defs/nonNegativeMm" }, "chamfer": { "$ref": "#/$defs/nonNegativeMm" }, "centerHole": { "oneOf": [ { "$ref": "#/$defs/positiveMm" }, { "type": "object", "required": ["diameter"], "properties": { "diameter": { "$ref": "#/$defs/positiveMm" } }, "additionalProperties": true } ] }, "holes": { "type": "array", "maxItems": 200, "items": { "$ref": "#/$defs/hole" } } } } } }
     },
     {
       "if": { "properties": { "partType": { "const": "sleeve" } } },
