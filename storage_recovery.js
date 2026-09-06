@@ -2,10 +2,10 @@
 (()=>{
  const KEY="ai3d:projects:v3",BACKUP=KEY+":backup",CORRUPT=KEY+":corrupt";
  const ALLOWED=new Set(["lightSign","spike","plug","sleeve","plate","adapter","enclosure"]);
- const BLOCKED_KEYS=new Set(["__proto__","prototype","constructor"]);
+ const BLOCKED_KEYS=new Set(["__proto__","prototype","constructor"]),MAX_PROJECT_NAME=120,MAX_PROJECT_DESCRIPTION=1000;
  const state={checked:false,recovered:false,repairedActive:false,reason:"",error:""};
  function validValues(v){if(!v||typeof v!=="object"||Array.isArray(v))return false;const e=Object.entries(v);if(e.length>100)return false;return e.every(([k,x])=>k.length<=160&&!BLOCKED_KEYS.has(k)&&(x===null||["string","number","boolean"].includes(typeof x))&&(typeof x!=="number"||Number.isFinite(x))&&(typeof x!=="string"||x.length<=50000))}
- function validProject(p){return!!(p&&typeof p==="object"&&!Array.isArray(p)&&typeof p.id==="string"&&p.id.trim()&&p.id.length<=160&&ALLOWED.has(p.type)&&validValues(p.values))}
+ function validProject(p){return!!(p&&typeof p==="object"&&!Array.isArray(p)&&typeof p.id==="string"&&p.id.trim()&&p.id.length<=160&&ALLOWED.has(p.type)&&validValues(p.values)&&(p.name==null||(typeof p.name==="string"&&p.name.length<=MAX_PROJECT_NAME))&&(p.description==null||(typeof p.description==="string"&&p.description.length<=MAX_PROJECT_DESCRIPTION)))}
  function parseArray(raw){try{const v=JSON.parse(raw);return Array.isArray(v)?v:null}catch{return null}}
  function uniqueValidItems(items){const ids=new Set(),out=[];for(const p of items||[]){if(!validProject(p)||ids.has(p.id))continue;ids.add(p.id);out.push(p)}return out}
  function parse(raw){const v=parseArray(raw);if(!v)return null;return uniqueValidItems(v).length===v.length?v:null}
