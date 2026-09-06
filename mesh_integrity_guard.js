@@ -45,7 +45,18 @@
   if(issue){block(issue);return false}
   lastIssue="";return true
  }
- function loadMultipart(){if(document.querySelector('script[data-ai3d-multipart]'))return;const s=document.createElement("script");s.src="multipart_projects.js?v=1.3";s.dataset.ai3dMultipart="1";document.body.appendChild(s)}
+ function loadMultipart(){
+  if(document.querySelector('script[data-ai3d-multipart],script[src^="multipart_projects.js"]'))return;
+  const s=document.createElement("script");
+  s.src="multipart_projects.js?v=1.3";
+  s.dataset.ai3dMultipart="1";
+  s.onerror=()=>{
+   s.remove();
+   const status=$("status");
+   if(status&&!/^Virhe\s*:/i.test(status.textContent||""))status.textContent="Varoitus: moniosaprojektien CAD-lisäosaa ei voitu ladata. Perusmallit ovat edelleen käytettävissä.";
+  };
+  document.body.appendChild(s)
+ }
  function init(){
   const status=$("status"),validation=$("validation");
   const obs=new MutationObserver(()=>setTimeout(check,0));
