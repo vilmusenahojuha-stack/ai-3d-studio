@@ -2,7 +2,7 @@
   "name": "3d-studio",
   "private": true,
   "scripts": {
-    "test": "node tests/geometry_regression.test.js && node tests/centauri_regression.test.js && node tests/plan_guard_regression.test.js && node tests/project_storage_regression.test.js && node tests/project_transfer_regression.test.js && node tests/mounting_plate_regression.test.js && node tests/parametric_fallback_regression.test.js"
+    "test": "node tests/geometry_regression.test.js && node tests/centauri_regression.test.js && node tests/plan_guard_regression.test.js && node tests/project_storage_regression.test.js && node tests/project_transfer_regression.test.js && node tests/mounting_plate_regression.test.js && node tests/parametric_fallback_regression.test.js && node tests/cad_v2_project_determinism.test.js"
   },
   "devDependencies": {
     "earcut": "2.2.4"
