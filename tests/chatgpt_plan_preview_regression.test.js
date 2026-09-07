@@ -32,6 +32,10 @@ assert(source.includes("`${esc(k)}: <b>${esc(v)}</b>`"), "parameter names and sc
 assert(source.includes('V2_CAD_URL="cad_plan_v2.js?v=1.4"'), "ChatGPT CAD loader must use the same CAD Plan v2 cache version as index.html");
 assert(source.includes("s.onload=()=>{v2Load=null;if(window.AI3DPlanV2CAD)resolve()"), "successful CAD loader completion must clear the in-flight promise and verify the API");
 assert(source.includes("s.onerror=()=>{v2Load=null;s.remove?.();reject"), "failed CAD loader attempts must clear the in-flight promise so a transient network failure can be retried");
+assert(source.includes("if(!pending||applying)return;const plan=pending"), "apply must snapshot the accepted plan and block duplicate concurrent applies");
+assert(source.includes("if(!applied&&material&&previousMaterial!=null)material.value=previousMaterial"), "a failed CAD transfer must restore the material selection instead of leaving partial UI state");
+assert(source.includes("finally{applying=false;if(ap)ap.disabled=false}"), "apply lock and button state must always recover after success or failure");
+assert(!source.includes("value=pending.material"), "async CAD transfer must not keep reading mutable pending plan state after apply starts");
 
 const malicious = {
   schemaVersion: 2,
