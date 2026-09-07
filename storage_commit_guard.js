@@ -31,12 +31,18 @@
   finally{checking=false}
  }
  function scheduleLiveVerify(){clearTimeout(editTimer);editTimer=setTimeout(()=>verify(true),650)}
+ function handleStorageChange(e){
+  if(e?.storageArea&&e.storageArea!==localStorage)return;
+  if(e?.key!==KEY&&e?.key!==KEY+":active")return;
+  warn("Projektitallennus muuttui toisessa välilehdessä tai ikkunassa. Päivitä tämä sivu ennen jatkamista, jotta uudempi projektiversio ei ylikirjoitu.")
+ }
  function init(){
   const box=$("planSyncStatus");if(!box)return;
   new MutationObserver(()=>{if(checking)return;const ok=box.classList.contains("ok")||/^\s*✓/.test(box.textContent||"");if(ok)setTimeout(()=>verify(false),0)}).observe(box,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:["class"]});
   document.addEventListener("input",e=>{if(e.target?.closest?.(".controls")&&e.target.matches?.("input,select,textarea"))scheduleLiveVerify()},true);
   document.addEventListener("change",e=>{if(e.target?.closest?.(".controls")&&e.target.matches?.("input,select,textarea"))scheduleLiveVerify()},true);
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")setTimeout(()=>verify(true),0)});
+  window.addEventListener("storage",handleStorageChange);
   setTimeout(()=>verify(false),300)
  }
  window.AI3DStorageCommitGuard={verify,get lastIssue(){return lastIssue}};
