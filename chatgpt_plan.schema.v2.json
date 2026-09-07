@@ -56,6 +56,15 @@
       "then": { "properties": { "parameters": { "required": ["length", "width", "thickness"], "properties": { "length": { "$ref": "#/$defs/positiveMm" }, "width": { "$ref": "#/$defs/positiveMm" }, "thickness": { "$ref": "#/$defs/positiveMm" }, "cornerRadius": { "$ref": "#/$defs/nonNegativeMm" }, "chamfer": { "$ref": "#/$defs/nonNegativeMm" }, "centerHole": { "oneOf": [ { "$ref": "#/$defs/positiveMm" }, { "type": "object", "required": ["diameter"], "properties": { "diameter": { "$ref": "#/$defs/positiveMm" } }, "additionalProperties": true } ] }, "holes": { "type": "array", "maxItems": 200, "items": { "$ref": "#/$defs/hole" } } } } } }
     },
     {
+      "if": {
+        "properties": { "partType": { "not": { "const": "mountingPlate" } } },
+        "required": ["partType"]
+      },
+      "then": {
+        "properties": { "operations": { "maxItems": 0 } }
+      }
+    },
+    {
       "if": { "properties": { "partType": { "const": "sleeve" } } },
       "then": { "properties": { "parameters": { "required": ["insideDiameter", "length"], "properties": { "insideDiameter": { "$ref": "#/$defs/positiveMm" }, "outsideDiameter": { "$ref": "#/$defs/positiveMm" }, "wall": { "$ref": "#/$defs/positiveMm" }, "length": { "$ref": "#/$defs/positiveMm" } }, "anyOf": [ { "required": ["wall"] }, { "required": ["outsideDiameter"] } ] } } }
     },
