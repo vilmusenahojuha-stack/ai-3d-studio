@@ -2,6 +2,6 @@
   "name": "3d-studio",
   "private": true,
   "scripts": {
-    "test": "node tests/geometry_regression.test.js && node tests/centauri_regression.test.js && node tests/plan_guard_regression.test.js"
+    "test": "node tests/geometry_regression.test.js && node tests/centauri_regression.test.js && node tests/plan_guard_regression.test.js && node tests/project_storage_regression.test.js"
   }
 }
