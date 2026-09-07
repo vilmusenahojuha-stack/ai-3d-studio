@@ -4,7 +4,7 @@
  const fn=x=>typeof x==="function";
  const EAR_FALLBACK="https://unpkg.com/earcut@2.2.4/dist/earcut.min.js";
  const CAD_FALLBACKS=[
-  ["cadV2",()=>!cadV2Ready(),"cad_v2_editor.js?v=1.3"],
+  ["cadV2",()=>!cadV2Ready(),"cad_v2_editor.js?v=1.4"],
   ["parametric",()=>!parametricReady(),"parametric_parts.js?v=1.9"],
   ["customPlate",()=>!customPlateReady(),"plate_custom.js?v=1.7"]
  ];
