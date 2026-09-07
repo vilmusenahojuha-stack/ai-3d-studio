@@ -38,7 +38,7 @@ function element(overrides={}){
   };
 }
 
-function boot(storage,{fieldValues}={}){
+function boot(storage,{fieldValues,conflict=false}={}){
   const listeners={document:{},window:{}};
   const elements={
     btnNewProject:element(),
@@ -58,6 +58,7 @@ function boot(storage,{fieldValues}={}){
   };
   const window={
     AI3D:{setPart(){}},
+    AI3DStorageCommitGuard:conflict?{hasConflict:true,lastIssue:"Projektitallennus muuttui toisessa välilehdessä tai ikkunassa."}:null,
     addEventListener(name,fn){listeners.window[name]=fn;},
     setTimeout,
     clearTimeout
@@ -137,6 +138,21 @@ assert.deepStrictEqual(
   JSON.parse(JSON.stringify(rollback.context.window.AI3DProjects.active().values)),
   saved[0].values,
   "failed autosave must restore the in-memory project parameters"
+);
+
+const conflictStorage=new MemoryStorage(storage.snapshot());
+const beforeConflict=conflictStorage.snapshot();
+const conflict=boot(conflictStorage,{fieldValues:{sleeveID:30,sleeveWall:5,sleeveLength:60},conflict:true});
+conflict.listeners.window.pagehide();
+assert.deepStrictEqual(
+  conflictStorage.snapshot(),
+  beforeConflict,
+  "latched cross-tab conflict must block core project autosave from overwriting newer storage"
+);
+assert.deepStrictEqual(
+  JSON.parse(JSON.stringify(conflict.context.window.AI3DProjects.active().values)),
+  saved[0].values,
+  "blocked cross-tab autosave must restore the in-memory project values"
 );
 
 console.log("project storage regression: ok");
