@@ -29,6 +29,9 @@ assert(source.includes("${esc(plan?.projectName||\"ChatGPT-suunnitelma\")}"), "p
 assert(source.includes("${esc(plan?.summary||\"\")}"), "summary must be escaped before innerHTML rendering");
 assert(source.includes("errors.map(esc).join"), "validation errors must be escaped before innerHTML rendering");
 assert(source.includes("`${esc(k)}: <b>${esc(v)}</b>`"), "parameter names and scalar values must be escaped in preview formatting");
+assert(source.includes('V2_CAD_URL="cad_plan_v2.js?v=1.4"'), "ChatGPT CAD loader must use the same CAD Plan v2 cache version as index.html");
+assert(source.includes("s.onload=()=>{v2Load=null;if(window.AI3DPlanV2CAD)resolve()"), "successful CAD loader completion must clear the in-flight promise and verify the API");
+assert(source.includes("s.onerror=()=>{v2Load=null;s.remove?.();reject"), "failed CAD loader attempts must clear the in-flight promise so a transient network failure can be retried");
 
 const malicious = {
   schemaVersion: 2,
