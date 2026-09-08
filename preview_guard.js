@@ -67,8 +67,8 @@
   if(status)new MutationObserver(inspect).observe(status,{childList:true,subtree:true,characterData:true});
   if(validation)new MutationObserver(inspect).observe(validation,{childList:true,subtree:true,characterData:true});
   if(sync)new MutationObserver(inspect).observe(sync,{childList:true,subtree:true,characterData:true});
-  document.addEventListener("input",geometryInputChanged,true);
-  document.addEventListener("change",geometryInputChanged,true);
+  document.addEventListener?.("input",geometryInputChanged,true);
+  document.addEventListener?.("change",geometryInputChanged,true);
   inspect()
  }
  window.AI3DPreviewGuard={clear:clearPreview,check:inspect,failureReason};
