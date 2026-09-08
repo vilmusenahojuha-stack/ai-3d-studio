@@ -83,4 +83,42 @@ assert.deepStrictEqual(
   "sleeve just above the CAD length minimum with exactly 1 mm radial wall must remain valid"
 );
 
+const legacyBase = {
+  schemaVersion: 1,
+  status: "ready",
+  projectName: "legacy sleeve",
+  partType: "sleeve",
+  material: "PETG",
+  values: { sleeveID: 20, sleeveWall: 2, sleeveLength: 30 }
+};
+assert.deepStrictEqual(Array.from(validate(legacyBase)), [], "normal Schema v1 sleeve must remain valid");
+
+const legacyThinWall = {
+  ...legacyBase,
+  values: { ...legacyBase.values, sleeveWall: 0.8 }
+};
+assert(
+  Array.from(validate(legacyThinWall)).some(x => x.includes("vähintään 1 mm seinämän")),
+  "Schema v1 sleeve wall must match buildSleeve minimum of 1 mm"
+);
+
+const legacyTooShort = {
+  ...legacyBase,
+  values: { ...legacyBase.values, sleeveLength: 2 }
+};
+assert(
+  Array.from(validate(legacyTooShort)).some(x => x.includes("yli 2 mm")),
+  "Schema v1 sleeve length must match buildSleeve requirement of more than 2 mm"
+);
+
+const legacyBoundaryOk = {
+  ...legacyBase,
+  values: { ...legacyBase.values, sleeveWall: 1, sleeveLength: 2.01 }
+};
+assert.deepStrictEqual(
+  Array.from(validate(legacyBoundaryOk)),
+  [],
+  "Schema v1 sleeve at the CAD wall boundary and just above the length boundary must remain valid"
+);
+
 console.log("ChatGPT sleeve validation regression: OK");
