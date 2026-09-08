@@ -105,7 +105,7 @@ function makeElement(overrides={}){
   window.AI3DStorageCommitGuard.hasConflict=false;
   prevented=false;stopped=false;
   clickHandler(event);
-  assert.strictEqual(setPartCalls,1,"normal project opening must remain available when there is no storage conflict");
+  assert.strictEqual(setPartCalls,0,"normal project click preflight must leave CAD generation to projects.js so the model is generated only once");
   assert.strictEqual(prevented,false,"normal project click must not be blocked");
 }
 
