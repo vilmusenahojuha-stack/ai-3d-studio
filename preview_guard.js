@@ -1,6 +1,7 @@
 "use strict";
 (()=>{
  const $=id=>document.getElementById(id);
+ const NON_GEOMETRY_PART_FIELDS=new Set(["filamentPriceKg","ledCost","powerCost","miscCost"]);
  let clearing=false,lastError="";
  function clearPreview(reason=""){
   if(clearing)return;
@@ -52,11 +53,22 @@
    try{if(currentMesh||currentFitMesh)clearPreview(reason)}catch{}
   }
  }
+ function geometryInputChanged(e){
+  const target=e?.target;
+  if(!target?.closest?.(".part-fields")||NON_GEOMETRY_PART_FIELDS.has(target.id))return;
+  if(!target.matches?.("input,select,textarea"))return;
+  let hasMesh=false;
+  try{hasMesh=!!(currentMesh||currentFitMesh)}catch{}
+  if(!hasMesh)return;
+  clearPreview("Mallin mittoja muutettiin. Luo ja tarkista 3D-malli uudelleen ennen STL-vientiä.")
+ }
  function init(){
   const status=$("status"),validation=$("validation"),sync=$("planSyncStatus");
   if(status)new MutationObserver(inspect).observe(status,{childList:true,subtree:true,characterData:true});
   if(validation)new MutationObserver(inspect).observe(validation,{childList:true,subtree:true,characterData:true});
   if(sync)new MutationObserver(inspect).observe(sync,{childList:true,subtree:true,characterData:true});
+  document.addEventListener?.("input",geometryInputChanged,true);
+  document.addEventListener?.("change",geometryInputChanged,true);
   inspect()
  }
  window.AI3DPreviewGuard={clear:clearPreview,check:inspect,failureReason};
