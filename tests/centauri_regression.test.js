@@ -124,9 +124,19 @@ function testBuildVolumeBoundary(runtime) {
   assert.match(elements.get("centauriStatus").innerHTML, /ylittää Centaurin 256 mm tulostusalueen/);
 }
 
+function testMissingPrimaryValidationControlFailsClosed(runtime) {
+  const { context, elements, api } = runtime;
+  context.currentMesh = boxMesh(120, 80, 35);
+  elements.delete("btnDownload");
+  api.status();
+  assert.equal(elements.get("btnCentauriStl").disabled, true, "Centauri-vienti pitää estää, jos ensisijaisen STL-validoinnin nappia ei ole saatavilla");
+  assert.match(elements.get("centauriStatus").innerHTML, /Mesh-tarkistus ei ole vielä hyväksytty/);
+}
+
 const runtime = makeRuntime();
 testOfficialProfile(runtime.api);
 testMeshBounds(runtime.api);
 testBuildVolumeBoundary(runtime);
+testMissingPrimaryValidationControlFailsClosed(runtime);
 
 console.log("centauri regression: OK");
