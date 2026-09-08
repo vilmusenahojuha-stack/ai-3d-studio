@@ -1,7 +1,7 @@
 "use strict";
 const assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path"),vm=require("node:vm");
 const ROOT=path.resolve(__dirname,"..");
-function el(extra={}){return{value:"",valueAsNumber:NaN,min:"",max:"",defaultValue:"",hidden:false,disabled:false,textContent:"",innerHTML:"",style:{},querySelector(){return null},querySelectorAll(){return[]},insertAdjacentHTML(){},...extra}}
+function el(extra={}){return{value:"",valueAsNumber:NaN,min:"",max:"",defaultValue:"",hidden:false,disabled:false,textContent:"",innerHTML:"",style:{},querySelector(){return null},querySelectorAll(){return[]},insertAdjacentHTML(){},appendChild(){},...extra}}
 const elements={
  partType:el({value:"adapter",onchange:null}),"fields-plate":el(),"fields-adapter":el(),"fields-enclosure":el(),btnGenerate:el({onclick:null}),material:el({value:"PETG"}),status:el(),validation:el(),btnDownload:el(),btnFitTest:el(),dimensions:el(),partTitle:el(),
  adapterLength:el({valueAsNumber:30,min:"2",max:"5000"}),adapterID1:el({valueAsNumber:20,min:"0.1",max:"5000"}),adapterID2:el({valueAsNumber:20,min:"0.1",max:"5000"}),adapterOD1:el({valueAsNumber:26,min:"0.1",max:"5000"}),adapterOD2:el({valueAsNumber:26,min:"0.1",max:"5000"}),
