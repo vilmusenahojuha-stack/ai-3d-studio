@@ -37,7 +37,7 @@ assert(source.includes("if(!applied&&material&&previousMaterial!=null)material.v
 assert(source.includes("finally{applying=false;if(ap)ap.disabled=false}"), "apply lock and button state must always recover after success or failure");
 assert(!source.includes("value=pending.material"), "async CAD transfer must not keep reading mutable pending plan state after apply starts");
 
-const malicious = {
+const validAdapter = {
   schemaVersion: 2,
   status: "ready",
   projectName: "safe",
@@ -45,9 +45,49 @@ const malicious = {
   material: "PETG",
   parameters: { length: 50, insideDiameter1: 20, insideDiameter2: 25, wall: 2 }
 };
-assert.deepStrictEqual(Array.from(api.validate(malicious)), [], "valid v2 adapter should remain accepted after preview hardening");
-const canonical = api.canonical(malicious);
+assert.deepStrictEqual(Array.from(api.validate(validAdapter)), [], "valid v2 adapter should remain accepted after preview hardening");
+const canonical = api.canonical(validAdapter);
 assert.strictEqual(canonical.partType, "adapter");
 assert.strictEqual(canonical.parameters.length, 50);
+
+const thinAdapter = {
+  ...validAdapter,
+  parameters: { length: 50, insideDiameter1: 20, insideDiameter2: 25, outsideDiameter1: 20.6, outsideDiameter2: 25.6 }
+};
+assert(
+  Array.from(api.validate(thinAdapter)).some(x => x.includes("vähintään 0,4 mm seinämä")),
+  "ChatGPT validation must reject adapter dimensions that CAD buildAdapter would reject for insufficient wall thickness"
+);
+
+const incompleteAdapter = {
+  ...validAdapter,
+  parameters: { length: 50, insideDiameter1: 20, insideDiameter2: 25, outsideDiameter1: 28 }
+};
+assert(
+  Array.from(api.validate(incompleteAdapter)).some(x => x.includes("ulko")),
+  "ChatGPT validation must reject an adapter when the second outside diameter cannot be derived"
+);
+
+const impossibleEnclosure = {
+  schemaVersion: 2,
+  status: "ready",
+  projectName: "bad enclosure",
+  partType: "enclosure",
+  material: "PETG",
+  parameters: { width: 20, length: 20, height: 10, wall: 9, floorThickness: 9 }
+};
+assert(
+  Array.from(api.validate(impossibleEnclosure)).some(x => x.includes("sisätila")),
+  "ChatGPT validation must reject enclosure dimensions that CAD buildEnclosure would reject"
+);
+
+const badFloor = {
+  ...impossibleEnclosure,
+  parameters: { width: 80, length: 60, height: 30, wall: 2.4, floorThickness: 0.4 }
+};
+assert(
+  Array.from(api.validate(badFloor)).some(x => x.includes("floorThickness")),
+  "ChatGPT validation must reject enclosure floor thickness below the CAD minimum"
+);
 
 console.log("ChatGPT plan preview regression: OK");
