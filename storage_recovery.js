@@ -12,6 +12,7 @@
  function parse(raw){const v=parseArray(raw);if(!v)return null;return uniqueValidItems(v).length===v.length?v:null}
  function validIdSet(items){return new Set((items||[]).map(p=>p.id))}
  function writeVerified(key,value){localStorage.setItem(key,value);if(localStorage.getItem(key)!==value)throw Error("Palautetun projektitallennuksen varmennus epäonnistui.")}
+ function restoreStorage(key,value){try{if(value===null)localStorage.removeItem(key);else localStorage.setItem(key,value)}catch{}}
  function repairActive(items){
   const ids=validIdSet(items),fallback=items[0]?.id||"";
   try{
@@ -43,15 +44,17 @@
   }catch(e){state.error=e?.message||String(e);state.reason="Vanhan projektitekstin automaattinen migraatio epäonnistui.";return false}
  }
  function restoreBackup(backup,reason){
+  let prevMain=null,prevActive=null,captured=false;
   try{
    const restored=JSON.stringify(backup);
+   prevMain=localStorage.getItem(KEY);prevActive=localStorage.getItem(KEY+":active");captured=true;
    writeVerified(KEY,restored);
-   const ids=validIdSet(backup),active=localStorage.getItem(KEY+":active")||"";
+   const ids=validIdSet(backup),active=prevActive||"";
    if(!ids.has(active))writeVerified(KEY+":active",backup[0]?.id||"");
    state.recovered=true;
    state.reason=reason||`Projektitallennus palautettiin rakenteellisesti tarkistetusta paikallisesta varmuuskopiosta (${backup.length} projektia).`;
    return true
-  }catch(e){state.error=e?.message||String(e);state.reason="Projektivarmuuskopion automaattinen palautus epäonnistui.";return false}
+  }catch(e){if(captured){restoreStorage(KEY,prevMain);restoreStorage(KEY+":active",prevActive)}state.error=e?.message||String(e);state.reason="Projektivarmuuskopion automaattinen palautus epäonnistui eikä keskeneräistä palautusta jätetty käyttöön.";return false}
  }
  function salvageValid(raw){
   const all=parseArray(raw||"");if(!all)return false;
