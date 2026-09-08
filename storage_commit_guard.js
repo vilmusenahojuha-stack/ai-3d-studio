@@ -35,7 +35,7 @@
  function scheduleLiveVerify(){clearTimeout(editTimer);editTimer=setTimeout(()=>verify(true),650)}
  function handleStorageChange(e){
   if(e?.storageArea&&e.storageArea!==localStorage)return;
-  if(e?.key!==KEY&&e?.key!==KEY+":active")return;
+  if(e?.key!==null&&e?.key!==KEY&&e?.key!==KEY+":active")return;
   crossTabConflict=true;
   warn(CROSS_TAB_WARNING)
  }
