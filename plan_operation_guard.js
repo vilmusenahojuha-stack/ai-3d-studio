@@ -19,7 +19,7 @@
   if(style==="round"){const r=Math.max(0,Math.min(size,L/2,W/2));if(ax<=L/2-r||ay<=W/2-r)return true;return Math.hypot(ax-(L/2-r),ay-(W/2-r))<=r+1e-7}
   return true
  }
- function holeFits(h,L,W,style,size,margin=.6){const r=h.d/2+margin;for(let i=0;i<36;i++){const a=i*2*Math.PI/36;if(!insidePlate(h.x+r*Math.cos(a),h.y+r*Math.sin(a),L,W,style,size))return false}return true}
+ function holeFits(h,L,W,style,size,margin=.4){const r=h.d/2+margin;for(let i=0;i<32;i++){const a=i*2*Math.PI/32;if(!insidePlate(h.x+r*Math.cos(a),h.y+r*Math.sin(a),L,W,style,size))return false}return true}
  function validatePlateGeometry(raw,errors,warnings){
   const p=raw.parameters||{},L=Number(p.length),W=Number(p.width),holes=plateHoles(raw),cornerRaw=p.cornerRadius,chamferRaw=p.chamfer,cornerRadius=Math.max(0,Number(cornerRaw)||0),chamfer=Math.max(0,Number(chamferRaw)||0),style=cornerRadius>0?"round":chamfer>0?"chamfer":"square",size=cornerRadius||chamfer||0;
   if(!positive(L)||!positive(W))return;
@@ -29,15 +29,15 @@
   if(positive(cornerRaw)&&positive(chamferRaw))errors.push("Levylle ei voi määrittää yhtä aikaa sekä cornerRadius- että chamfer-arvoa; valitse yksi kulmatyyli.");
   if(Array.isArray(p.holes)&&p.holes.length>MAX_HOLES)errors.push(`parameters.holes sisältää yli ${MAX_HOLES} reikää.`);
   let holeBudget=(Array.isArray(p.holes)?p.holes.length:0)+(p.centerHole?1:0);for(const op of (raw.operations||[]).slice(0,MAX_OPS+1)){if(op?.type==="hole")holeBudget++;if(op?.type==="holes"&&Array.isArray(op.holes)){holeBudget+=op.holes.length;if(op.holes.length>MAX_HOLES)errors.push(`Yksi holes-operaatio sisältää yli ${MAX_HOLES} reikää.`)}}if(holeBudget>MAX_HOLES)errors.push(`Suunnitelmassa on yhteensä yli ${MAX_HOLES} reikää; jaa työ pienempiin osiin.`);
-  if(size>Math.min(L,W)/2-.2)errors.push("Levyn pyöristys/viiste on liian suuri levyn mitoille.");
+  if(size>=Math.min(L,W)/2)errors.push("Levyn pyöristys/viiste on liian suuri levyn mitoille.");
   for(let i=0;i<holes.length&&i<=MAX_HOLES;i++){
    const h=holes[i];if(h.invalid||!withinMm(h.x)||!withinMm(h.y)||!positiveMm(h.d)){errors.push(`Reikä ${i+1}: x/y pitää olla välillä -${MAX_MM}…${MAX_MM} mm ja diameter välillä 0…${MAX_MM} mm.`);continue}
-   if(!holeFits(h,L,W,style,size))errors.push(`Reikä ${i+1} on liian lähellä levyn todellista reunaa tai kulmaa; CAD tarvitsee vähintään 0,6 mm reunamarginaalin.`)
+   if(!holeFits(h,L,W,style,size))errors.push(`Reikä ${i+1} on liian lähellä levyn todellista reunaa tai kulmaa; CAD tarvitsee vähintään 0,4 mm reunamarginaalin.`)
   }
   const limit=Math.min(holes.length,MAX_HOLES);for(let i=0;i<limit;i++)for(let j=i+1;j<limit;j++){
    const a=holes[i],b=holes[j];if(a.invalid||b.invalid||![a.x,a.y,a.d,b.x,b.y,b.d].every(Number.isFinite)||a.d<=0||b.d<=0)continue;
    const gap=Math.hypot(a.x-b.x,a.y-b.y)-(a.d+b.d)/2;
-   if(gap<1)errors.push(`Reikien ${i+1} ja ${j+1} väli on alle 1 mm; CAD estää näin lähellä olevat reiät.`);else if(gap<2)warnings.push(`Reikien ${i+1} ja ${j+1} väli on alle 2 mm; tarkista mekaaninen kestävyys.`)
+   if(gap<.4)errors.push(`Reikien ${i+1} ja ${j+1} väli on alle 0,4 mm; CAD estää näin lähellä olevat reiät.`);else if(gap<2)warnings.push(`Reikien ${i+1} ja ${j+1} väli on alle 2 mm; tarkista mekaaninen kestävyys.`)
   }
  }
  function validateAdapterGeometry(raw,errors){
