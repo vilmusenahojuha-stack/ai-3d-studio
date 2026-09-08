@@ -71,11 +71,15 @@ assert(
   "negative numeric centerHole must be rejected before CAD"
 );
 
-const twoHundredOtherHoles = Array.from({ length: 200 }, (_, i) => ({
-  x: (i % 20) - 10,
-  y: Math.floor(i / 20) - 5,
-  diameter: 0.2
-}));
+const twoHundredOtherHoles = [];
+for (let y = -24; y <= 24 && twoHundredOtherHoles.length < 200; y += 4) {
+  for (let x = -44; x <= 44 && twoHundredOtherHoles.length < 200; x += 4) {
+    if (Math.hypot(x, y) <= 6) continue;
+    twoHundredOtherHoles.push({ x, y, diameter: 0.2 });
+  }
+}
+assert.strictEqual(twoHundredOtherHoles.length, 200, "test fixture must contain 200 geometrically separated holes");
+
 const overLimit = {
   ...base,
   parameters: { ...base.parameters, holes: twoHundredOtherHoles }
@@ -92,7 +96,7 @@ const boundaryOk = {
 assert.deepStrictEqual(
   Array.from(validate(boundaryOk)),
   [],
-  "199 listed holes plus centerHole must remain within the CAD limit"
+  "199 geometrically valid listed holes plus centerHole must remain within the CAD limit"
 );
 
 console.log("ChatGPT center hole validation regression: OK");
