@@ -5,7 +5,7 @@
  const materialTips={PLA:{layer:"0.20 mm",walls:"3",infill:"15–20 %",note:"Hyvä prototyyppeihin ja ensimmäisiin mittatesteihin."},PETG:{layer:"0.20 mm",walls:"4",infill:"25–35 %",note:"Hyvä mekaanisiin käyttöosiin. Tarkista sillat ja jäähdytys slicerin esikatselusta."},ASA:{layer:"0.20 mm",walls:"4–5",infill:"30–40 %",note:"ASA kuuluu Elegoon Centauri Carbon 2 Combo -mallin tuettuihin materiaaleihin. Käytä ASA:lle tarkoitettua tulostin- ja materiaaliprofiilia ja tarkista slicerin lämpötila-, jäähdytys- ja kotelointiasetukset ennen tulostusta."}};
  function inject(){if($("centauriPanel"))return;const actions=document.querySelector(".actions");if(!actions)return;const box=document.createElement("div");box.id="centauriPanel";box.className="centauri-panel";box.innerHTML=`<div class="section-title">Centauri Carbon 2 Combo</div><div id="centauriStatus" class="printer-status"><b>Ei vielä mallia.</b><span>Luo 3D-malli ensin.</span></div><div class="centauri-actions"><button id="btnCentauriStl" class="primary" disabled>LATAA STL CENTAURIIN</button><button id="btnCentauriGuide" class="tool">LATAA ASETUSOHJE</button></div><small class="centauri-note">3D Studio tarkistaa oikean mesh-rajauslaatikon, koon ja nykyisen mesh-validoinnin. Tulostettavuusanalyysi on neuvova arvio — slicerin esikatselu ratkaisee lopulliset tuet ja orientaation.</small>`;actions.after(box)}
  function mesh(){try{return currentMesh||null}catch{return null}}
- function meshOk(){return !$("btnDownload")?.disabled}
+ function meshOk(){const b=$("btnDownload");return !!b&&b.disabled===false}
  function bounds(m){
   const tris=m?.triangles;if(!Array.isArray(tris)||!tris.length)return null;
   let minX=Infinity,minY=Infinity,minZ=Infinity,maxX=-Infinity,maxY=-Infinity,maxZ=-Infinity,vertices=0;
