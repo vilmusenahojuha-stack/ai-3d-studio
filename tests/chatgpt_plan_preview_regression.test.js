@@ -90,4 +90,51 @@ assert(
   "ChatGPT validation must reject enclosure floor thickness below the CAD minimum"
 );
 
+const unsupportedOperation = {
+  schemaVersion: 2,
+  status: "ready",
+  projectName: "unsupported op",
+  partType: "mountingPlate",
+  material: "PETG",
+  parameters: { length: 100, width: 60, thickness: 4 },
+  operations: [{ type: "subtract" }]
+};
+assert(
+  Array.from(api.validate(unsupportedOperation)).some(x => x.includes("tukematon CAD-operaatio")),
+  "direct ChatGPT import must reject operations that Schema v2 and the CAD operation guard do not execute"
+);
+
+const operationOnAdapter = {
+  ...validAdapter,
+  operations: [{ type: "hole", x: 0, y: 0, diameter: 4 }]
+};
+assert(
+  Array.from(api.validate(operationOnAdapter)).some(x => x.includes("vain mountingPlate")),
+  "CAD operations must not be silently accepted for part types that do not execute them"
+);
+
+const validPlateOperation = {
+  schemaVersion: 2,
+  status: "ready",
+  projectName: "plate op",
+  partType: "mountingPlate",
+  material: "PETG",
+  parameters: { length: 100, width: 60, thickness: 4 },
+  operations: [{ type: "hole", x: 0, y: 0, diameter: 6 }]
+};
+assert.deepStrictEqual(
+  Array.from(api.validate(validPlateOperation)),
+  [],
+  "a supported mountingPlate hole operation must remain valid"
+);
+
+const tooManyHoles = {
+  ...validPlateOperation,
+  operations: [{ type: "holes", holes: Array.from({ length: 201 }, (_, i) => ({ x: i, y: 0, diameter: 1 })) }]
+};
+assert(
+  Array.from(api.validate(tooManyHoles)).some(x => x.includes("yli 200 reikää")),
+  "direct ChatGPT import must enforce the same 200-hole complexity bound as Schema v2"
+);
+
 console.log("ChatGPT plan preview regression: OK");
