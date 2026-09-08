@@ -94,7 +94,7 @@ const roundedCorner = {
   parameters: {
     ...base.parameters,
     cornerRadius: 12,
-    holes: [{ x: 43, y: 23, diameter: 4 }]
+    holes: [{ x: 46, y: 26, diameter: 4 }]
   }
 };
 assert(
