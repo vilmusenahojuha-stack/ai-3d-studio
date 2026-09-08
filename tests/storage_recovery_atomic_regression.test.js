@@ -24,7 +24,7 @@ vm.runInContext(fs.readFileSync("storage_recovery.js","utf8"),context,{filename:
 assert.equal(context.window.AI3DStorageRecovery.checked,true);
 assert.equal(context.window.AI3DStorageRecovery.recovered,false,"epäonnistunutta palautusta ei saa merkitä onnistuneeksi");
 assert.match(context.window.AI3DStorageRecovery.error,/simuloitu active-kirjoitusvirhe/);
-assert.match(context.window.AI3DStorageRecovery.reason,/keskeneräistä palautusta ei jätetty käyttöön/);
+assert.match(context.window.AI3DStorageRecovery.reason,/keskeneräistä palautusta jätetty käyttöön/);
 assert.equal(store.get(KEY),originalMain,"projektien päädata pitää palauttaa alkuperäiseksi jos active-kirjoitus epäonnistuu");
 assert.equal(store.get(ACTIVE),"p-missing","aktiivisen projektin tunnus pitää palauttaa alkuperäiseksi");
 assert.equal(store.get(BACKUP),backup,"kelvollinen varmuuskopio pitää säilyttää");
