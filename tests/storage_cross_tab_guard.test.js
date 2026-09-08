@@ -22,7 +22,7 @@ function makeRuntime(){
     dataset:{},
     classList:{contains(){return false;}}
   };
-  const localStorage=new MemoryStorage({[KEY]:"[]",[KEY+":active]:""});
+  const localStorage=new MemoryStorage({[KEY]:"[]",[KEY+":active"]:""});
   const document={
     readyState:"loading",
     visibilityState:"visible",
