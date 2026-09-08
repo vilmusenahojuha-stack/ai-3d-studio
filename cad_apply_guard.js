@@ -17,8 +17,9 @@
   return result
  };
  Object.defineProperty(api,"__applyGuard",{value:true,configurable:false,enumerable:false,writable:false});
- function wrapV2(){
-  const v2=window.AI3DPlanV2CAD;
+ let v2Value=window.AI3DPlanV2CAD;
+ function wrapV2(value=v2Value){
+  const v2=value;
   if(!v2||typeof v2.apply!=="function"||v2.__applyGuard)return false;
   const originalApply=v2.apply.bind(v2);
   v2.apply=plan=>{
@@ -30,6 +31,22 @@
   Object.defineProperty(v2,"__applyGuard",{value:true,configurable:false,enumerable:false,writable:false});
   return true
  }
- if(!wrapV2()&&document.readyState==="loading")document.addEventListener?.("DOMContentLoaded",wrapV2,{once:true});
+ function watchV2Assignment(){
+  if(v2Value)return wrapV2(v2Value);
+  let desc;
+  try{desc=Object.getOwnPropertyDescriptor(window,"AI3DPlanV2CAD")}catch{return false}
+  if(desc&&!desc.configurable)return false;
+  try{
+   Object.defineProperty(window,"AI3DPlanV2CAD",{
+    configurable:true,
+    enumerable:desc?.enumerable??true,
+    get(){return v2Value},
+    set(value){v2Value=value;wrapV2(value)}
+   });
+   return true
+  }catch{return false}
+ }
+ const watching=watchV2Assignment();
+ if(!watching&&!wrapV2()&&document.readyState==="loading")document.addEventListener?.("DOMContentLoaded",wrapV2,{once:true});
  window.AI3DCADApplyGuard={check:failureMessage,wrapV2};
 })();

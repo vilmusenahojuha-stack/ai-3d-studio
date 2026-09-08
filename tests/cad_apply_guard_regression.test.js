@@ -98,4 +98,24 @@ function runCase({ statusText = "Malli luotu ja tarkistettu.", failClass = false
   assert.strictEqual(v2Calls, 1, "failing CAD v2 apply must still call the original apply exactly once");
 }
 
+{
+  const ctx = runCase({ loading: false });
+  let v2Calls = 0;
+  ctx.window.AI3DPlanV2CAD = {
+    apply() {
+      v2Calls++;
+      ctx.status.textContent = "STL-lataus estetty virheen vuoksi.";
+      ctx.validation.querySelector = selector => selector === ".check.fail" ? {} : null;
+      return undefined;
+    }
+  };
+  assert.strictEqual(ctx.window.AI3DPlanV2CAD.__applyGuard, true, "CAD v2 API assigned after DOMContentLoaded must be guarded immediately");
+  assert.throws(
+    () => ctx.window.AI3DPlanV2CAD.apply({ partType: "adapter" }),
+    /STL-lataus estetty/,
+    "late runtime CAD v2 recovery must retain programmatic failure propagation"
+  );
+  assert.strictEqual(v2Calls, 1, "late-loaded failing CAD v2 apply must call the recovered implementation exactly once");
+}
+
 console.log("CAD apply guard regression: OK");
