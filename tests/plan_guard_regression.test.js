@@ -106,4 +106,28 @@ const edgeHole = structuredClone(validPlate);
 edgeHole.parameters.holes = [{ x: 57, y: 0, diameter: 8 }];
 assert.equal(validate(edgeHole).ok, false, "hole too close to real plate edge must be rejected");
 
+const cadValidEdgeMargin = structuredClone(validPlate);
+cadValidEdgeMargin.parameters.cornerRadius = 0;
+cadValidEdgeMargin.parameters.holes = [{ x: 55.5, y: 0, diameter: 8 }];
+assert.equal(validate(cadValidEdgeMargin).ok, true, "0.5 mm edge margin accepted by CAD must not be blocked by the plan guard");
+
+const cadValidHoleGap = structuredClone(validPlate);
+cadValidHoleGap.parameters.cornerRadius = 0;
+cadValidHoleGap.parameters.holes = [
+  { x: -4.3, y: 0, diameter: 8 },
+  { x: 4.3, y: 0, diameter: 8 }
+];
+assert.equal(validate(cadValidHoleGap).ok, true, "0.6 mm gap accepted by CAD must remain valid while still producing only a mechanical warning");
+assert(validate(cadValidHoleGap).warnings.length > 0, "close but CAD-valid holes should retain a strength warning");
+
+const cadValidCornerRadius = structuredClone(validPlate);
+cadValidCornerRadius.parameters.cornerRadius = 29.9;
+cadValidCornerRadius.parameters.holes = [];
+assert.equal(validate(cadValidCornerRadius).ok, true, "corner radius below the CAD half-width limit must not be rejected early");
+
+const cadInvalidCornerRadius = structuredClone(validPlate);
+cadInvalidCornerRadius.parameters.cornerRadius = 30;
+cadInvalidCornerRadius.parameters.holes = [];
+assert.equal(validate(cadInvalidCornerRadius).ok, false, "corner radius at the CAD half-width limit must still be rejected");
+
 console.log("CAD Plan operation guard regression tests passed");
