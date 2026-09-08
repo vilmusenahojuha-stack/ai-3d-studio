@@ -1,7 +1,7 @@
 "use strict";
 (()=>{
  const $=id=>document.getElementById(id);
- const NON_GEOMETRY_PART_FIELDS=new Set(["filamentPriceKg","ledCost","powerCost","miscCost"]);
+ const NON_GEOMETRY_PART_FIELDS=new Set(["material","filamentPriceKg","ledCost","powerCost","miscCost"]);
  let clearing=false,lastError="";
  function clearPreview(reason=""){
   if(clearing)return;
