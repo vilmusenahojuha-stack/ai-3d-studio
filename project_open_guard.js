@@ -1,6 +1,6 @@
 "use strict";
 (()=>{
- const KEY="ai3d:projects:v3",ACTIVE=KEY+":active",$=id=>document.getElementById(id),CROSS_TAB_WARNING="Projektitallennus muuttui toisessa välilehdessä tai ikkunassa. Päivitä tämä sivu ennen jatkamista, jotta uudempi projektiversio ei ylikirjoitu.";
+ const KEY="ai3d:projects:v3",$=id=>document.getElementById(id),CROSS_TAB_WARNING="Projektitallennus muuttui toisessa välilehdessä tai ikkunassa. Päivitä tämä sivu ennen jatkamista, jotta uudempi projektiversio ei ylikirjoitu.";
  const ALLOWED=new Set(["lightSign","spike","plug","sleeve","plate","adapter","enclosure"]),BLOCKED=new Set(["__proto__","prototype","constructor"]),MAX_PROJECT_NAME=120,MAX_PROJECT_DESCRIPTION=1000;
  function validValues(v){if(!v||typeof v!=="object"||Array.isArray(v))return false;const e=Object.entries(v);if(e.length>100)return false;return e.every(([k,x])=>k.length<=160&&!BLOCKED.has(k)&&(x===null||["string","number","boolean"].includes(typeof x))&&(typeof x!=="number"||Number.isFinite(x))&&(typeof x!=="string"||x.length<=50000))}
  function validProject(p){return!!(p&&typeof p==="object"&&!Array.isArray(p)&&typeof p.id==="string"&&p.id.trim()&&p.id.length<=160&&ALLOWED.has(p.type)&&validValues(p.values)&&(p.name==null||(typeof p.name==="string"&&p.name.length<=MAX_PROJECT_NAME))&&(p.description==null||(typeof p.description==="string"&&p.description.length<=MAX_PROJECT_DESCRIPTION)))}
