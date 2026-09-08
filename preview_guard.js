@@ -55,12 +55,12 @@
  }
  function geometryInputChanged(e){
   const target=e?.target;
-  if(!target?.closest?.(".part-fields")||NON_GEOMETRY_PART_FIELDS.has(target.id))return;
+  if(!(target?.id==="partType"||target?.closest?.(".part-fields"))||NON_GEOMETRY_PART_FIELDS.has(target.id))return;
   if(!target.matches?.("input,select,textarea"))return;
   let hasMesh=false;
   try{hasMesh=!!(currentMesh||currentFitMesh)}catch{}
   if(!hasMesh)return;
-  clearPreview("Mallin mittoja muutettiin. Luo ja tarkista 3D-malli uudelleen ennen STL-vientiä.")
+  clearPreview("Mallin mittoja tai osatyyppiä muutettiin. Luo ja tarkista 3D-malli uudelleen ennen STL-vientiä.")
  }
  function init(){
   const status=$("status"),validation=$("validation"),sync=$("planSyncStatus");
