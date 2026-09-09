@@ -6,28 +6,31 @@
  function clearPreview(reason=""){
   if(clearing)return;
   clearing=true;
-  try{currentMesh=null}catch{}
-  try{currentFitMesh=null}catch{}
-  const download=$("btnDownload"),fit=$("btnFitTest"),dims=$("dimensions"),overlay=$("measureOverlay"),validation=$("validation");
-  if(download)download.disabled=true;
-  if(fit)fit.disabled=true;
-  if(dims)dims.textContent="–";
-  if(overlay){overlay.innerHTML="";overlay.hidden=true}
-  if(validation&&reason&&!validation.querySelector?.(".check.fail")){
-   validation.innerHTML="";
-   const box=document.createElement("div"),title=document.createElement("strong");
-   box.className="check fail";title.textContent="✕ Tarkistus epäonnistui";box.append(title,document.createElement("br"),document.createTextNode(reason));validation.appendChild(box)
+  try{
+   try{currentMesh=null}catch{}
+   try{currentFitMesh=null}catch{}
+   const download=$("btnDownload"),fit=$("btnFitTest"),dims=$("dimensions"),overlay=$("measureOverlay"),validation=$("validation");
+   if(download)download.disabled=true;
+   if(fit)fit.disabled=true;
+   if(dims)dims.textContent="–";
+   if(overlay){overlay.innerHTML="";overlay.hidden=true}
+   if(validation&&reason&&!validation.querySelector?.(".check.fail")){
+    validation.innerHTML="";
+    const box=document.createElement("div"),title=document.createElement("strong");
+    box.className="check fail";title.textContent="✕ Tarkistus epäonnistui";box.append(title,document.createElement("br"),document.createTextNode(reason));validation.appendChild(box)
+   }
+   try{draw()}catch{
+    const canvas=$("preview");
+    const ctx=canvas?.getContext?.("2d");
+    if(ctx)ctx.clearRect(0,0,canvas.width,canvas.height)
+   }
+   setTimeout(()=>window.CentauriProfile?.check?.(),0);
+   setTimeout(()=>window.CentauriOrientation?.render&&$("orientationResult")?window.CentauriOrientation.render():null,0);
+   setTimeout(()=>window.AI3DPrintability?.render?.(),0);
+   lastError=reason||lastError
+  }finally{
+   clearing=false
   }
-  try{draw()}catch{
-   const canvas=$("preview");
-   const ctx=canvas?.getContext?.("2d");
-   if(ctx)ctx.clearRect(0,0,canvas.width,canvas.height)
-  }
-  setTimeout(()=>window.CentauriProfile?.check?.(),0);
-  setTimeout(()=>window.CentauriOrientation?.render&&$("orientationResult")?window.CentauriOrientation.render():null,0);
-  setTimeout(()=>window.AI3DPrintability?.render?.(),0);
-  lastError=reason||lastError;
-  clearing=false
  }
  function projectFailureReason(){
   const sync=$("planSyncStatus")?.textContent?.trim()||"",storageGuard=window.AI3DStorageCommitGuard;
