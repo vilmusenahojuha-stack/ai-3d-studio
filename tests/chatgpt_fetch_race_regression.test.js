@@ -20,6 +20,10 @@ assert(source.includes("byteLength(text)>PLAN_MAX_BYTES"), "responses without a 
 assert(!source.includes("text.length>PLAN_MAX_BYTES"), "multibyte plan content must not be checked by UTF-16 character count");
 assert(source.includes("JSON.parse(text)"), "plan JSON parsing must be explicit so malformed JSON gets a controlled error");
 assert(source.includes("Suunnitelmatiedosto ei ole kelvollista JSON-dataa."), "malformed ChatGPT plan JSON must produce a clear Finnish error");
+assert(source.includes("async function fetchPlan(){if(applying)return;"), "a new ChatGPT fetch must not start while an approved plan is still being applied");
+assert(source.includes('fp=$("btnFetchChatGPTPlan")'), "the apply path must track the fetch button during asynchronous CAD loading");
+assert(source.includes("if(fp)fp.disabled=true"), "ChatGPT fetch button must be visibly disabled while a plan is being applied");
+assert(source.includes("if(fp)fp.disabled=false"), "ChatGPT fetch button must be restored after apply success or failure");
 
 const sample = "ä".repeat(140000);
 assert(sample.length < 262144, "test fixture should stay below the old character limit");
