@@ -68,18 +68,20 @@ const backupRaw=JSON.stringify([backupProject]);
 
 {
   const storage=new MemoryStorage({[KEY]:"{broken",[ACTIVE]:"p-stale",[BACKUP]:backupRaw});
-  boot(storage);
+  const elements=boot(storage);
   assert.strictEqual(storage.getItem(KEY),backupRaw,"valid backup must replace corrupt main project data");
   assert.strictEqual(storage.getItem(ACTIVE),"p-backup","fallback recovery must also repair the active project id");
   assert.strictEqual(storage.getItem(BACKUP),backupRaw,"fallback recovery must preserve the backup itself");
+  assert.match(elements.projectStorageInfo.textContent,/Paikalliset projektit: 1\b/,"successful recovery should expose the recovered project count");
 }
 
 {
   const storage=new MemoryStorage({[KEY]:"{broken",[ACTIVE]:"p-stale",[BACKUP]:backupRaw},true);
-  boot(storage);
+  const elements=boot(storage);
   assert.strictEqual(storage.getItem(KEY),"{broken","failed fallback recovery must roll back the main project data");
   assert.strictEqual(storage.getItem(ACTIVE),"p-stale","failed fallback recovery must roll back the active project id");
   assert.strictEqual(storage.getItem(BACKUP),backupRaw,"failed fallback recovery must not alter the backup");
+  assert.match(elements.projectStorageInfo.textContent,/Paikalliset projektit: 0\b/,"failed recovery must not expose the rolled-back backup as active project data");
 }
 
 console.log("project tools read recovery regression: ok");
