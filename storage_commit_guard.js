@@ -16,10 +16,10 @@
   checking=true;
   try{
    if(crossTabConflict){warn(CROSS_TAB_WARNING);return false}
-   const active=window.AI3DProjects?.active?.();
-   if(!active?.id){lastIssue="";clearOwnWarning();return true}
    const items=read();
    if(!items){warn("Paikallinen projektitallennus ei läpäissyt rakennetarkistusta. Vie tärkeä työ JSON-varmuuskopioksi ennen sivun sulkemista.");return false}
+   const active=window.AI3DProjects?.active?.();
+   if(!active?.id){lastIssue="";clearOwnWarning();return true}
    const storedProject=items.find(p=>p.id===active.id),activeId=localStorage.getItem(KEY+":active")||"";
    if(!storedProject||activeId!==active.id){warn("Projekti on auki, mutta paikallinen tallennus ei varmistunut. Vie tärkeä työ JSON-varmuuskopioksi ennen sivun sulkemista.");return false}
    if(requireLive){

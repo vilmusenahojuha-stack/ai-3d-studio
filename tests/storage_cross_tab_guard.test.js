@@ -14,7 +14,7 @@ class MemoryStorage{
   removeItem(key){this.map.delete(key);}
 }
 
-function makeRuntime(){
+function makeRuntime(seed={}){
   const listeners={document:{},window:{}};
   const box={
     textContent:"",
@@ -22,7 +22,7 @@ function makeRuntime(){
     dataset:{},
     classList:{contains(){return false;}}
   };
-  const localStorage=new MemoryStorage({[KEY]:"[]",[KEY+":active"]:""});
+  const localStorage=new MemoryStorage({[KEY]:"[]",[KEY+":active"]:"",...seed});
   const document={
     readyState:"loading",
     visibilityState:"visible",
@@ -78,6 +78,14 @@ function makeRuntime(){
   assert.match(box.textContent,/toisessa välilehdessä tai ikkunassa/i,"localStorage.clear() in another tab must warn because it can remove project storage");
   assert.strictEqual(context.window.AI3DStorageCommitGuard.hasConflict,true,"cross-tab localStorage.clear() must latch a conflict until reload");
   assert.strictEqual(context.window.AI3DStorageCommitGuard.verify(),false,"verification must remain blocked after cross-tab localStorage.clear()");
+}
+
+{
+  const {box,context}=makeRuntime({[KEY]:"{broken-json"});
+  assert.strictEqual(context.window.AI3DProjects.active(),null,"regression setup must have no active project");
+  assert.strictEqual(context.window.AI3DStorageCommitGuard.verify(),false,"invalid project storage must fail closed even when no project is active");
+  assert.match(box.textContent,/ei läpäissyt rakennetarkistusta/i,"invalid project storage must remain visible instead of being reported healthy");
+  assert.match(context.window.AI3DStorageCommitGuard.lastIssue,/ei läpäissyt rakennetarkistusta/i,"guard state must retain the invalid-storage warning");
 }
 
 console.log("storage cross-tab guard: ok");
