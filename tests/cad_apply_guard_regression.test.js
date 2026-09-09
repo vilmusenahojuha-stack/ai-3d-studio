@@ -37,7 +37,7 @@ function runCase({ statusText = "Malli luotu ja tarkistettu.", failClass = false
     }
   };
 
-  vm.runInNewContext(source, { window, document, Error, Object, String });
+  vm.runInNewContext(source, { window, document, Error, Object, String, Number, Array, Math });
   return { window, calls: () => calls, status, validation, previewClears, fireReady: () => domReady?.() };
 }
 
@@ -151,6 +151,51 @@ function runCase({ statusText = "Malli luotu ja tarkistettu.", failClass = false
     "late runtime CAD v2 recovery must retain programmatic failure propagation"
   );
   assert.strictEqual(v2Calls, 1, "late-loaded failing CAD v2 apply must call the recovered implementation exactly once");
+}
+
+{
+  const ctx = runCase({ loading: false });
+  let v2Calls = 0;
+  ctx.window.AI3DPlanV2CAD = { apply(plan) { v2Calls++; return { plan }; } };
+  const atBoundary = {
+    schemaVersion: 2,
+    partType: "mountingPlate",
+    parameters: { length: 5000, width: 5000, thickness: 4, holes: [{ x: 2000, y: -2000, diameter: 500 }] },
+    operations: [{ type: "hole", x: 0, y: 0, diameter: 0.2 }]
+  };
+  const result = ctx.window.AI3DPlanV2CAD.apply(atBoundary);
+  assert.strictEqual(v2Calls, 1, "schema boundary-sized holes must still reach CAD v2");
+  assert.strictEqual(result.plan, atBoundary, "valid boundary plan must preserve the original plan reference");
+}
+
+{
+  const ctx = runCase({ loading: false });
+  let v2Calls = 0;
+  ctx.window.AI3DPlanV2CAD = { apply() { v2Calls++; return {}; } };
+  assert.throws(
+    () => ctx.window.AI3DPlanV2CAD.apply({ schemaVersion: 2, partType: "mountingPlate", parameters: { holes: [{ x: 2000.01, y: 0, diameter: 6 }] } }),
+    /-2000…2000 mm/,
+    "CAD apply guard must reject a hole coordinate outside the ChatGPT schema before geometry generation"
+  );
+  assert.strictEqual(v2Calls, 0, "out-of-schema hole coordinates must not reach CAD v2");
+  assert.ok(ctx.previewClears.length >= 1, "rejected hole coordinates must clear stale preview/export state");
+}
+
+{
+  const ctx = runCase({ loading: false });
+  let v2Calls = 0;
+  ctx.window.AI3DPlanV2CAD = { apply() { v2Calls++; return {}; } };
+  assert.throws(
+    () => ctx.window.AI3DPlanV2CAD.apply({ schemaVersion: 2, partType: "mountingPlate", parameters: { centerHole: { diameter: 500.01 } } }),
+    /0\.2…500 mm/,
+    "CAD apply guard must reject an oversized center hole before geometry generation"
+  );
+  assert.throws(
+    () => ctx.window.AI3DPlanV2CAD.apply({ schemaVersion: 2, partType: "mountingPlate", parameters: {}, operations: [{ type: "holes", holes: [{ x: 0, y: 0, diameter: 0.19 }] }] }),
+    /0\.2…500 mm/,
+    "CAD apply guard must reject an undersized operation hole before geometry generation"
+  );
+  assert.strictEqual(v2Calls, 0, "out-of-schema hole diameters must not reach CAD v2");
 }
 
 console.log("CAD apply guard regression: OK");
