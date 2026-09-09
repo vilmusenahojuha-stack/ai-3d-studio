@@ -31,4 +31,19 @@ assert.match(elements.status.textContent,/sisätila ei mahdu/);
 elements.enclosureW.valueAsNumber=80;
 assert.equal(window.AI3DV2Editor.apply("enclosure"),true,"valid enclosure must still reach CAD generator");
 assert.equal(applied.length,2);
+
+// A project/import error that happens before apply() must also invalidate any stale preview.
+context.currentMesh={stale:true};
+context.currentFitMesh={stale:true};
+elements.btnDownload.disabled=false;
+elements.btnFitTest.disabled=false;
+elements.dimensions.textContent="80 × 60 × 30 mm";
+assert.throws(()=>window.AI3D.setPart("adapter",{material:"ABS"}),/tulostusmateriaalia ei tueta/);
+assert.equal(context.currentMesh,null,"unsupported project material must clear stale main mesh");
+assert.equal(context.currentFitMesh,null,"unsupported project material must clear stale fit mesh");
+assert.equal(elements.btnDownload.disabled,true,"unsupported project material must disable stale STL download");
+assert.equal(elements.btnFitTest.disabled,true,"unsupported project material must disable stale fit-test download");
+assert.equal(elements.dimensions.textContent,"–","unsupported project material must clear stale dimensions");
+assert.match(elements.status.textContent,/^Virhe: .*tulostusmateriaalia ei tueta/);
+
 console.log("CAD v2 editor preflight regression: ok");
