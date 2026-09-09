@@ -3,8 +3,8 @@ const assert=require("assert"),fs=require("fs"),path=require("path"),vm=require(
 const root=path.resolve(__dirname,"..");
 const runtime=fs.readFileSync(path.join(root,"runtime_health_guard.js"),"utf8");
 const index=fs.readFileSync(path.join(root,"index.html"),"utf8");
-assert.match(index,/cad_v2_editor\.js\?v=1\.4/,"index.html must load the current CAD v2 editor cache version");
-assert.match(runtime,/\["cadV2",\(\)=>!cadV2Ready\(\),"cad_v2_editor\.js\?v=1\.4"\]/,"runtime fallback must use the same CAD v2 editor version");
+assert.match(index,/cad_v2_editor\.js\?v=1\.5/,"index.html must load the current CAD v2 editor cache version");
+assert.match(runtime,/\["cadV2",\(\)=>!cadV2Ready\(\),"cad_v2_editor\.js\?v=1\.5"\]/,"runtime fallback must use the same CAD v2 editor version");
 assert.match(runtime,/\["CAD v2 -editori",cadV2Ready\]/,"runtime health must report a missing CAD v2 editor");
 const appended=[];
 const warning={hidden:true,textContent:""};
@@ -25,5 +25,5 @@ assert.ok(window.AI3DRuntimeHealth.missing().includes("CAD v2 -editori"),"missin
 window.AI3DRuntimeHealth.retryDependencies();
 const v2=appended.find(s=>s.dataset.ai3dCadFallback==="cadV2");
 assert.ok(v2,"manual dependency retry must append a CAD v2 recovery script");
-assert.match(v2.src,/^cad_v2_editor\.js\?v=1\.4&healthRetry=\d+$/,"recovery script must be cache-busted without changing its pinned version");
+assert.match(v2.src,/^cad_v2_editor\.js\?v=1\.5&healthRetry=\d+$/,"recovery script must be cache-busted without changing its pinned version");
 console.log("CAD v2 runtime recovery regression: ok");
