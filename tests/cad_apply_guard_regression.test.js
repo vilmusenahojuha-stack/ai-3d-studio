@@ -7,17 +7,22 @@ const vm = require("vm");
 
 const source = fs.readFileSync(path.join(__dirname, "..", "cad_apply_guard.js"), "utf8");
 
-function runCase({ statusText = "Malli luotu ja tarkistettu.", failClass = false, loading = false } = {}) {
+function runCase({ statusText = "Malli luotu ja tarkistettu.", failClass = false, loading = false, throwSetPart = false } = {}) {
   const status = { textContent: statusText };
   const validation = { querySelector: selector => selector === ".check.fail" && failClass ? {} : null };
   let calls = 0;
   let domReady = null;
+  const previewClears = [];
   const window = {
     AI3D: {
       setPart(type, values) {
         calls++;
+        if (throwSetPart) throw Error("Alkuperäinen CAD-generointi kaatui.");
         return { type, values };
       }
+    },
+    AI3DPreviewGuard: {
+      clear(message) { previewClears.push(message); }
     }
   };
   const document = {
@@ -32,8 +37,8 @@ function runCase({ statusText = "Malli luotu ja tarkistettu.", failClass = false
     }
   };
 
-  vm.runInNewContext(source, { window, document, Error, Object });
-  return { window, calls: () => calls, status, validation, fireReady: () => domReady?.() };
+  vm.runInNewContext(source, { window, document, Error, Object, String });
+  return { window, calls: () => calls, status, validation, previewClears, fireReady: () => domReady?.() };
 }
 
 {
@@ -41,6 +46,17 @@ function runCase({ statusText = "Malli luotu ja tarkistettu.", failClass = false
   const result = window.AI3D.setPart("sleeve", { sleeveID: 20 });
   assert.strictEqual(calls(), 1, "valid programmatic CAD apply must call the original setPart once");
   assert.strictEqual(result.type, "sleeve", "valid apply must preserve the original return value");
+}
+
+{
+  const { window, calls, previewClears } = runCase({ throwSetPart: true });
+  assert.throws(
+    () => window.AI3D.setPart("adapter", {}),
+    /Alkuperäinen CAD-generointi kaatui/,
+    "an exception thrown before CAD status updates must still reach the caller"
+  );
+  assert.strictEqual(calls(), 1, "throwing apply must call the original setPart exactly once");
+  assert.deepStrictEqual(previewClears, ["Alkuperäinen CAD-generointi kaatui."], "throwing programmatic apply must clear stale preview state");
 }
 
 {
@@ -76,6 +92,25 @@ function runCase({ statusText = "Malli luotu ja tarkistettu.", failClass = false
   assert.strictEqual(v2Calls, 1, "valid CAD v2 apply must call the original apply once");
   assert.strictEqual(result.plan.partType, "adapter", "valid CAD v2 apply must preserve its return value");
   assert.strictEqual(ctx.window.AI3DPlanV2CAD.__applyGuard, true, "CAD v2 API must be guarded after it has loaded");
+}
+
+{
+  const ctx = runCase({ loading: true });
+  let v2Calls = 0;
+  ctx.window.AI3DPlanV2CAD = {
+    apply() {
+      v2Calls++;
+      throw Error("CAD v2 -generaattori kaatui ennen validointitilaa.");
+    }
+  };
+  ctx.fireReady();
+  assert.throws(
+    () => ctx.window.AI3DPlanV2CAD.apply({ partType: "enclosure" }),
+    /CAD v2 -generaattori kaatui/,
+    "a thrown CAD v2 exception must still reach the caller"
+  );
+  assert.strictEqual(v2Calls, 1, "throwing CAD v2 apply must call the original implementation exactly once");
+  assert.deepStrictEqual(ctx.previewClears, ["CAD v2 -generaattori kaatui ennen validointitilaa."], "throwing CAD v2 apply must clear stale preview state");
 }
 
 {
