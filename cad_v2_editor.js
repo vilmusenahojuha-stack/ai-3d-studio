@@ -19,6 +19,6 @@
  function apply(type){try{if(!V2_TYPES.has(type))throw Error("CAD v2 -editori ei tunnista osatyyppiä.");show(type);if(typeof window.AI3DPlanV2CAD?.apply!=="function")throw Error("CAD Plan v2 -generaattori ei latautunut.");window.AI3DPlanV2CAD.apply({schemaVersion:2,partType:type,material:$("material")?.value||DEFAULT_MATERIAL,parameters:parameters(type)});return true}catch(e){clearFailure(e?.message||"CAD-mallin generointi epäonnistui.");return false}}
  partType.onchange=()=>{if(V2_TYPES.has(partType.value))return apply(partType.value);restoreStandardUi();return oldChange?.call(partType)};
  btnGenerate.onclick=()=>V2_TYPES.has(partType.value)?apply(partType.value):oldGenerate?.call(btnGenerate);
- window.AI3D.setPart=(type,values={})=>{if(!V2_TYPES.has(type)){restoreStandardUi();return oldSetPart(type,values)}resetMaterial(values);partType.value=type;show(type);resetMissingValues(type,values);if(!apply(type))throw Error($("status")?.textContent||"CAD-mallin generointi epäonnistui.")};
+ window.AI3D.setPart=(type,values={})=>{if(!V2_TYPES.has(type)){restoreStandardUi();return oldSetPart(type,values)}try{resetMaterial(values);partType.value=type;show(type);resetMissingValues(type,values);if(!apply(type))throw Error($("status")?.textContent||"CAD-mallin generointi epäonnistui.")}catch(e){const message=e?.message||"CAD-mallin generointi epäonnistui.";clearFailure(message);throw e}};
  window.AI3DV2Editor={types:[...V2_TYPES],apply};
 })();
