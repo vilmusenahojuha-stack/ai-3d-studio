@@ -189,10 +189,34 @@ function testInvalidPlans(runtime) {
   );
 }
 
+function testFinishFailureClearsPreview(runtime) {
+  const download = runtime.document.getElementById("btnDownload");
+  const fit = runtime.document.getElementById("btnFitTest");
+  const dimensions = runtime.document.getElementById("dimensions");
+  download.disabled = false;
+  fit.disabled = false;
+  dimensions.textContent = "vanha mitta";
+
+  vm.runInContext("validate=()=>{throw Error('forced validation failure')}", runtime);
+  assert.throws(
+    () => runtime.window.AI3DPlanV2CAD.apply({
+      schemaVersion: 2,
+      partType: "adapter",
+      parameters: { length: 30, insideDiameter: 18, wall: 2 },
+    }),
+    /forced validation failure/,
+  );
+  assert.equal(runtime.__getCurrentMesh(), null, "epäonnistunut CAD v2 -viimeistely ei saa jättää meshiä aktiiviseksi");
+  assert.equal(download.disabled, true, "epäonnistunut CAD v2 -viimeistely estää stale-STL-latauksen");
+  assert.equal(fit.disabled, true, "epäonnistunut CAD v2 -viimeistely estää stale-sovitustestin");
+  assert.equal(dimensions.textContent, "–", "epäonnistunut CAD v2 -viimeistely tyhjentää stale-mitat");
+}
+
 const runtime = makeRuntime();
 testAdapter(runtime);
 testEnclosure(runtime);
 testWallDerivedAdapter(runtime);
 testInvalidPlans(runtime);
+testFinishFailureClearsPreview(runtime);
 
 console.log("geometry regression: OK");
