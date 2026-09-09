@@ -236,5 +236,27 @@ async function boot(storage,chatgptPlan){
   assert.strictEqual(storage.getItem(ACTIVE),beforeInvalidActive,"invalid import must preserve the active project");
   assert.ok(app.alerts.some(x=>x.includes("tuonti epäonnistui")),"invalid import must report a clear failure");
 
+  const aliasPlan={
+    schemaVersion:2,
+    projectName:"Alias-päätytulppa",
+    summary:"Schema v2 alias pitää voida muokata projektina",
+    partType:"plug",
+    material:"PETG",
+    parameters:{width:40,height:30,wall:2,clearance:.25,insertDepth:12,capThickness:3,overhang:1}
+  };
+  const aliasStorage=new MemoryStorage({[KEY]:JSON.stringify([originalProject]),[ACTIVE]:originalProject.id});
+  const aliasApp=await boot(aliasStorage,aliasPlan);
+  aliasApp.context.window.AI3DProjects.openPlan("chatgpt-current");
+  const aliasProjects=JSON.parse(aliasStorage.getItem(KEY));
+  assert.strictEqual(aliasProjects.length,2,"a validated Schema v2 alias must be importable as an editable project");
+  const aliasCopy=aliasProjects.find(p=>p.id!==originalProject.id);
+  assert.ok(aliasCopy,"Schema v2 alias must create an editable project copy");
+  assert.strictEqual(aliasCopy.type,"plug","Schema v2 plug alias must normalize to the editable plug type");
+  assert.strictEqual(aliasCopy.values.tubeW,40);
+  assert.strictEqual(aliasCopy.values.tubeH,30);
+  assert.strictEqual(aliasCopy.values.tubeWall,2);
+  assert.strictEqual(aliasCopy.values.insertDepth,12);
+  assert.ok(aliasApp.setPartCalls.some(x=>x.type==="plug"),"alias import must reach CAD using the editable canonical type");
+
   console.log("project transfer regression: ok");
 })().catch(err=>{console.error(err);process.exitCode=1;});
