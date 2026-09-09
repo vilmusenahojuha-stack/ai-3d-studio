@@ -43,7 +43,8 @@ runTimers();
 const centauriButton=elements.get("btnCentauriStl");
 const buttonObserver=observers.find(x=>x.target===centauriButton);
 assert.ok(buttonObserver,"Centauri export button must be observed for stale re-enables");
-assert.deepStrictEqual(buttonObserver.options,{attributes:true,attributeFilter:["disabled"]});
+assert.equal(buttonObserver.options?.attributes,true,"Centauri export observer must watch attributes");
+assert.equal(Array.from(buttonObserver.options?.attributeFilter||[]).join(","),"disabled","Centauri export observer must only watch disabled state");
 
 guard.refresh(true);
 assert.equal(timers.size,1,"refresh must schedule a compatibility check");
