@@ -69,10 +69,23 @@ const backupRaw=JSON.stringify([backupProject]);
 {
   const storage=new MemoryStorage({[KEY]:"{broken",[ACTIVE]:"p-stale",[BACKUP]:backupRaw});
   const elements=boot(storage);
-  assert.strictEqual(storage.getItem(KEY),backupRaw,"valid backup must replace corrupt main project data");
+  assert.strictEqual(storage.getItem(KEY),backupRaw,"valid non-empty backup must replace corrupt main project data");
   assert.strictEqual(storage.getItem(ACTIVE),"p-backup","fallback recovery must also repair the active project id");
   assert.strictEqual(storage.getItem(BACKUP),backupRaw,"fallback recovery must preserve the backup itself");
   assert.match(elements.projectStorageInfo.textContent,/Paikalliset projektit: 1\b/,"successful recovery should expose the recovered project count");
+}
+
+{
+  const salvageable={...backupProject,id:"p-salvage",name:"Pelastettava projekti"};
+  const invalid={...backupProject,id:"p-invalid",type:"unknown"};
+  const corruptMain=JSON.stringify([salvageable,invalid]);
+  const storage=new MemoryStorage({[KEY]:corruptMain,[ACTIVE]:"p-invalid",[BACKUP]:"[]"});
+  const elements=boot(storage);
+  const recovered=JSON.parse(storage.getItem(KEY));
+  assert.deepStrictEqual(recovered.map(p=>p.id),["p-salvage"],"salvageable main projects must win over an empty valid backup");
+  assert.strictEqual(storage.getItem(ACTIVE),"p-salvage","salvage recovery must repair the active project id");
+  assert.strictEqual(storage.getItem(BACKUP),"[]","salvage recovery must preserve the empty backup");
+  assert.match(elements.projectStorageInfo.textContent,/Paikalliset projektit: 1\b/,"salvage recovery should expose the recovered project count");
 }
 
 {
