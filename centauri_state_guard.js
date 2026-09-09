@@ -3,7 +3,7 @@
  const $=id=>document.getElementById(id);
  const nonGeometryIds=new Set(["material","filamentPriceKg","ledCost","powerCost","miscCost"]);
  let timer=0,dirty=false;
- function refresh(clearDirty=false){clearTimeout(timer);timer=setTimeout(()=>{timer=0;window.CentauriProfile?.check?.();if(clearDirty)dirty=false},0)}
+ function refresh(clearDirty=false){clearTimeout(timer);timer=setTimeout(()=>{timer=0;const check=window.CentauriProfile?.check;if(typeof check!=="function")return;try{check.call(window.CentauriProfile);if(clearDirty)dirty=false}catch{if(clearDirty)markGeometryDirty()}},0)}
  function geometryInput(target){return!!target&&!nonGeometryIds.has(target.id)&&!!(target.closest?.(".part-fields")||target.id==="partType")}
  function markGeometryDirty(){
   clearTimeout(timer);timer=0;
