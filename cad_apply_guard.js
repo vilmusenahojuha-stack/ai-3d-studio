@@ -1,6 +1,6 @@
 "use strict";
 (()=>{
- const $=id=>document.getElementById(id),api=window.AI3D;
+ const $=id=>document.getElementById(id),api=window.AI3D,HOLE_XY_MAX=2000,HOLE_D_MIN=.2,HOLE_D_MAX=500;
  if(!api||typeof api.setPart!=="function"||api.__applyGuard)return;
  const original=api.setPart.bind(api);
  function failureMessage(){
@@ -22,6 +22,22 @@
   if(status&&!/^Virhe\s*:/i.test(status.textContent||""))status.textContent="Virhe: "+message;
   try{draw()}catch{}
  }
+ function validatePlanHoleBounds(plan){
+  if(!plan||plan.schemaVersion!==2||!["mountingPlate","plate"].includes(plan.partType))return true;
+  const holes=[],add=(h,label)=>{if(h==null)return;if(typeof h==="number"){holes.push({x:0,y:0,d:h,label});return}if(!h||typeof h!=="object"||Array.isArray(h))throw Error(`${label}: reiän tiedot eivät ole kelvollinen objekti.`);holes.push({x:h.x??0,y:h.y??0,d:h.diameter??h.d,label})};
+  const p=plan.parameters||{};
+  if(Array.isArray(p.holes))p.holes.forEach((h,i)=>add(h,`parameters.holes ${i+1}`));
+  if(p.centerHole!=null)add(p.centerHole,"parameters.centerHole");
+  for(const [i,op] of (Array.isArray(plan.operations)?plan.operations:[]).entries()){
+   if(op?.type==="hole")add(op,`operations ${i+1}`);
+   if(op?.type==="holes"&&Array.isArray(op.holes))op.holes.forEach((h,j)=>add(h,`operations ${i+1}, reikä ${j+1}`));
+  }
+  for(const h of holes){
+   const x=Number(h.x),y=Number(h.y),d=Number(h.d);
+   if(!Number.isFinite(x)||!Number.isFinite(y)||!Number.isFinite(d)||Math.abs(x)>HOLE_XY_MAX||Math.abs(y)>HOLE_XY_MAX||d<HOLE_D_MIN||d>HOLE_D_MAX)throw Error(`${h.label}: x/y pitää olla välillä -${HOLE_XY_MAX}…${HOLE_XY_MAX} mm ja diameter välillä ${HOLE_D_MIN}…${HOLE_D_MAX} mm.`);
+  }
+  return true
+ }
  api.setPart=(type,values={})=>{
   try{
    const result=original(type,values);
@@ -38,6 +54,7 @@
   const originalApply=v2.apply.bind(v2);
   v2.apply=plan=>{
    try{
+    validatePlanHoleBounds(plan);
     const result=originalApply(plan);
     const error=failureMessage();
     if(error)throw Error(error);
@@ -64,5 +81,5 @@
  }
  const watching=watchV2Assignment();
  if(!watching&&!wrapV2()&&document.readyState==="loading")document.addEventListener?.("DOMContentLoaded",wrapV2,{once:true});
- window.AI3DCADApplyGuard={check:failureMessage,wrapV2};
+ window.AI3DCADApplyGuard={check:failureMessage,wrapV2,validatePlanHoleBounds};
 })();
