@@ -229,6 +229,34 @@ async function boot(storage,chatgptPlan){
   assert.strictEqual(imported.sourceSchema,2);
   assert.strictEqual(storage.getItem(ACTIVE),imported.id,"successfully imported project must become active");
 
+  const hardened={
+    ...exported,
+    project:{
+      ...exported.project,
+      unexpectedPayload:"x".repeat(10000),
+      print:{printer:"Elegoo Centauri Carbon 2 Combo",nozzle:"0.4 mm",notes:"Säilytä nämä tulostusohjeet",unexpectedNested:"drop-me"}
+    }
+  };
+  importInput.onchange({target:{files:[{size:JSON.stringify(hardened).length,content:JSON.stringify(hardened)}],value:"hardened"}});
+  projects=JSON.parse(storage.getItem(KEY));
+  assert.strictEqual(projects.length,4,"sanitized import must still add one valid project");
+  const sanitized=projects[0];
+  assert.ok(!Object.prototype.hasOwnProperty.call(sanitized,"unexpectedPayload"),"import must not persist unknown top-level fields");
+  assert.strictEqual(sanitized.print.printer,"Elegoo Centauri Carbon 2 Combo","known print metadata must survive import");
+  assert.strictEqual(sanitized.print.nozzle,"0.4 mm");
+  assert.strictEqual(sanitized.print.notes,"Säilytä nämä tulostusohjeet");
+  assert.ok(!Object.prototype.hasOwnProperty.call(sanitized.print,"unexpectedNested"),"unknown print metadata must be dropped");
+  assert.strictEqual(sanitized.sourcePlan,"chatgpt-current","sanitizing must preserve supported source metadata");
+  assert.strictEqual(sanitized.sourceSchema,2);
+
+  const beforeUnknownVersion=storage.getItem(KEY);
+  const beforeUnknownVersionActive=storage.getItem(ACTIVE);
+  const futureVersion={...exported,version:99};
+  importInput.onchange({target:{files:[{size:JSON.stringify(futureVersion).length,content:JSON.stringify(futureVersion)}],value:"future"}});
+  assert.strictEqual(storage.getItem(KEY),beforeUnknownVersion,"unknown project format version must not modify storage");
+  assert.strictEqual(storage.getItem(ACTIVE),beforeUnknownVersionActive,"unknown project format version must preserve the active project");
+  assert.ok(app.alerts.some(x=>x.includes("versiota ei tueta")),"unknown project format version must report a clear failure");
+
   const beforeInvalid=storage.getItem(KEY);
   const beforeInvalidActive=storage.getItem(ACTIVE);
   importInput.onchange({target:{files:[{size:80,content:JSON.stringify({format:"AI3D-project",version:1,project:{type:"unknown",values:{}}})}],value:"bad"}});
