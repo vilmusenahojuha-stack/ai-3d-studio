@@ -6,14 +6,16 @@
  const CAD_FALLBACKS=[
   ["cadV2",()=>!cadV2Ready(),"cad_v2_editor.js?v=1.5"],
   ["parametric",()=>!parametricReady(),"parametric_parts.js?v=1.9"],
-  ["customPlate",()=>!customPlateReady(),"plate_custom.js?v=1.7"]
+  ["customPlate",()=>!customPlateReady(),"plate_custom.js?v=1.7"],
+  ["centauri",()=>!centauriReady(),"centauri.js?v=1.9"]
  ];
- let earcutFallbackState="idle",earcutFallbackAttempts=0,cadFallbackAttempts={cadV2:0,parametric:0,customPlate:0};
+ let earcutFallbackState="idle",earcutFallbackAttempts=0,cadFallbackAttempts={cadV2:0,parametric:0,customPlate:0,centauri:0};
  const cadV2Ready=()=>fn(window.AI3DV2Editor?.apply);
  const parametricReady=()=>fn(window.AI3DParametric?.generate)&&!!$("fields-adapter")&&!!$("fields-enclosure")&&!!$("partType")?.querySelector?.('option[value="adapter"]')&&!!$("partType")?.querySelector?.('option[value="enclosure"]');
  const customPlateReady=()=>!!$("plateCustomHoles")&&!!$("plateHolePattern")?.querySelector?.('option[value="custom"]');
  const projectToolsReady=()=>!!$("btnDuplicateProject")&&!!$("btnExportAllProjects")&&!!$("btnImportAllProjects")&&!!$("btnRestoreProjects");
  const storageRecoveryReady=()=>window.AI3DStorageRecovery?.checked===true&&!window.AI3DStorageRecovery?.error;
+ const centauriReady=()=>fn(window.CentauriProfile?.check)&&fn(window.CentauriProfile?.bounds)&&fn(window.CentauriProfile?.printability);
  const centauriStateReady=()=>fn(window.AI3DCentauriStateGuard?.refresh)&&fn(window.AI3DCentauriStateGuard?.isDirty);
  const checks=[
   ["CAD-moottori",()=>fn(window.AI3D?.setPart)],
@@ -30,7 +32,7 @@
   ["mesh-eheystarkistus",()=>fn(window.AI3DMeshIntegrity?.check)],
   ["ohjattu käyttöliittymä",()=>fn(window.AI3DGuidedUI?.refreshValidation)],
   ["mittakentän ohjaus",()=>fn(window.AI3DMeasureFocus?.highlight)],
-  ["Centauri-profiili",()=>fn(window.CentauriProfile?.check)&&fn(window.CentauriProfile?.bounds)&&fn(window.CentauriProfile?.printability)],
+  ["Centauri-profiili",centauriReady],
   ["Centauri-tilavahti",centauriStateReady],
   ["tulostusasennon arvio",()=>fn(window.CentauriOrientation?.analyse)],
   ["tulostettavuusarvio",()=>fn(window.AI3DPrintability?.render)],
@@ -57,6 +59,7 @@
    if(!missing||cadFallbackAttempts[key]>=1)continue;
    cadFallbackAttempts[key]++;started=true;
    const s=document.createElement("script");s.src=src+"&healthRetry="+Date.now();s.async=true;s.dataset.ai3dCadFallback=key;
+   if(key==="centauri")s.dataset.ai3dCentauri="1";
    s.onload=()=>start();s.onerror=()=>start();document.body.appendChild(s)
   }
   return started
@@ -80,6 +83,6 @@
   const tick=()=>{attempts++;if(render(false))return;if(attempts>=20){if(loadCadFallbacks())return;render(true);return}timer=setTimeout(tick,250)};timer=setTimeout(tick,150)
  }
  function init(){start();document.addEventListener("visibilitychange",()=>{if(!document.hidden)start()});window.addEventListener("online",()=>{if(!fn(window.earcut)&&earcutFallbackState==="failed")earcutFallbackState="idle";resetMissingCadRetries();start()})}
- window.AI3DRuntimeHealth={check:()=>render(true),missing,retryDependencies:()=>{if(!fn(window.earcut)&&earcutFallbackState!=="loading")earcutFallbackState="idle";resetMissingCadRetries();loadEarcutFallback();loadCadFallbacks();start()},dependencyState:()=>({earcut:fn(window.earcut)?"ready":earcutFallbackState,earcutFallbackAttempts,cadV2:cadV2Ready()?"ready":"missing",parametric:parametricReady()?"ready":"missing",customPlate:customPlateReady()?"ready":"missing",projectTools:projectToolsReady()?"ready":"missing",storageRecovery:storageRecoveryReady()?"ready":"missing",centauriState:centauriStateReady()?"ready":"missing",cadFallbackAttempts:{...cadFallbackAttempts}})};
+ window.AI3DRuntimeHealth={check:()=>render(true),missing,retryDependencies:()=>{if(!fn(window.earcut)&&earcutFallbackState!=="loading")earcutFallbackState="idle";resetMissingCadRetries();loadEarcutFallback();loadCadFallbacks();start()},dependencyState:()=>({earcut:fn(window.earcut)?"ready":earcutFallbackState,earcutFallbackAttempts,cadV2:cadV2Ready()?"ready":"missing",parametric:parametricReady()?"ready":"missing",customPlate:customPlateReady()?"ready":"missing",projectTools:projectToolsReady()?"ready":"missing",storageRecovery:storageRecoveryReady()?"ready":"missing",centauriProfile:centauriReady()?"ready":"missing",centauriState:centauriStateReady()?"ready":"missing",cadFallbackAttempts:{...cadFallbackAttempts}})};
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
