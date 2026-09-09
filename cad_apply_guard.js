@@ -10,11 +10,25 @@
   if(!failed)return"";
   return status.replace(/^Virhe\s*:\s*/i,"")||"CAD-malli ei läpäissyt tarkistusta.";
  }
+ function failClosed(error){
+  const message=error?.message||String(error||"CAD-mallin generointi epäonnistui.");
+  try{if(typeof window.AI3DPreviewGuard?.clear==="function"){window.AI3DPreviewGuard.clear(message);return}}catch{}
+  try{currentMesh=null}catch{}
+  try{currentFitMesh=null}catch{}
+  const download=$("btnDownload"),fit=$("btnFitTest"),dims=$("dimensions"),status=$("status");
+  if(download)download.disabled=true;
+  if(fit)fit.disabled=true;
+  if(dims)dims.textContent="–";
+  if(status&&!/^Virhe\s*:/i.test(status.textContent||""))status.textContent="Virhe: "+message;
+  try{draw()}catch{}
+ }
  api.setPart=(type,values={})=>{
-  const result=original(type,values);
-  const error=failureMessage();
-  if(error)throw Error(error);
-  return result
+  try{
+   const result=original(type,values);
+   const error=failureMessage();
+   if(error)throw Error(error);
+   return result
+  }catch(error){failClosed(error);throw error}
  };
  Object.defineProperty(api,"__applyGuard",{value:true,configurable:false,enumerable:false,writable:false});
  let v2Value=window.AI3DPlanV2CAD;
@@ -23,10 +37,12 @@
   if(!v2||typeof v2.apply!=="function"||v2.__applyGuard)return false;
   const originalApply=v2.apply.bind(v2);
   v2.apply=plan=>{
-   const result=originalApply(plan);
-   const error=failureMessage();
-   if(error)throw Error(error);
-   return result
+   try{
+    const result=originalApply(plan);
+    const error=failureMessage();
+    if(error)throw Error(error);
+    return result
+   }catch(error){failClosed(error);throw error}
   };
   Object.defineProperty(v2,"__applyGuard",{value:true,configurable:false,enumerable:false,writable:false});
   return true
