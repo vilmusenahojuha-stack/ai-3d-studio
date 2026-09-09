@@ -26,11 +26,16 @@
   if(!plan||plan.schemaVersion!==2||!["mountingPlate","plate"].includes(plan.partType))return true;
   const holes=[],add=(h,label)=>{if(h==null)return;if(typeof h==="number"){holes.push({x:0,y:0,d:h,label});return}if(!h||typeof h!=="object"||Array.isArray(h))throw Error(`${label}: reiän tiedot eivät ole kelvollinen objekti.`);holes.push({x:h.x??0,y:h.y??0,d:h.diameter??h.d,label})};
   const p=plan.parameters||{};
+  if(p.holes!=null&&!Array.isArray(p.holes))throw Error("parameters.holes: reikien pitää olla taulukko.");
+  if(plan.operations!=null&&!Array.isArray(plan.operations))throw Error("operations: CAD-operaatioiden pitää olla taulukko.");
   if(Array.isArray(p.holes))p.holes.forEach((h,i)=>add(h,`parameters.holes ${i+1}`));
   if(p.centerHole!=null)add(p.centerHole,"parameters.centerHole");
   for(const [i,op] of (Array.isArray(plan.operations)?plan.operations:[]).entries()){
    if(op?.type==="hole")add(op,`operations ${i+1}`);
-   if(op?.type==="holes"&&Array.isArray(op.holes))op.holes.forEach((h,j)=>add(h,`operations ${i+1}, reikä ${j+1}`));
+   if(op?.type==="holes"){
+    if(!Array.isArray(op.holes))throw Error(`operations ${i+1}: holes-operaation reikien pitää olla taulukko.`);
+    op.holes.forEach((h,j)=>add(h,`operations ${i+1}, reikä ${j+1}`));
+   }
   }
   for(const h of holes){
    const x=Number(h.x),y=Number(h.y),d=Number(h.d);
