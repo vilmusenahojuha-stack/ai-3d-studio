@@ -3,11 +3,13 @@
  const KEY="ai3d:projects:v3",$=id=>document.getElementById(id),ALLOWED=new Set(["lightSign","spike","plug","sleeve","plate","adapter","enclosure"]),BLOCKED_KEYS=new Set(["__proto__","prototype","constructor"]),MAX_PROJECT_NAME=120,MAX_PROJECT_DESCRIPTION=1000;
  const MAP={lightSign:["signDiameter","signRingWidth","signDepth","signWall","diffuserThickness","starWidth","starThickness","ledWidth","filamentPriceKg","ledCost","powerCost","miscCost","material"],spike:["nutAf","clearance","lockAmount","lockZ","wall","baseHeight","totalHeight","tipRadius","monogram","monogramWidth","monogramDepth","monogramHeight","material"],plug:["tubeW","tubeH","tubeWall","plugClear","insertDepth","capThickness","capOverhang","material"],sleeve:["sleeveID","sleeveWall","sleeveLength","material"],plate:["plateL","plateW","plateT","plateHolePattern","plateHoleD","plateHoleEdge","plateCornerStyle","plateCornerSize","plateCustomHoles","material"],adapter:["adapterLength","adapterID1","adapterID2","adapterOD1","adapterOD2","material"],enclosure:["enclosureW","enclosureD","enclosureH","enclosureWall","enclosureFloor","material"]};
  const CROSS_TAB_WARNING="Projektitallennus muuttui toisessa välilehdessä tai ikkunassa. Päivitä tämä sivu ennen jatkamista, jotta uudempi projektiversio ei ylikirjoitu.";
+ const INVALID_STORAGE_WARNING="Paikallinen projektitallennus ei läpäissyt rakennetarkistusta. Vie tärkeä työ JSON-varmuuskopioksi ennen sivun sulkemista.";
  let checking=false,lastIssue="",editTimer=0,crossTabConflict=false;
  function validValues(v){if(!v||typeof v!=="object"||Array.isArray(v))return false;const entries=Object.entries(v);if(entries.length>100)return false;return entries.every(([k,x])=>k.length<=160&&!BLOCKED_KEYS.has(k)&&(x===null||["string","number","boolean"].includes(typeof x))&&(typeof x!=="number"||Number.isFinite(x))&&(typeof x!=="string"||x.length<=50000))}
  function validProject(p){return!!(p&&typeof p==="object"&&!Array.isArray(p)&&typeof p.id==="string"&&p.id.trim()&&p.id.length<=160&&ALLOWED.has(p.type)&&validValues(p.values)&&(p.name==null||(typeof p.name==="string"&&p.name.length<=MAX_PROJECT_NAME))&&(p.description==null||(typeof p.description==="string"&&p.description.length<=MAX_PROJECT_DESCRIPTION)))}
  function read(){try{const v=JSON.parse(localStorage.getItem(KEY)||"[]");if(!Array.isArray(v)||!v.every(validProject))return null;const ids=new Set();for(const p of v){if(ids.has(p.id))return null;ids.add(p.id)}return v}catch{return null}}
  function warn(text){lastIssue=text;const box=$("planSyncStatus");if(box){const message="⚠ "+text;box.dataset.storageGuardWarning="1";box.dataset.storageGuardWarningText=message;box.textContent=message;box.className="plan-sync-status warn"}}
+ function blockingIssue(){if(crossTabConflict)return CROSS_TAB_WARNING;if(read()===null)return INVALID_STORAGE_WARNING;return""}
  function clearOwnWarning(){if(crossTabConflict)return;const box=$("planSyncStatus");if(box?.dataset.storageGuardWarning==="1"){const ownMessage=box.dataset.storageGuardWarningText||"";delete box.dataset.storageGuardWarning;delete box.dataset.storageGuardWarningText;if(!ownMessage||box.textContent===ownMessage){box.textContent="✓ Projektin paikallinen tallennus varmistettu.";box.className="plan-sync-status ok"}}}
  function same(a,b){if(typeof a==="number"||typeof b==="number"){const x=Number(a),y=Number(b);return Number.isFinite(x)&&Number.isFinite(y)&&Math.abs(x-y)<1e-9}return String(a??"")===String(b??"")}
  function liveValues(type){const out={};for(const id of MAP[type]||[]){const e=$(id);if(!e)continue;if(e.type==="number"){if(Number.isFinite(e.valueAsNumber))out[id]=e.valueAsNumber}else out[id]=e.value}return out}
@@ -17,7 +19,7 @@
   try{
    if(crossTabConflict){warn(CROSS_TAB_WARNING);return false}
    const items=read();
-   if(!items){warn("Paikallinen projektitallennus ei läpäissyt rakennetarkistusta. Vie tärkeä työ JSON-varmuuskopioksi ennen sivun sulkemista.");return false}
+   if(!items){warn(INVALID_STORAGE_WARNING);return false}
    const active=window.AI3DProjects?.active?.();
    if(!active?.id){lastIssue="";clearOwnWarning();return true}
    const storedProject=items.find(p=>p.id===active.id),activeId=localStorage.getItem(KEY+":active")||"";
@@ -48,6 +50,6 @@
   window.addEventListener("storage",handleStorageChange);
   setTimeout(()=>verify(false),300)
  }
- window.AI3DStorageCommitGuard={verify,get lastIssue(){return lastIssue},get hasConflict(){return crossTabConflict}};
+ window.AI3DStorageCommitGuard={verify,get lastIssue(){return lastIssue},get hasConflict(){const issue=blockingIssue();if(!issue)return false;if(issue!==lastIssue)warn(issue);return true}};
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
