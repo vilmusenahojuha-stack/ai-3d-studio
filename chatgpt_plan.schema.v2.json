@@ -24,10 +24,10 @@
         "required": ["type"],
         "properties": {
           "type": { "enum": ["hole", "holes"] },
-          "x": { "type": "number", "minimum": -5000, "maximum": 5000 },
-          "y": { "type": "number", "minimum": -5000, "maximum": 5000 },
+          "x": { "type": "number", "minimum": -2000, "maximum": 2000 },
+          "y": { "type": "number", "minimum": -2000, "maximum": 2000 },
           "z": { "type": "number", "minimum": -5000, "maximum": 5000 },
-          "diameter": { "$ref": "#/$defs/positiveMm" },
+          "diameter": { "$ref": "#/$defs/holeDiameter" },
           "holes": {
             "type": "array",
             "maxItems": 200,
@@ -53,7 +53,7 @@
   "allOf": [
     {
       "if": { "properties": { "partType": { "const": "mountingPlate" } } },
-      "then": { "properties": { "parameters": { "required": ["length", "width", "thickness"], "properties": { "length": { "$ref": "#/$defs/positiveMm" }, "width": { "$ref": "#/$defs/positiveMm" }, "thickness": { "$ref": "#/$defs/positiveMm" }, "cornerRadius": { "$ref": "#/$defs/nonNegativeMm" }, "chamfer": { "$ref": "#/$defs/nonNegativeMm" }, "centerHole": { "oneOf": [ { "$ref": "#/$defs/positiveMm" }, { "type": "object", "required": ["diameter"], "properties": { "diameter": { "$ref": "#/$defs/positiveMm" } }, "additionalProperties": true } ] }, "holes": { "type": "array", "maxItems": 200, "items": { "$ref": "#/$defs/hole" } } } } } }
+      "then": { "properties": { "parameters": { "required": ["length", "width", "thickness"], "properties": { "length": { "$ref": "#/$defs/positiveMm" }, "width": { "$ref": "#/$defs/positiveMm" }, "thickness": { "$ref": "#/$defs/positiveMm" }, "cornerRadius": { "$ref": "#/$defs/nonNegativeMm" }, "chamfer": { "$ref": "#/$defs/nonNegativeMm" }, "centerHole": { "oneOf": [ { "$ref": "#/$defs/holeDiameter" }, { "type": "object", "required": ["diameter"], "properties": { "diameter": { "$ref": "#/$defs/holeDiameter" } }, "additionalProperties": true } ] }, "holes": { "type": "array", "maxItems": 200, "items": { "$ref": "#/$defs/hole" } } } } } }
     },
     {
       "if": {
@@ -89,13 +89,14 @@
   "$defs": {
     "positiveMm": { "type": "number", "exclusiveMinimum": 0, "maximum": 5000 },
     "nonNegativeMm": { "type": "number", "minimum": 0, "maximum": 5000 },
+    "holeDiameter": { "type": "number", "minimum": 0.2, "maximum": 500 },
     "hole": {
       "type": "object",
       "required": ["x", "y", "diameter"],
       "properties": {
-        "x": { "type": "number", "minimum": -5000, "maximum": 5000 },
-        "y": { "type": "number", "minimum": -5000, "maximum": 5000 },
-        "diameter": { "$ref": "#/$defs/positiveMm" }
+        "x": { "type": "number", "minimum": -2000, "maximum": 2000 },
+        "y": { "type": "number", "minimum": -2000, "maximum": 2000 },
+        "diameter": { "$ref": "#/$defs/holeDiameter" }
       },
       "additionalProperties": true
     }
