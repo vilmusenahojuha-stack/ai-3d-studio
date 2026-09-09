@@ -198,4 +198,27 @@ function runCase({ statusText = "Malli luotu ja tarkistettu.", failClass = false
   assert.strictEqual(v2Calls, 0, "out-of-schema hole diameters must not reach CAD v2");
 }
 
+{
+  const ctx = runCase({ loading: false });
+  let v2Calls = 0;
+  ctx.window.AI3DPlanV2CAD = { apply() { v2Calls++; return {}; } };
+  assert.throws(
+    () => ctx.window.AI3DPlanV2CAD.apply({ schemaVersion: 2, partType: "mountingPlate", parameters: { holes: { x: 0, y: 0, diameter: 6 } } }),
+    /parameters\.holes: reikien pitää olla taulukko/,
+    "malformed parameter hole containers must fail closed instead of being silently ignored"
+  );
+  assert.throws(
+    () => ctx.window.AI3DPlanV2CAD.apply({ schemaVersion: 2, partType: "mountingPlate", parameters: {}, operations: { type: "hole", x: 0, y: 0, diameter: 6 } }),
+    /operations: CAD-operaatioiden pitää olla taulukko/,
+    "malformed operation containers must fail closed instead of being silently ignored"
+  );
+  assert.throws(
+    () => ctx.window.AI3DPlanV2CAD.apply({ schemaVersion: 2, partType: "mountingPlate", parameters: {}, operations: [{ type: "holes", holes: { x: 0, y: 0, diameter: 6 } }] }),
+    /holes-operaation reikien pitää olla taulukko/,
+    "malformed holes operations must fail closed instead of being silently ignored"
+  );
+  assert.strictEqual(v2Calls, 0, "malformed hole containers must never reach CAD v2 geometry generation");
+  assert.ok(ctx.previewClears.length >= 3, "each malformed plan rejection must clear stale preview/export state");
+}
+
 console.log("CAD apply guard regression: OK");
