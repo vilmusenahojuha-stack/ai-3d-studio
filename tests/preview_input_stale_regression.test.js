@@ -11,4 +11,5 @@ assert(src.includes('NON_GEOMETRY_PART_FIELDS.has(target.id)'),"non-geometry par
 assert(src.includes('currentMesh||currentFitMesh'),"parameter edits should only clear an existing generated mesh");
 assert(src.includes("Mallin mittoja tai osatyyppiä muutettiin"),"stale preview must explain that geometry or part type changed");
 assert(src.includes("Luo ja tarkista 3D-malli uudelleen ennen STL-vientiä"),"stale preview must explain why STL export was disabled");
+assert(/try\s*\{[\s\S]*lastError=reason\|\|lastError[\s\S]*\}\s*finally\s*\{\s*clearing=false/.test(src),"preview invalidation must always release its re-entrancy lock even if an unexpected UI operation throws");
 console.log("preview input stale regression OK");
