@@ -83,6 +83,9 @@ function makeRuntime(seed={}){
 {
   const {box,context}=makeRuntime({[KEY]:"{broken-json"});
   assert.strictEqual(context.window.AI3DProjects.active(),null,"regression setup must have no active project");
+  assert.strictEqual(context.window.AI3DStorageCommitGuard.hasConflict,true,"invalid project storage must synchronously block a core save before it can overwrite corrupted data");
+  assert.match(box.textContent,/ei läpäissyt rakennetarkistusta/i,"synchronous save blocking must surface the invalid-storage reason");
+  assert.match(context.window.AI3DStorageCommitGuard.lastIssue,/ei läpäissyt rakennetarkistusta/i,"synchronous save blocking must retain the invalid-storage warning");
   assert.strictEqual(context.window.AI3DStorageCommitGuard.verify(),false,"invalid project storage must fail closed even when no project is active");
   assert.match(box.textContent,/ei läpäissyt rakennetarkistusta/i,"invalid project storage must remain visible instead of being reported healthy");
   assert.match(context.window.AI3DStorageCommitGuard.lastIssue,/ei läpäissyt rakennetarkistusta/i,"guard state must retain the invalid-storage warning");
