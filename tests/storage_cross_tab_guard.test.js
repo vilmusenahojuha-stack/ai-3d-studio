@@ -91,4 +91,22 @@ function makeRuntime(seed={}){
   assert.match(context.window.AI3DStorageCommitGuard.lastIssue,/ei läpäissyt rakennetarkistusta/i,"guard state must retain the invalid-storage warning");
 }
 
+{
+  const valid={id:"p-meta",name:"Meta",description:"ok",type:"sleeve",values:{sleeveID:20,sleeveWall:3,sleeveLength:30,material:"PETG"},print:{printer:"Elegoo Centauri Carbon 2 Combo",nozzle:"0.4 mm",notes:"ok"},sourcePlan:"chatgpt-current",sourceSchema:2,created:1,updated:2};
+  const ok=makeRuntime({[KEY]:JSON.stringify([valid])});
+  assert.strictEqual(ok.context.window.AI3DStorageCommitGuard.hasConflict,false,"supported bounded project metadata must remain valid");
+
+  const badPrint={...valid,print:{...valid.print,unexpected:"x"}};
+  const badPrintRuntime=makeRuntime({[KEY]:JSON.stringify([badPrint])});
+  assert.strictEqual(badPrintRuntime.context.window.AI3DStorageCommitGuard.hasConflict,true,"unknown persisted print metadata must fail closed instead of bypassing the storage boundary");
+
+  const hugeNotes={...valid,print:{...valid.print,notes:"x".repeat(1001)}};
+  const hugeNotesRuntime=makeRuntime({[KEY]:JSON.stringify([hugeNotes])});
+  assert.strictEqual(hugeNotesRuntime.context.window.AI3DStorageCommitGuard.hasConflict,true,"oversized print notes must fail closed");
+
+  const badSource={...valid,sourceSchema:99};
+  const badSourceRuntime=makeRuntime({[KEY]:JSON.stringify([badSource])});
+  assert.strictEqual(badSourceRuntime.context.window.AI3DStorageCommitGuard.hasConflict,true,"unknown source schema metadata must fail closed");
+}
+
 console.log("storage cross-tab guard: ok");
