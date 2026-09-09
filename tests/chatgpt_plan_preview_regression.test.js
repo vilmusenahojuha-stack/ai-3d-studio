@@ -34,7 +34,7 @@ assert(source.includes("s.onload=()=>{v2Load=null;if(window.AI3DPlanV2CAD)resolv
 assert(source.includes("s.onerror=()=>{v2Load=null;s.remove?.();reject"), "failed CAD loader attempts must clear the in-flight promise so a transient network failure can be retried");
 assert(source.includes("if(!pending||applying)return;const plan=pending"), "apply must snapshot the accepted plan and block duplicate concurrent applies");
 assert(source.includes("if(!applied&&material&&previousMaterial!=null)material.value=previousMaterial"), "a failed CAD transfer must restore the material selection instead of leaving partial UI state");
-assert(source.includes("finally{applying=false;if(ap)ap.disabled=false}"), "apply lock and button state must always recover after success or failure");
+assert(source.includes("finally{applying=false;if(ap)ap.disabled=false;if(fp)fp.disabled=false}"), "apply lock and both button states must always recover after success or failure");
 assert(!source.includes("value=pending.material"), "async CAD transfer must not keep reading mutable pending plan state after apply starts");
 
 const validAdapter = {
