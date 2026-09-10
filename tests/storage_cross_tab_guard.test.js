@@ -92,6 +92,13 @@ function makeRuntime(seed={}){
 }
 
 {
+  const {box,context}=makeRuntime({[KEY]:""});
+  assert.strictEqual(context.window.AI3DStorageCommitGuard.hasConflict,true,"an empty-string project storage value is corrupted data, not a missing storage key, and must fail closed");
+  assert.strictEqual(context.window.AI3DStorageCommitGuard.verify(),false,"empty-string project storage must stay blocked until recovery or reload repairs it");
+  assert.match(box.textContent,/ei läpäissyt rakennetarkistusta/i,"empty-string corruption must surface the same safe storage warning");
+}
+
+{
   const valid={id:"p-meta",name:"Meta",description:"ok",type:"sleeve",values:{sleeveID:20,sleeveWall:3,sleeveLength:30,material:"PETG"},print:{printer:"Elegoo Centauri Carbon 2 Combo",nozzle:"0.4 mm",notes:"ok"},sourcePlan:"chatgpt-current",sourceSchema:2,created:1,updated:2};
   const ok=makeRuntime({[KEY]:JSON.stringify([valid])});
   assert.strictEqual(ok.context.window.AI3DStorageCommitGuard.hasConflict,false,"supported bounded project metadata must remain valid");
