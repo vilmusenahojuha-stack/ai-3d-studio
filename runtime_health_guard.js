@@ -10,9 +10,10 @@
   ["planOperations",()=>!(fn(window.AI3DPlanOperationGuard?.validate)&&fn(window.AI3DPlanOperationGuard?.run)&&fn(window.AI3DPlanOperationGuard?.getLastResult)&&fn(window.AI3DPlanOperationGuard?.isAllowed)),"plan_operation_guard.js?v=1.10"],
   ["parametric",()=>!parametricReady(),"parametric_parts.js?v=1.9"],
   ["customPlate",()=>!customPlateReady(),"plate_custom.js?v=1.7"],
+  ["previewGuard",()=>!previewGuardReady(),"preview_guard.js?v=1.6"],
   ["centauri",()=>!centauriReady(),"centauri.js?v=1.9"]
  ];
- let earcutFallbackState="idle",earcutFallbackAttempts=0,cadFallbackAttempts={cadV2Core:0,cadV2:0,planPreflight:0,planOperations:0,parametric:0,customPlate:0,centauri:0};
+ let earcutFallbackState="idle",earcutFallbackAttempts=0,cadFallbackAttempts={cadV2Core:0,cadV2:0,planPreflight:0,planOperations:0,parametric:0,customPlate:0,previewGuard:0,centauri:0};
  const cadV2CoreReady=()=>fn(window.AI3DPlanV2CAD?.apply);
  const cadV2EditorReady=()=>fn(window.AI3DV2Editor?.apply);
  const cadV2Ready=()=>cadV2CoreReady()&&cadV2EditorReady();
@@ -20,6 +21,7 @@
  const customPlateReady=()=>!!$("plateCustomHoles")&&!!$("plateHolePattern")?.querySelector?.('option[value="custom"]');
  const projectToolsReady=()=>!!$("btnDuplicateProject")&&!!$("btnExportAllProjects")&&!!$("btnImportAllProjects")&&!!$("btnRestoreProjects");
  const storageRecoveryReady=()=>window.AI3DStorageRecovery?.checked===true&&!window.AI3DStorageRecovery?.error;
+ const previewGuardReady=()=>fn(window.AI3DPreviewGuard?.clear)&&fn(window.AI3DPreviewGuard?.check)&&fn(window.AI3DPreviewGuard?.failureReason);
  const centauriReady=()=>fn(window.CentauriProfile?.check)&&fn(window.CentauriProfile?.bounds)&&fn(window.CentauriProfile?.printability);
  const centauriStateReady=()=>fn(window.AI3DCentauriStateGuard?.refresh)&&fn(window.AI3DCentauriStateGuard?.isDirty);
  const checks=[
@@ -34,7 +36,7 @@
   ["parametriset CAD-osat",parametricReady],
   ["mukautetut levyreiät",customPlateReady],
   ["projektitallennuksen varmennus",()=>fn(window.AI3DStorageCommitGuard?.verify)],
-  ["3D-esikatselun suojaus",()=>fn(window.AI3DPreviewGuard?.clear)],
+  ["3D-esikatselun suojaus",previewGuardReady],
   ["mesh-eheystarkistus",()=>fn(window.AI3DMeshIntegrity?.check)],
   ["ohjattu käyttöliittymä",()=>fn(window.AI3DGuidedUI?.refreshValidation)],
   ["mittakentän ohjaus",()=>fn(window.AI3DMeasureFocus?.highlight)],
@@ -95,6 +97,6 @@
   const tick=()=>{attempts++;if(render(false))return;if(attempts>=20){if(loadCadFallbacks())return;render(true);return}timer=setTimeout(tick,250)};timer=setTimeout(tick,150)
  }
  function init(){start();document.addEventListener("visibilitychange",()=>{if(!document.hidden)start()});window.addEventListener("online",()=>{if(!fn(window.earcut)&&earcutFallbackState==="failed")earcutFallbackState="idle";resetMissingCadRetries();start()})}
- window.AI3DRuntimeHealth={check:()=>render(true),missing,retryDependencies:()=>{if(!fn(window.earcut)&&earcutFallbackState!=="loading")earcutFallbackState="idle";resetMissingCadRetries();loadEarcutFallback();loadCadFallbacks();start()},dependencyState:()=>({earcut:fn(window.earcut)?"ready":earcutFallbackState,earcutFallbackAttempts,cadV2:cadV2Ready()?"ready":"missing",cadV2Core:cadV2CoreReady()?"ready":"missing",cadV2Editor:cadV2EditorReady()?"ready":"missing",planPreflight:fn(window.AI3DPlanPreflight?.validate)&&fn(window.AI3DPlanPreflight?.run)&&fn(window.AI3DPlanPreflight?.getLastResult)?"ready":"missing",planOperations:fn(window.AI3DPlanOperationGuard?.validate)&&fn(window.AI3DPlanOperationGuard?.run)&&fn(window.AI3DPlanOperationGuard?.getLastResult)&&fn(window.AI3DPlanOperationGuard?.isAllowed)?"ready":"missing",parametric:parametricReady()?"ready":"missing",customPlate:customPlateReady()?"ready":"missing",projectTools:projectToolsReady()?"ready":"missing",storageRecovery:storageRecoveryReady()?"ready":"missing",centauriProfile:centauriReady()?"ready":"missing",centauriState:centauriStateReady()?"ready":"missing",cadFallbackAttempts:{...cadFallbackAttempts}})};
+ window.AI3DRuntimeHealth={check:()=>render(true),missing,retryDependencies:()=>{if(!fn(window.earcut)&&earcutFallbackState!=="loading")earcutFallbackState="idle";resetMissingCadRetries();loadEarcutFallback();loadCadFallbacks();start()},dependencyState:()=>({earcut:fn(window.earcut)?"ready":earcutFallbackState,earcutFallbackAttempts,cadV2:cadV2Ready()?"ready":"missing",cadV2Core:cadV2CoreReady()?"ready":"missing",cadV2Editor:cadV2EditorReady()?"ready":"missing",planPreflight:fn(window.AI3DPlanPreflight?.validate)&&fn(window.AI3DPlanPreflight?.run)&&fn(window.AI3DPlanPreflight?.getLastResult)?"ready":"missing",planOperations:fn(window.AI3DPlanOperationGuard?.validate)&&fn(window.AI3DPlanOperationGuard?.run)&&fn(window.AI3DPlanOperationGuard?.getLastResult)&&fn(window.AI3DPlanOperationGuard?.isAllowed)?"ready":"missing",parametric:parametricReady()?"ready":"missing",customPlate:customPlateReady()?"ready":"missing",previewGuard:previewGuardReady()?"ready":"missing",projectTools:projectToolsReady()?"ready":"missing",storageRecovery:storageRecoveryReady()?"ready":"missing",centauriProfile:centauriReady()?"ready":"missing",centauriState:centauriStateReady()?"ready":"missing",cadFallbackAttempts:{...cadFallbackAttempts}})};
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
