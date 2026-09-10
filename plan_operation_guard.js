@@ -12,7 +12,7 @@
  function fingerprint(raw){try{return JSON.stringify(raw)}catch{return null}}
  function plateHoles(raw){
   const out=[],add=(h,label)=>{if(out.length>=MAX_HOLES+1)return;if(!h||typeof h!=="object"||Array.isArray(h)){out.push({invalid:true,label});return}const x=h.x,y=h.y,d=h.diameter;out.push({x:Number(x),y:Number(y),d:Number(d),invalid:!finite(x)||!finite(y)||!holeDiameter(d),label})};
-  const p=raw.parameters||{},ph=p.holes;if(ph!=null&&!Array.isArray(ph))out.push({invalid:true,label:"parameters.holes"});else for(const [i,h] of (ph||[]).slice(0,MAX_HOLES+1).entries())add(h,`parameters.holes ${i+1}`);if(p.centerHole){const h=typeof p.centerHole==="number"?{x:0,y:0,diameter:p.centerHole}:{x:0,y:0,diameter:p.centerHole?.diameter};add(h,"parameters.centerHole")}
+  const p=raw.parameters||{},ph=p.holes;if(ph!=null&&!Array.isArray(ph))out.push({invalid:true,label:"parameters.holes"});else for(const [i,h] of (ph||[]).slice(0,MAX_HOLES+1).entries())add(h,`parameters.holes ${i+1}`);if(p.centerHole!=null){const h=typeof p.centerHole==="number"?{x:0,y:0,diameter:p.centerHole}:{x:0,y:0,diameter:p.centerHole?.diameter};add(h,"parameters.centerHole")}
   for(const op of (raw.operations||[]).slice(0,MAX_OPS+1)){if(op?.type==="hole")add(op,"hole");if(op?.type==="holes"&&Array.isArray(op.holes))for(const [i,h] of op.holes.slice(0,MAX_HOLES+1).entries())add(h,`holes ${i+1}`)}return out
  }
  function insidePlate(x,y,L,W,style,size){
@@ -30,7 +30,7 @@
   if(chamferRaw!=null&&(!finite(chamferRaw)||Number(chamferRaw)<0||Number(chamferRaw)>MAX_MM))errors.push(`chamfer pitää olla välillä 0…${MAX_MM} mm.`);
   if(positive(cornerRaw)&&positive(chamferRaw))errors.push("Levylle ei voi määrittää yhtä aikaa sekä cornerRadius- että chamfer-arvoa; valitse yksi kulmatyyli.");
   if(Array.isArray(p.holes)&&p.holes.length>MAX_HOLES)errors.push(`parameters.holes sisältää yli ${MAX_HOLES} reikää.`);
-  let holeBudget=(Array.isArray(p.holes)?p.holes.length:0)+(p.centerHole?1:0);for(const op of (raw.operations||[]).slice(0,MAX_OPS+1)){if(op?.type==="hole")holeBudget++;if(op?.type==="holes"&&Array.isArray(op.holes)){holeBudget+=op.holes.length;if(op.holes.length>MAX_HOLES)errors.push(`Yksi holes-operaatio sisältää yli ${MAX_HOLES} reikää.`)}}if(holeBudget>MAX_HOLES)errors.push(`Suunnitelmassa on yhteensä yli ${MAX_HOLES} reikää; jaa työ pienempiin osiin.`);
+  let holeBudget=(Array.isArray(p.holes)?p.holes.length:0)+(p.centerHole!=null?1:0);for(const op of (raw.operations||[]).slice(0,MAX_OPS+1)){if(op?.type==="hole")holeBudget++;if(op?.type==="holes"&&Array.isArray(op.holes)){holeBudget+=op.holes.length;if(op.holes.length>MAX_HOLES)errors.push(`Yksi holes-operaatio sisältää yli ${MAX_HOLES} reikää.`)}}if(holeBudget>MAX_HOLES)errors.push(`Suunnitelmassa on yhteensä yli ${MAX_HOLES} reikää; jaa työ pienempiin osiin.`);
   if(size>=Math.min(L,W)/2)errors.push("Levyn pyöristys/viiste on liian suuri levyn mitoille.");
   for(let i=0;i<holes.length&&i<=MAX_HOLES;i++){
    const h=holes[i];if(h.invalid||!withinHoleXY(h.x)||!withinHoleXY(h.y)||!holeDiameter(h.d)){errors.push(`Reikä ${i+1}: x/y pitää olla välillä -${HOLE_XY_MAX}…${HOLE_XY_MAX} mm ja diameter välillä ${HOLE_D_MIN}…${HOLE_D_MAX} mm.`);continue}
