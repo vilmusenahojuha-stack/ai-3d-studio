@@ -5,7 +5,7 @@ const vm=require("vm");
 
 const html=fs.readFileSync("index.html","utf8");
 const storageGuardPos=html.indexOf('storage_commit_guard.js?v=1.9');
-const openGuardPos=html.indexOf('project_open_guard.js?v=1.1');
+const openGuardPos=html.indexOf('project_open_guard.js?v=1.2');
 assert(storageGuardPos>=0&&openGuardPos>storageGuardPos,"project open guard must load after storage commit guard in production");
 
 const KEY="ai3d:projects:v3";
@@ -62,5 +62,14 @@ assert.equal(setPartCalls,1);
 assert.equal(prevented,1);
 assert.equal(stopped,1);
 assert.match(elements.planSyncStatus.textContent,/Uudempi projektiversio/);
+
+// Project-open guard must also fail closed on corrupt storage by itself, even if the storage commit guard is unavailable.
+delete context.window.AI3DStorageCommitGuard;
+store.set(KEY,"");
+captureHandler({target,preventDefault:()=>{prevented++},stopImmediatePropagation:()=>{stopped++}});
+assert.equal(setPartCalls,1,"corrupt project storage must be blocked before CAD generation");
+assert.equal(prevented,2,"corrupt project storage must prevent the normal project click handler");
+assert.equal(stopped,2,"corrupt project storage must stop propagation before projects.js can act on stale state");
+assert.match(elements.planSyncStatus.textContent,/ei läpäissyt rakennetarkistusta/i,"corrupt project storage must surface a controlled warning");
 
 console.log("Project open single-apply regression: OK");
