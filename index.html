@@ -1,40 +1,148 @@
 <!doctype html>
 <html lang="fi">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>3D Studio</title>
-<link rel="stylesheet" href="style.css?v=1.4">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <title>3D Studio</title>
+  <link rel="stylesheet" href="styles.css?v=1.4">
 </head>
 <body>
-<header><div><h1>3D Studio</h1><p>Suunnittele mittojen mukaan ja vie tarkistettu STL Elegoo Centauri Carbon 2 Combo -tulostimelle.</p></div></header>
-<main>
-<section class="panel controls-panel">
-  <div class="section-title">Projektit ja suunnitelmat</div>
-  <div class="project-layout">
-    <div><div class="project-head"><b>Omat projektit</b><button id="btnNewProject" class="small">UUSI</button></div><div id="projectList" class="project-list"></div></div>
-    <div><div class="project-head"><b>Valmiit suunnitelmat</b><button id="btnReloadPlans" class="small">PÄIVITÄ</button></div><div id="planList" class="project-list"></div></div>
+<header class="topbar">
+  <div>
+    <h1>3D Studio</h1>
+    <p>ChatGPT-suunnitelmat muokattaviksi ja tulostettaviksi</p>
   </div>
-  <div class="project-summary"><b id="projectName">–</b><p id="projectDescription">Valitse projekti tai suunnitelma.</p><div id="projectPrintInfo" class="print-info"></div><div id="planSyncStatus" class="plan-sync-status"></div></div>
-  <div class="project-tools"><button id="btnDuplicateProject" class="small">KOPIOI</button><button id="btnExportAllProjects" class="small">VARMUUSKOPIO</button><button id="btnImportAllProjects" class="small">TUO VARMUUSKOPIO</button><button id="btnRestoreProjects" class="small">PALAUTA</button></div>
+  <span class="badge">v1.4</span>
+</header>
 
-  <div class="section-title">CAD-osa</div>
-  <label>Osatyyppi<select id="partType"><option value="spike">M-piikkimutteri</option><option value="plug">Putkitulppa</option><option value="sleeve">Holkki</option><option value="plate">Kiinnityslevy</option><option value="adapter">Adapteri</option><option value="enclosure">Kotelo</option><option value="lightSign">Valokyltti</option></select></label>
+<section class="project-workspace">
+  <aside class="project-sidebar">
+    <button id="btnNewProject" class="primary">＋ UUSI PROJEKTI</button>
+    <div class="section-title compact">Suunnitelmat</div>
+    <div id="planList"></div>
+    <div class="section-title compact">Omat projektit</div>
+    <div id="projectList"></div>
+  </aside>
+  <section class="project-summary panel-lite">
+    <small>AKTIIVINEN PROJEKTI</small>
+    <h2 id="projectName">–</h2>
+    <p id="projectDescription">Valitse valmis suunnitelma tai luo uusi projekti. Mittoja voi muuttaa CAD-työtilassa.</p>
+    <div id="projectPrintInfo" class="project-print-info"></div>
+  </section>
+</section>
 
-  <div id="fields-spike" class="fields part-fields">
-    <div class="grid"><label>Mutterin avainväli (mm)<input id="nutAf" type="number" value="19" step="0.1"></label><label>Välys (mm)<input id="clearance" type="number" value="0.4" step="0.05"></label><label>Lukituksen määrä (mm)<input id="lockAmount" type="number" value="0.8" step="0.1"></label><label>Lukituksen Z (mm)<input id="lockZ" type="number" value="8" step="0.5"></label><label>Seinämä (mm)<input id="wall" type="number" value="3" step="0.1"></label><label>Pohjan korkeus (mm)<input id="baseHeight" type="number" value="8" step="0.5"></label><label>Kokonaiskorkeus (mm)<input id="totalHeight" type="number" value="60" step="0.5"></label><label>Kärjen säde (mm)<input id="tipRadius" type="number" value="1.2" step="0.1"></label><label>Monogrammi<input id="monogram" value="M" maxlength="2"></label><label>M leveys (mm)<input id="monogramWidth" type="number" value="12" step="0.5"></label><label>M syvyys (mm)<input id="monogramDepth" type="number" value="1" step="0.1"></label><label>M korkeus (mm)<input id="monogramHeight" type="number" value="2" step="0.1"></label></div>
+<main class="layout">
+<section class="panel controls">
+  <h2 id="partTitle">Piikkimutterinsuojus</h2>
+  <p class="hint">Muuta mittoja tarvittaessa ja luo malli. Valmiit ChatGPT-suunnitelmat tulevat Suunnitelmat-listaan.</p>
+
+  <div class="section-title">Osatyyppi</div>
+  <select id="partType">
+    <option value="lightSign">Valokyltti / LED-kyltti</option>
+    <option value="spike">Piikkimutterinsuojus</option>
+    <option value="plug">Suorakaideputken päätytulppa</option>
+    <option value="sleeve">Holkki / soviterengas</option>
+    <option value="plate">Levy / kiinnikeaihio</option>
+  </select>
+
+  <div id="fields-lightSign" class="part-fields">
+    <div class="section-title">Valokyltin päämitat</div>
+    <div class="grid">
+      <label>Ulkohalkaisija (mm)<input id="signDiameter" type="number" value="400" min="120" max="500" step="1"></label>
+      <label>Kehän leveys (mm)<input id="signRingWidth" type="number" value="28" min="12" max="60" step="1"></label>
+      <label>Rungon syvyys (mm)<input id="signDepth" type="number" value="24" min="12" max="50" step="1"></label>
+      <label>Seinämä (mm)<input id="signWall" type="number" value="2.4" min="1.6" max="5" step="0.1"></label>
+      <label>Diffuusorin paksuus (mm)<input id="diffuserThickness" type="number" value="1.2" min="0.8" max="3" step="0.1"></label>
+      <label>Tähden leveys keskellä (mm)<input id="starWidth" type="number" value="28" min="12" max="60" step="1"></label>
+      <label>Tähden paksuus (mm)<input id="starThickness" type="number" value="4" min="2" max="8" step="0.5"></label>
+      <label>LED-nauhan leveys (mm)<input id="ledWidth" type="number" value="10" min="5" max="14" step="1"></label>
+    </div>
+    <div class="section-title">Kustannusarvio</div>
+    <div class="grid">
+      <label>Filamentti €/kg<input id="filamentPriceKg" type="number" value="20" min="1" step="1"></label>
+      <label>LED-nauha / ostettava kela €<input id="ledCost" type="number" value="25.5" min="0" step="0.5"></label>
+      <label>12 V virtalähde €<input id="powerCost" type="number" value="12" min="0" step="0.5"></label>
+      <label>Johdot, liittimet, ruuvit €<input id="miscCost" type="number" value="5" min="0" step="0.5"></label>
+    </div>
+    <div id="costEstimate" class="cost-estimate">Arvio lasketaan mallin luonnin yhteydessä.</div>
   </div>
-  <div id="fields-plug" class="fields part-fields" hidden><div class="grid"><label>Putken leveys (mm)<input id="tubeW" type="number" value="30" step="0.1"></label><label>Putken korkeus (mm)<input id="tubeH" type="number" value="30" step="0.1"></label><label>Putken seinämä (mm)<input id="tubeWall" type="number" value="2" step="0.1"></label><label>Tulpan välys (mm)<input id="plugClear" type="number" value="0.3" step="0.05"></label><label>Upotussyvyys (mm)<input id="insertDepth" type="number" value="22" step="0.5"></label><label>Kannen paksuus (mm)<input id="capThickness" type="number" value="3" step="0.1"></label><label>Kannen ylitys (mm)<input id="capOverhang" type="number" value="1" step="0.1"></label></div></div>
-  <div id="fields-sleeve" class="fields part-fields" hidden><div class="grid"><label>Sisähalkaisija (mm)<input id="sleeveID" type="number" value="20" step="0.1"></label><label>Seinämä (mm)<input id="sleeveWall" type="number" value="3" step="0.1"></label><label>Pituus (mm)<input id="sleeveLength" type="number" value="30" step="0.5"></label></div></div>
-  <div id="fields-plate" class="fields part-fields" hidden><div class="grid"><label>Pituus (mm)<input id="plateL" type="number" value="80" step="0.5"></label><label>Leveys (mm)<input id="plateW" type="number" value="50" step="0.5"></label><label>Paksuus (mm)<input id="plateT" type="number" value="5" step="0.1"></label><label>Reikäkuvio<select id="plateHolePattern"><option value="corners">Kulmareiät</option><option value="center">Keskireikä</option><option value="none">Ei reikiä</option><option value="custom">Mukautettu</option></select></label><label>Reiän Ø (mm)<input id="plateHoleD" type="number" value="5" step="0.1"></label><label>Reunan etäisyys (mm)<input id="plateHoleEdge" type="number" value="10" step="0.5"></label></div><label>Mukautetut reiät (x;y;Ø, yksi/rivi)<textarea id="plateCustomHoles" rows="4" placeholder="-20;-10;5\n20;-10;5"></textarea></label><div class="grid"><label>Kulmat<select id="plateCornerStyle"><option value="square">Suorat</option><option value="round">Pyöristetyt</option><option value="chamfer">Viistetyt</option></select></label><label>Pyöristys / viiste (mm)<input id="plateCornerSize" type="number" value="5" min="0" step="0.5"></label></div></div>
-  <div id="fields-adapter" class="fields part-fields" hidden><div class="grid"><label>Pituus (mm)<input id="adapterLength" type="number" value="30" step="0.5"></label><label>Sisä Ø 1 (mm)<input id="adapterID1" type="number" value="20" step="0.1"></label><label>Sisä Ø 2 (mm)<input id="adapterID2" type="number" value="20" step="0.1"></label><label>Ulko Ø 1 (mm)<input id="adapterOD1" type="number" value="26" step="0.1"></label><label>Ulko Ø 2 (mm)<input id="adapterOD2" type="number" value="26" step="0.1"></label></div></div>
-  <div id="fields-enclosure" class="fields part-fields" hidden><div class="grid"><label>Leveys (mm)<input id="enclosureW" type="number" value="80" step="0.5"></label><label>Syvyys (mm)<input id="enclosureD" type="number" value="60" step="0.5"></label><label>Korkeus (mm)<input id="enclosureH" type="number" value="40" step="0.5"></label><label>Seinämä (mm)<input id="enclosureWall" type="number" value="2.4" step="0.1"></label><label>Pohja (mm)<input id="enclosureFloor" type="number" value="2.4" step="0.1"></label></div></div>
-  <div id="fields-lightSign" class="fields part-fields" hidden><div class="grid"><label>Halkaisija (mm)<input id="signDiameter" type="number" value="160" step="1"></label><label>Kehyksen leveys (mm)<input id="signRingWidth" type="number" value="10" step="0.5"></label><label>Syvyys (mm)<input id="signDepth" type="number" value="20" step="0.5"></label><label>Seinämä (mm)<input id="signWall" type="number" value="2" step="0.1"></label><label>Diffuusori (mm)<input id="diffuserThickness" type="number" value="1.2" step="0.1"></label><label>Tähden leveys (mm)<input id="starWidth" type="number" value="85" step="1"></label><label>Tähden paksuus (mm)<input id="starThickness" type="number" value="2" step="0.1"></label><label>LED-uran leveys (mm)<input id="ledWidth" type="number" value="10" step="0.5"></label><label>Filamentti €/kg<input id="filamentPriceKg" type="number" value="25" step="0.5"></label><label>LED €<input id="ledCost" type="number" value="10" step="0.5"></label><label>Virta €<input id="powerCost" type="number" value="5" step="0.5"></label><label>Muut €<input id="miscCost" type="number" value="3" step="0.5"></label></div></div>
+
+  <div id="fields-spike" class="part-fields" hidden>
+    <div class="section-title">Sovitus</div>
+    <div class="grid">
+      <label>Mutterin avainkoko (mm)<input id="nutAf" type="number" value="33" step="0.1"></label>
+      <label>Välys per puoli (mm)<input id="clearance" type="number" value="0.25" step="0.05"></label>
+      <label>Puristuslukitus (mm)<input id="lockAmount" type="number" value="0.20" step="0.05"></label>
+      <label>Lukituksen korkeus (mm)<input id="lockZ" type="number" value="7" step="0.5"></label>
+    </div>
+    <div class="section-title">Muoto</div>
+    <div class="grid">
+      <label>Seinämä (mm)<input id="wall" type="number" value="2.5" step="0.1"></label>
+      <label>Mutteriosan korkeus (mm)<input id="baseHeight" type="number" value="24" step="0.5"></label>
+      <label>Kokonaiskorkeus (mm)<input id="totalHeight" type="number" value="75" step="1"></label>
+      <label>Kärjen pyöristys (mm)<input id="tipRadius" type="number" value="0.8" step="0.1"></label>
+    </div>
+  </div>
+
+  <div id="fields-plug" class="part-fields" hidden>
+    <div class="section-title">Putki ja tulppa</div>
+    <div class="grid">
+      <label>Putken ulkoleveys (mm)<input id="tubeW" type="number" value="50" step="0.1"></label>
+      <label>Putken ulkokorkeus (mm)<input id="tubeH" type="number" value="30" step="0.1"></label>
+      <label>Putken seinämä (mm)<input id="tubeWall" type="number" value="2.5" step="0.1"></label>
+      <label>Sovitusvälys / puoli (mm)<input id="plugClear" type="number" value="0.25" step="0.05"></label>
+      <label>Upotussyvyys (mm)<input id="insertDepth" type="number" value="18" step="1"></label>
+      <label>Päätylevyn paksuus (mm)<input id="capThickness" type="number" value="3" step="0.5"></label>
+      <label>Päätylevyn ylitys / puoli (mm)<input id="capOverhang" type="number" value="1" step="0.5"></label>
+    </div>
+  </div>
+
+  <div id="fields-sleeve" class="part-fields" hidden>
+    <div class="section-title">Holkki</div>
+    <div class="grid">
+      <label>Sisähalkaisija (mm)<input id="sleeveID" type="number" value="20" step="0.1"></label>
+      <label>Seinämä (mm)<input id="sleeveWall" type="number" value="3" step="0.1"></label>
+      <label>Pituus (mm)<input id="sleeveLength" type="number" value="30" step="1"></label>
+    </div>
+  </div>
+
+  <div id="fields-plate" class="part-fields" hidden>
+    <div class="section-title">Levy / kiinnike</div>
+    <div class="grid">
+      <label>Pituus (mm)<input id="plateL" type="number" value="100" step="1"></label>
+      <label>Leveys (mm)<input id="plateW" type="number" value="50" step="1"></label>
+      <label>Paksuus (mm)<input id="plateT" type="number" value="4" step="0.5"></label>
+      <label>Reikäjako<select id="plateHolePattern"><option value="none">Ei reikiä</option><option value="center">1 keskireikä</option><option value="four">4 reikää symmetrisesti</option></select></label>
+      <label>Reikien halkaisija (mm)<input id="plateHoleD" type="number" value="0" min="0" step="0.5"></label>
+      <label>Reikien etäisyys reunoista (mm)<input id="plateHoleEdge" type="number" value="10" min="0" step="0.5"></label>
+      <label>Kulmien muoto<select id="plateCornerStyle"><option value="square">Suorat</option><option value="round" selected>Pyöristetyt</option><option value="chamfer">Viistetyt</option></select></label>
+      <label>Pyöristys / viiste (mm)<input id="plateCornerSize" type="number" value="5" min="0" step="0.5"></label>
+    </div>
+  </div>
 
   <div class="section-title">Tulostusmateriaali</div>
-  <div class="material-row"><select id="material"><option value="PLA">PLA – koekappale</option><option value="PETG" selected>PETG – käyttöosa</option><option value="ASA">ASA – ulkokäyttö / UV</option></select><div id="materialCard" class="material-card"></div></div>
-  <div class="actions"><button id="btnGenerate" class="primary">LUO JA TARKISTA MALLI</button><button id="btnFitTest">LATAA SOVITUSTESTI STL</button><button id="btnDownload" disabled>LATAA STL</button><button id="btnReset" class="ghost">PALAUTA OLETUKSET</button></div>
-  <div id="status" class="status">Valmis suunnitteluun.</div><div id="validation" class="validation"></div>
+  <div class="material-row">
+    <select id="material"><option value="PLA">PLA – koekappale</option><option value="PETG" selected>PETG – käyttöosa</option><option value="ASA">ASA – ulkokäyttö / UV</option></select>
+    <div id="materialCard" class="material-card"></div>
+  </div>
+  <div class="actions">
+    <button id="btnGenerate" class="primary">LUO JA TARKISTA MALLI</button>
+    <button id="btnFitTest">LATAA SOVITUSTESTI STL</button>
+    <button id="btnDownload" disabled>LATAA STL</button>
+    <button id="btnReset" class="ghost">PALAUTA OLETUKSET</button>
+  </div>
+  <div id="status" class="status">Valmis suunnitteluun.</div>
+  <div id="validation" class="validation"></div>
 </section>
-<section class="panel preview-panel"><div class="preview-head"><div><h2>3D-esikatselu</h2><p class="hint">Vedä pyörittääksesi. Tarkista mitat ennen vientiä.</p></div><div class="dimensions" id="dimensions">–</div></div><div class="view-tools"><button id="btnMeasure" class="tool active">MITTANÄKYMÄ: PÄÄLLÄ</button><button id="btnFront" class="tool">ETU</button><button id="btnSide" class="tool">SIVU</button><button id="btnTop" class="tool">YLÄ</button><button id="btnIso" class="tool">3D</button></div><div class="zoom-tools"><button id="btnZoomOut" class="tool">−</button><input id="zoomRange" type="range" min="60" max="220" value="100" step="5"><button id="btnZoomIn" class="tool">+</button><button id="btnFitView" class="tool">SOVITA</button><span id="zoomValue">100 %</span></div><div class="canvas-wrap"><canvas id="preview" width="900" height="700"></canvas><div id="measureOverlay" class="measure-overlay"></div><div id="viewLabel" class="view-label">3D-NÄKYMÄ</div></div><div class="legend" id="legend"></div></section>
+
+<section class="panel preview-panel">
+  <div class="preview-head"><div><h2>3D-esikatselu</h2><p class="hint">Vedä pyörittääksesi. Tarkista mitat ennen vientiä.</p></div><div class="dimensions" id="dimensions">–</div></div>
+  <div class="view-tools"><button id="btnMeasure" class="tool active">MITTANÄKYMÄ: PÄÄLLÄ</button><button id="btnFront" class="tool">ETU</button><button id="btnSide" class="tool">SIVU</button><button id="btnTop" class="tool">YLÄ</button><button id="btnIso" class="tool">3D</button></div>
+  <div class="zoom-tools"><button id="btnZoomOut" class="tool">−</button><input id="zoomRange" type="range" min="60" max="220" value="100" step="5"><button id="btnZoomIn" class="tool">+</button><button id="btnFitView" class="tool">SOVITA</button><span id="zoomValue">100 %</span></div>
+  <div class="canvas-wrap"><canvas id="preview" width="900" height="700"></canvas><div id="measureOverlay" class="measure-overlay"></div><div id="viewLabel" class="view-label">3D-NÄKYMÄ</div></div>
+  <div class="legend" id="legend"></div>
+</section>
 </main>
 <footer><p>3D Studio v1.4 — suunnittele, tarkista 3D-malli ja vie STL tulostettavaksi.</p></footer>
 <script src="app.js?v=1.4"></script>
