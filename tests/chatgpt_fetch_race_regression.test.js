@@ -5,6 +5,7 @@ const fs = require("fs");
 const path = require("path");
 
 const source = fs.readFileSync(path.join(__dirname, "..", "plan_sync.js"), "utf8");
+const projectsSource = fs.readFileSync(path.join(__dirname, "..", "projects.js"), "utf8");
 
 assert(source.includes("fetchSeq=0,fetchAbort=null"), "ChatGPT fetch path must track the newest request");
 assert(source.includes("const seq=++fetchSeq"), "each plan fetch must receive a monotonic request token");
@@ -24,6 +25,14 @@ assert(source.includes("async function fetchPlan(){if(applying)return;"), "a new
 assert(source.includes('fp=$("btnFetchChatGPTPlan")'), "the apply path must track the fetch button during asynchronous CAD loading");
 assert(source.includes("if(fp)fp.disabled=true"), "ChatGPT fetch button must be visibly disabled while a plan is being applied");
 assert(source.includes("if(fp)fp.disabled=false"), "ChatGPT fetch button must be restored after apply success or failure");
+
+assert(projectsSource.includes("PLAN_MAX_BYTES=262144"), "production project plan loader must enforce the same ChatGPT plan size limit");
+assert(projectsSource.includes('r.headers?.get?.("content-length")'), "production loader must reject declared oversized ChatGPT plans before reading the body");
+assert(projectsSource.includes("const text=await r.text()"), "production loader must read ChatGPT plan text explicitly before parsing");
+assert(projectsSource.includes("byteLength(text)>PLAN_MAX_BYTES"), "production loader must byte-check responses even without a usable content-length");
+assert(projectsSource.includes("JSON.parse(text)"), "production loader must parse ChatGPT plan JSON inside its controlled error path");
+assert(projectsSource.includes("suunnitelmatiedosto ei ole kelvollista JSON-dataa"), "production loader must surface malformed ChatGPT plan JSON as a controlled Finnish status error");
+assert(!projectsSource.includes("normalizeChatGPT(await r.json())"), "production ChatGPT plan loader must not bypass the size guard with response.json()");
 
 const sample = "ä".repeat(140000);
 assert(sample.length < 262144, "test fixture should stay below the old character limit");
