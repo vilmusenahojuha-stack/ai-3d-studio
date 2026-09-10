@@ -3,7 +3,13 @@
  const $=id=>document.getElementById(id);
  const nonGeometryIds=new Set(["material","filamentPriceKg","ledCost","powerCost","miscCost"]);
  let timer=0,dirty=false;
- function refresh(clearDirty=false){clearTimeout(timer);timer=setTimeout(()=>{timer=0;const check=window.CentauriProfile?.check;if(typeof check!=="function")return;try{check.call(window.CentauriProfile);if(clearDirty)dirty=false}catch{if(clearDirty)markGeometryDirty()}},0)}
+ function failCheck(){
+  clearTimeout(timer);timer=0;dirty=true;
+  const root=$("centauriStatus"),button=$("btnCentauriStl");
+  if(button)button.disabled=true;
+  if(root){root.className="printer-status fail";root.innerHTML='<b>Centauri-tarkistus epäonnistui.</b><span>Centauri-STL-vienti on estetty, kunnes malli tarkistetaan onnistuneesti uudelleen.</span>'}
+ }
+ function refresh(clearDirty=false){clearTimeout(timer);timer=setTimeout(()=>{timer=0;const check=window.CentauriProfile?.check;if(typeof check!=="function")return;try{check.call(window.CentauriProfile);if(clearDirty)dirty=false}catch{failCheck()}},0)}
  function geometryInput(target){return!!target&&!nonGeometryIds.has(target.id)&&!!(target.closest?.(".part-fields")||target.id==="partType")}
  function enforceDirtyExportLock(){const button=$("btnCentauriStl");if(dirty&&button&&!button.disabled)button.disabled=true}
  function markGeometryDirty(){

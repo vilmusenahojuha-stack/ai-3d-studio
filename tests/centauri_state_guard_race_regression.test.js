@@ -41,6 +41,7 @@ function runTimers(){
 
 runTimers();
 const centauriButton=elements.get("btnCentauriStl");
+const status=elements.get("centauriStatus");
 const buttonObserver=observers.find(x=>x.target===centauriButton);
 assert.ok(buttonObserver,"Centauri export button must be observed for stale re-enables");
 assert.equal(buttonObserver.options?.attributes,true,"Centauri export observer must watch attributes");
@@ -70,6 +71,16 @@ guard.refresh(true);
 runTimers();
 assert.equal(guard.isDirty(),true,"failed Centauri checker must keep dirty state fail-closed");
 assert.equal(centauriButton.disabled,true,"failed Centauri checker must keep Centauri STL export disabled");
+assert.match(status.innerHTML,/Centauri-tarkistus epäonnistui/,"failed compatibility check must explain why Centauri export is locked");
+
+// A background/non-clearing refresh can also fail (visibility/material/status refresh). It must never leave a previously enabled Centauri export stale.
+centauriButton.disabled=false;
+context.window.CentauriProfile={check(){throw new Error("background checker failed")}};
+guard.refresh(false);
+runTimers();
+assert.equal(guard.isDirty(),true,"failed background Centauri refresh must mark compatibility state dirty");
+assert.equal(centauriButton.disabled,true,"failed background Centauri refresh must disable stale Centauri export");
+assert.equal(status.className,"printer-status fail","failed background Centauri refresh must show a fail status");
 
 context.window.CentauriProfile={check(){checks++}};
 guard.refresh(true);
