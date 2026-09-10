@@ -24,7 +24,7 @@
  }
  function validatePlanHoleBounds(plan){
   if(!plan||plan.schemaVersion!==2||!["mountingPlate","plate"].includes(plan.partType))return true;
-  const holes=[],add=(h,label,allowNumeric=false)=>{if(h==null)return;if(typeof h==="number"){if(!allowNumeric)throw Error(`${label}: reiän tiedot pitää antaa objektina, jossa ovat x, y ja diameter.`);holes.push({x:0,y:0,d:h,label});return}if(!h||typeof h!=="object"||Array.isArray(h))throw Error(`${label}: reiän tiedot eivät ole kelvollinen objekti.`);holes.push({x:h.x??0,y:h.y??0,d:h.diameter??h.d,label})};
+  const holes=[],has=(o,k)=>Object.prototype.hasOwnProperty.call(o,k),add=(h,label,allowNumeric=false)=>{if(h==null)return;if(typeof h==="number"){if(!allowNumeric)throw Error(`${label}: reiän tiedot pitää antaa objektina, jossa ovat x, y ja diameter.`);holes.push({x:0,y:0,d:h,label});return}if(!h||typeof h!=="object"||Array.isArray(h))throw Error(`${label}: reiän tiedot eivät ole kelvollinen objekti.`);if(!has(h,"diameter"))throw Error(`${label}: reiästä puuttuu diameter.`);if(!allowNumeric&&(!has(h,"x")||!has(h,"y")))throw Error(`${label}: reiästä pitää antaa x ja y.`);holes.push({x:allowNumeric?0:h.x,y:allowNumeric?0:h.y,d:h.diameter,label})};
   const p=plan.parameters||{};
   if(p.holes!=null&&!Array.isArray(p.holes))throw Error("parameters.holes: reikien pitää olla taulukko.");
   if(plan.operations!=null&&!Array.isArray(plan.operations))throw Error("operations: CAD-operaatioiden pitää olla taulukko.");
