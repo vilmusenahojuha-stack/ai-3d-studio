@@ -4,7 +4,7 @@ const fs=require("fs");
 const vm=require("vm");
 
 const KEY="ai3d:projects:v3";
-const project={id:"p1",name:"Adapteri",type:"adapter",values:{adapterLength:30,adapterID1:20,adapterID2:20,adapterOD1:26,adapterOD2:26,material:"PETG"}};
+const project={id:"p1",name:"Adapteri",type:"adapter",values:{adapterLength:30,adapterID1:20,adapterID2:20,adapterOD1:26,adapterOD2:26,material:"PETG"},print:{printer:"Elegoo Centauri Carbon 2 Combo",nozzle:0.4,notes:"PETG"},sourcePlan:"chatgpt-1",sourceSchema:2,created:1,updated:2};
 const store=new Map([[KEY,JSON.stringify([project])],[KEY+":active","p1"]]);
 let captureHandler=null,setPartCalls=0,prevented=0,stopped=0;
 const elements={
@@ -36,6 +36,19 @@ assert.equal(stopped,0);
 // The explicit guard API still performs the structural/CAD check when called directly.
 context.window.AI3DProjectOpenGuard.check(project);
 assert.equal(setPartCalls,1,"explicit check API must still validate through CAD");
+
+// Project-open validation must match projects.js metadata rules.
+for(const bad of [
+  {...project,print:{...project.print,unknown:"x"}},
+  {...project,print:{...project.print,notes:"x".repeat(1001)}},
+  {...project,sourcePlan:"x".repeat(161)},
+  {...project,sourceSchema:3},
+  {...project,created:"1"},
+  {...project,updated:Infinity}
+]){
+  assert.throws(()=>context.window.AI3DProjectOpenGuard.check(bad),/rakennetarkistusta/);
+}
+assert.equal(setPartCalls,1,"invalid metadata must be rejected before CAD generation");
 
 // Cross-tab conflict remains fail-closed before the normal click handler can run.
 context.window.AI3DStorageCommitGuard={hasConflict:true,lastIssue:"Uudempi projektiversio toisessa välilehdessä."};
