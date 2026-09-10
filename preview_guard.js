@@ -3,6 +3,7 @@
  const $=id=>document.getElementById(id);
  const NON_GEOMETRY_PART_FIELDS=new Set(["material","filamentPriceKg","ledCost","powerCost","miscCost"]);
  let clearing=false,lastError="";
+ function defer(fn){setTimeout(()=>{try{const result=fn?.();result?.catch?.(()=>{})}catch{}},0)}
  function clearPreview(reason=""){
   if(clearing)return;
   clearing=true;
@@ -24,9 +25,9 @@
     const ctx=canvas?.getContext?.("2d");
     if(ctx)ctx.clearRect(0,0,canvas.width,canvas.height)
    }
-   setTimeout(()=>window.CentauriProfile?.check?.(),0);
-   setTimeout(()=>window.CentauriOrientation?.render&&$("orientationResult")?window.CentauriOrientation.render():null,0);
-   setTimeout(()=>window.AI3DPrintability?.render?.(),0);
+   defer(()=>window.CentauriProfile?.check?.());
+   defer(()=>window.CentauriOrientation?.render&&$("orientationResult")?window.CentauriOrientation.render():null);
+   defer(()=>window.AI3DPrintability?.render?.());
    lastError=reason||lastError
   }finally{
    clearing=false
@@ -34,7 +35,7 @@
  }
  function projectFailureReason(){
   const sync=$("planSyncStatus")?.textContent?.trim()||"",storageGuard=window.AI3DStorageCommitGuard;
-  if(storageGuard?.hasConflict)return storageGuard.lastIssue||sync||"Projektitallennus muuttui toisessa välilehdessä tai ikkunassa. Päivitä sivu ennen jatkamista.";
+  if(storageGuard?.hasConflict)return storageGuard.lastIssue||sync||"Projektitallennus muuttui toisessa välilehdessä tai ikkunassa. Päivitä sivu ennen jatkamista, jotta uudempi projektiversio ei ylikirjoitu.";
   if(!sync||typeof window.AI3DProjects?.active!=="function"||window.AI3DProjects.active())return"";
   if(/projektien paikallinen tallennus epäonnistui|eikä projektia tallennettu|ei löytynyt avattavaa CAD-mallia|projektia ei voitu avata/i.test(sync))return sync;
   return""
