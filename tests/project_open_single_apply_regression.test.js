@@ -5,7 +5,7 @@ const vm=require("vm");
 
 const html=fs.readFileSync("index.html","utf8");
 const storageGuardPos=html.indexOf('storage_commit_guard.js?v=1.9');
-const openGuardPos=html.indexOf('project_open_guard.js?v=1.2');
+const openGuardPos=html.indexOf('project_open_guard.js?v=1.3');
 assert(storageGuardPos>=0&&openGuardPos>storageGuardPos,"project open guard must load after storage commit guard in production");
 
 const KEY="ai3d:projects:v3";
@@ -71,5 +71,13 @@ assert.equal(setPartCalls,1,"corrupt project storage must be blocked before CAD 
 assert.equal(prevented,2,"corrupt project storage must prevent the normal project click handler");
 assert.equal(stopped,2,"corrupt project storage must stop propagation before projects.js can act on stale state");
 assert.match(elements.planSyncStatus.textContent,/ei läpäissyt rakennetarkistusta/i,"corrupt project storage must surface a controlled warning");
+
+// A stale rendered project button must not fall through to projects.js when the current storage no longer contains that id.
+store.set(KEY,"[]");
+captureHandler({target,preventDefault:()=>{prevented++},stopImmediatePropagation:()=>{stopped++}});
+assert.equal(setPartCalls,1,"missing project id must be blocked before CAD generation");
+assert.equal(prevented,3,"missing project id must prevent the stale project click handler");
+assert.equal(stopped,3,"missing project id must stop propagation before projects.js can open stale in-memory state");
+assert.match(elements.planSyncStatus.textContent,/ei enää löydy nykyisestä projektitallennuksesta/i,"missing project id must surface a controlled refresh warning");
 
 console.log("Project open single-apply regression: OK");
