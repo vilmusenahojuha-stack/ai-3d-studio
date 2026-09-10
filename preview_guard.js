@@ -35,7 +35,7 @@
  }
  function projectFailureReason(){
   const sync=$("planSyncStatus")?.textContent?.trim()||"",storageGuard=window.AI3DStorageCommitGuard;
-  if(storageGuard?.hasConflict)return storageGuard.lastIssue||sync||"Projektitallennus muuttui toisessa välilehdessä tai ikkunassa. Päivitä sivu ennen jatkamista, jotta uudempi projektiversio ei ylikirjoitu.";
+  if(storageGuard?.hasConflict)return storageGuard.lastIssue||sync||"Projektitallennus muuttui toisessa välilehdessä tai ikkunassa. Päivitä sivu ennen jatkamista.";
   if(!sync||typeof window.AI3DProjects?.active!=="function"||window.AI3DProjects.active())return"";
   if(/projektien paikallinen tallennus epäonnistui|eikä projektia tallennettu|ei löytynyt avattavaa CAD-mallia|projektia ei voitu avata/i.test(sync))return sync;
   return""
