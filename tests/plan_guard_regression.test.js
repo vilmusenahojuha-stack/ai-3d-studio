@@ -52,6 +52,15 @@ const validPlate = {
 
 assert.equal(validate(validPlate).ok, true, "valid mounting plate should pass operation guard");
 
+const zeroCenterHole = structuredClone(validPlate);
+zeroCenterHole.parameters.holes = [];
+zeroCenterHole.parameters.centerHole = 0;
+assert.equal(validate(zeroCenterHole).ok, false, "explicit zero centerHole must be rejected instead of silently ignored");
+assert(
+  validate(zeroCenterHole).errors.some(x => /diameter/i.test(x)),
+  "zero centerHole rejection should identify the invalid hole diameter"
+);
+
 const validHoleOperation = structuredClone(validPlate);
 validHoleOperation.parameters.holes = [];
 validHoleOperation.operations = [{ type: "hole", x: 0, y: 0, diameter: 10 }];
