@@ -58,6 +58,12 @@
  function resetMissingCadRetries(){
   for(const [key,needed] of CAD_FALLBACKS){let missing=false;try{missing=needed()}catch{missing=true}if(missing)cadFallbackAttempts[key]=0}
  }
+ function recoverCentauriState(){
+  try{
+   window.AI3DCentauriStateGuard?.installSafeCheck?.();
+   window.AI3DCentauriStateGuard?.refresh?.(true)
+  }catch{}
+ }
  function loadCadFallbacks(){
   let started=false;
   for(const [key,needed,src] of CAD_FALLBACKS){
@@ -66,7 +72,7 @@
    cadFallbackAttempts[key]++;started=true;
    const s=document.createElement("script");s.src=src+"&healthRetry="+Date.now();s.async=true;s.dataset.ai3dCadFallback=key;
    if(key==="centauri")s.dataset.ai3dCentauri="1";
-   s.onload=()=>start();s.onerror=()=>start();document.body.appendChild(s)
+   s.onload=()=>{if(key==="centauri")recoverCentauriState();start()};s.onerror=()=>start();document.body.appendChild(s)
   }
   return started
  }
