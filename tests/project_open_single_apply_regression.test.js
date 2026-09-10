@@ -3,6 +3,11 @@ const assert=require("assert");
 const fs=require("fs");
 const vm=require("vm");
 
+const html=fs.readFileSync("index.html","utf8");
+const storageGuardPos=html.indexOf('storage_commit_guard.js?v=1.8');
+const openGuardPos=html.indexOf('project_open_guard.js?v=1.1');
+assert(storageGuardPos>=0&&openGuardPos>storageGuardPos,"project open guard must load after storage commit guard in production");
+
 const KEY="ai3d:projects:v3";
 const project={id:"p1",name:"Adapteri",type:"adapter",values:{adapterLength:30,adapterID1:20,adapterID2:20,adapterOD1:26,adapterOD2:26,material:"PETG"},print:{printer:"Elegoo Centauri Carbon 2 Combo",nozzle:0.4,notes:"PETG"},sourcePlan:"chatgpt-1",sourceSchema:2,created:1,updated:2};
 const store=new Map([[KEY,JSON.stringify([project])],[KEY+":active","p1"]]);
