@@ -133,6 +133,23 @@ function testInvalidHoleGeometry(runtime) {
     partType: "mountingPlate",
     parameters: { length: 60, width: 40, thickness: 4, holes: [{ x: 27, y: 0, diameter: 8 }] },
   }), /liian lähellä levyn todellista reunaa/);
+
+  assert.throws(() => generate(runtime, {
+    schemaVersion: 2,
+    partType: "mountingPlate",
+    parameters: { length: 60, width: 40, thickness: 4, centerHole: 0 },
+  }), /Keskireiän halkaisijan pitää olla/,
+  "CAD Plan v2 -ydin ei saa ohittaa eksplisiittistä centerHole: 0 -arvoa");
+
+  assert.throws(() => generate(runtime, {
+    schemaVersion: 2,
+    partType: "mountingPlate",
+    parameters: {
+      length: 600, width: 600, thickness: 4, centerHole: 4,
+      holes: Array.from({ length: 200 }, (_, i) => ({ x: -245 + (i % 20) * 25, y: -245 + Math.floor(i / 20) * 25, diameter: 2 })),
+    },
+  }), /enintään 200 reikää/,
+  "eksplisiittinen keskireikä pitää laskea mukaan CAD-ytimen 200 reiän työmäärärajaan");
 }
 
 const runtime = makeRuntime();
