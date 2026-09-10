@@ -1,6 +1,6 @@
 "use strict";
 (()=>{
- const $=id=>document.getElementById(id),api=window.AI3D,HOLE_XY_MAX=2000,HOLE_D_MIN=.2,HOLE_D_MAX=500;
+ const $=id=>document.getElementById(id),api=window.AI3D,HOLE_XY_MAX=2000,HOLE_D_MIN=.2,HOLE_D_MAX=500,MAX_OPS=200,MAX_HOLES=200;
  if(!api||typeof api.setPart!=="function"||api.__applyGuard)return;
  const original=api.setPart.bind(api);
  function failureMessage(){
@@ -25,18 +25,23 @@
  function validatePlanHoleBounds(plan){
   if(!plan||plan.schemaVersion!==2||!["mountingPlate","plate"].includes(plan.partType))return true;
   const holes=[],has=(o,k)=>Object.prototype.hasOwnProperty.call(o,k),add=(h,label,allowNumeric=false)=>{if(h==null)return;if(typeof h==="number"){if(!allowNumeric)throw Error(`${label}: reiän tiedot pitää antaa objektina, jossa ovat x, y ja diameter.`);holes.push({x:0,y:0,d:h,label});return}if(!h||typeof h!=="object"||Array.isArray(h))throw Error(`${label}: reiän tiedot eivät ole kelvollinen objekti.`);if(!has(h,"diameter"))throw Error(`${label}: reiästä puuttuu diameter.`);if(!allowNumeric&&(!has(h,"x")||!has(h,"y")))throw Error(`${label}: reiästä pitää antaa x ja y.`);holes.push({x:allowNumeric?0:h.x,y:allowNumeric?0:h.y,d:h.diameter,label})};
-  const p=plan.parameters||{};
+  const p=plan.parameters||{},ops=Array.isArray(plan.operations)?plan.operations:[];
   if(p.holes!=null&&!Array.isArray(p.holes))throw Error("parameters.holes: reikien pitää olla taulukko.");
   if(plan.operations!=null&&!Array.isArray(plan.operations))throw Error("operations: CAD-operaatioiden pitää olla taulukko.");
+  if(Array.isArray(p.holes)&&p.holes.length>MAX_HOLES)throw Error(`parameters.holes sisältää yli ${MAX_HOLES} reikää.`);
+  if(ops.length>MAX_OPS)throw Error(`operations sisältää yli ${MAX_OPS} operaatiota.`);
   if(Array.isArray(p.holes))p.holes.forEach((h,i)=>add(h,`parameters.holes ${i+1}`));
   if(p.centerHole!=null)add(p.centerHole,"parameters.centerHole",true);
-  for(const [i,op] of (Array.isArray(plan.operations)?plan.operations:[]).entries()){
+  for(const [i,op] of ops.entries()){
    if(op?.type==="hole")add(op,`operations ${i+1}`);
    if(op?.type==="holes"){
     if(!Array.isArray(op.holes))throw Error(`operations ${i+1}: holes-operaation reikien pitää olla taulukko.`);
+    if(op.holes.length>MAX_HOLES)throw Error(`operations ${i+1}: holes-operaatio sisältää yli ${MAX_HOLES} reikää.`);
     op.holes.forEach((h,j)=>add(h,`operations ${i+1}, reikä ${j+1}`));
    }
+   if(holes.length>MAX_HOLES)throw Error(`Suunnitelmassa on yhteensä yli ${MAX_HOLES} reikää.`);
   }
+  if(holes.length>MAX_HOLES)throw Error(`Suunnitelmassa on yhteensä yli ${MAX_HOLES} reikää.`);
   for(const h of holes){
    const x=Number(h.x),y=Number(h.y),d=Number(h.d);
    if(!Number.isFinite(x)||!Number.isFinite(y)||!Number.isFinite(d)||Math.abs(x)>HOLE_XY_MAX||Math.abs(y)>HOLE_XY_MAX||d<HOLE_D_MIN||d>HOLE_D_MAX)throw Error(`${h.label}: x/y pitää olla välillä -${HOLE_XY_MAX}…${HOLE_XY_MAX} mm ja diameter välillä ${HOLE_D_MIN}…${HOLE_D_MAX} mm.`);

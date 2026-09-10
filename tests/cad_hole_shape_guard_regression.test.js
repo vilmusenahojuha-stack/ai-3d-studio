@@ -91,7 +91,39 @@ assert.throws(
   "single hole operations must require the Schema v2 diameter field"
 );
 
-assert.strictEqual(calls, 2, "malformed hole definitions must never reach CAD geometry generation");
-assert.ok(previewClears.length >= 5, "each rejected malformed plan must clear stale preview/export state");
+assert.throws(
+  () => window.AI3DPlanV2CAD.apply({
+    schemaVersion: 2,
+    partType: "mountingPlate",
+    parameters: { holes: Array.from({ length: 201 }, (_, i) => ({ x: i, y: 0, diameter: 1 })) }
+  }),
+  /yli 200 reikää/,
+  "direct CAD apply must enforce the same parameters.holes budget as ChatGPT preflight"
+);
+
+assert.throws(
+  () => window.AI3DPlanV2CAD.apply({
+    schemaVersion: 2,
+    partType: "mountingPlate",
+    parameters: {},
+    operations: Array.from({ length: 201 }, (_, i) => ({ type: "hole", x: i, y: 0, diameter: 1 }))
+  }),
+  /yli 200 operaatiota/,
+  "direct CAD apply must enforce the same operation budget as ChatGPT preflight"
+);
+
+assert.throws(
+  () => window.AI3DPlanV2CAD.apply({
+    schemaVersion: 2,
+    partType: "mountingPlate",
+    parameters: { holes: Array.from({ length: 150 }, (_, i) => ({ x: i, y: 0, diameter: 1 })) },
+    operations: [{ type: "holes", holes: Array.from({ length: 51 }, (_, i) => ({ x: i, y: 10, diameter: 1 })) }]
+  }),
+  /yhteensä yli 200 reikää/,
+  "combined parameter and operation holes must not bypass the total hole budget"
+);
+
+assert.strictEqual(calls, 2, "malformed or over-budget plans must never reach CAD geometry generation");
+assert.ok(previewClears.length >= 8, "each rejected malformed or over-budget plan must clear stale preview/export state");
 
 console.log("CAD hole shape guard regression: OK");
