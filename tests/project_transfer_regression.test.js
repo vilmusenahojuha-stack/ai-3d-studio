@@ -136,10 +136,11 @@ async function boot(storage,chatgptPlan){
       revokeObjectURL(){}
     },
     FileReader:TestFileReader,
-    fetch:async url=>({
-      ok:true,
-      async json(){return String(url).startsWith("plans.json")?{plans:[]}:chatgptPlan;}
-    }),
+    fetch:async url=>{
+      if(String(url).startsWith("plans.json"))return{ok:true,async json(){return{plans:[]};}};
+      const text=JSON.stringify(chatgptPlan);
+      return{ok:true,headers:{get(){return null;}},async text(){return text;}};
+    },
     alert(message){alerts.push(String(message));},
     prompt(){return null;},
     crypto:{randomUUID(){return"test-"+Math.random().toString(36).slice(2,10);}},
