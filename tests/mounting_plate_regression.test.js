@@ -118,6 +118,43 @@ function testCenterHoleAndChamfer(runtime) {
   assertHoleWall(mesh, 0, 0, 5, 4);
 }
 
+function testSchemaV2HoleBounds(runtime) {
+  const minHole = generate(runtime, {
+    schemaVersion: 2,
+    partType: "mountingPlate",
+    parameters: { length: 20, width: 20, thickness: 2, centerHole: 0.2 },
+  });
+  assert.equal(runtime.__validateMesh(minHole).ok, true, "Schema v2:n 0,2 mm minimireiän pitää olla sallittu");
+
+  const maxHole = generate(runtime, {
+    schemaVersion: 2,
+    partType: "mountingPlate",
+    parameters: { length: 600, width: 600, thickness: 2, centerHole: 500 },
+  });
+  assert.equal(runtime.__validateMesh(maxHole).ok, true, "Schema v2:n 500 mm maksimireiän pitää olla sallittu");
+
+  assert.throws(() => generate(runtime, {
+    schemaVersion: 2,
+    partType: "mountingPlate",
+    parameters: { length: 20, width: 20, thickness: 2, centerHole: 0.19 },
+  }), /0\.2…500 mm/,
+  "CAD-ytimen pitää käyttää samaa 0,2 mm minimihalkaisijaa kuin Schema v2");
+
+  assert.throws(() => generate(runtime, {
+    schemaVersion: 2,
+    partType: "mountingPlate",
+    parameters: { length: 600, width: 600, thickness: 2, centerHole: 500.01 },
+  }), /0\.2…500 mm/,
+  "CAD-ytimen pitää käyttää samaa 500 mm maksimihalkaisijaa kuin Schema v2");
+
+  assert.throws(() => generate(runtime, {
+    schemaVersion: 2,
+    partType: "mountingPlate",
+    parameters: { length: 4500, width: 100, thickness: 2, holes: [{ x: 2000.01, y: 0, diameter: 2 }] },
+  }), /-2000…2000 mm/,
+  "CAD-ytimen pitää käyttää samaa ±2000 mm reikäkoordinaattirajaa kuin Schema v2");
+}
+
 function testInvalidHoleGeometry(runtime) {
   assert.throws(() => generate(runtime, {
     schemaVersion: 2,
@@ -155,6 +192,7 @@ function testInvalidHoleGeometry(runtime) {
 const runtime = makeRuntime();
 testFourOperationHoles(runtime);
 testCenterHoleAndChamfer(runtime);
+testSchemaV2HoleBounds(runtime);
 testInvalidHoleGeometry(runtime);
 
 console.log("mounting plate regression: OK");
