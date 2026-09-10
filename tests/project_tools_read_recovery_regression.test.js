@@ -76,6 +76,15 @@ const backupRaw=JSON.stringify([backupProject]);
 }
 
 {
+  const storage=new MemoryStorage({[KEY]:"",[ACTIVE]:"p-stale",[BACKUP]:backupRaw});
+  const elements=boot(storage);
+  assert.strictEqual(storage.getItem(KEY),backupRaw,"empty-string main storage must be treated as corrupt and recover from a valid backup");
+  assert.strictEqual(storage.getItem(ACTIVE),"p-backup","empty-string recovery must repair the active project id");
+  assert.strictEqual(storage.getItem(BACKUP),backupRaw,"empty-string recovery must preserve the backup itself");
+  assert.match(elements.projectStorageInfo.textContent,/Paikalliset projektit: 1\b/,"empty-string recovery should expose the recovered project count");
+}
+
+{
   const salvageable={...backupProject,id:"p-salvage",name:"Pelastettava projekti"};
   const invalid={...backupProject,id:"p-invalid",type:"unknown"};
   const corruptMain=JSON.stringify([salvageable,invalid]);
