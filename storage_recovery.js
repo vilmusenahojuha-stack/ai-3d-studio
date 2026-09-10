@@ -2,10 +2,12 @@
 (()=>{
  const KEY="ai3d:projects:v3",BACKUP=KEY+":backup",CORRUPT=KEY+":corrupt";
  const ALLOWED=new Set(["lightSign","spike","plug","sleeve","plate","adapter","enclosure"]);
- const BLOCKED_KEYS=new Set(["__proto__","prototype","constructor"]),MAX_PROJECT_NAME=120,MAX_PROJECT_DESCRIPTION=1000;
+ const BLOCKED_KEYS=new Set(["__proto__","prototype","constructor"]),PRINT_KEYS=new Set(["printer","nozzle","layer","walls","infill","notes"]),MAX_PROJECT_NAME=120,MAX_PROJECT_DESCRIPTION=1000;
  const state={checked:false,recovered:false,repairedActive:false,reason:"",error:""};
  function validValues(v){if(!v||typeof v!=="object"||Array.isArray(v))return false;const e=Object.entries(v);if(e.length>100)return false;return e.every(([k,x])=>k.length<=160&&!BLOCKED_KEYS.has(k)&&(x===null||["string","number","boolean"].includes(typeof x))&&(typeof x!=="number"||Number.isFinite(x))&&(typeof x!=="string"||x.length<=50000))}
- function validLegacyProject(p){return!!(p&&typeof p==="object"&&!Array.isArray(p)&&typeof p.id==="string"&&p.id.trim()&&p.id.length<=160&&ALLOWED.has(p.type)&&validValues(p.values)&&(p.name==null||typeof p.name==="string")&&(p.description==null||typeof p.description==="string"))}
+ function validPrint(pr){if(pr==null)return true;if(typeof pr!=="object"||Array.isArray(pr))return false;const entries=Object.entries(pr);if(entries.length>PRINT_KEYS.size)return false;return entries.every(([k,v])=>PRINT_KEYS.has(k)&&["string","number"].includes(typeof v)&&(typeof v!=="number"||Number.isFinite(v))&&String(v).length<=(k==="notes"?1000:160))}
+ function validMetadata(p){return validPrint(p.print)&&(p.sourcePlan==null||(typeof p.sourcePlan==="string"&&p.sourcePlan.length<=160))&&(p.sourceSchema==null||p.sourceSchema===1||p.sourceSchema===2)&&(p.created==null||(typeof p.created==="number"&&Number.isFinite(p.created)))&&(p.updated==null||(typeof p.updated==="number"&&Number.isFinite(p.updated)))}
+ function validLegacyProject(p){return!!(p&&typeof p==="object"&&!Array.isArray(p)&&typeof p.id==="string"&&p.id.trim()&&p.id.length<=160&&ALLOWED.has(p.type)&&validValues(p.values)&&validMetadata(p)&&(p.name==null||typeof p.name==="string")&&(p.description==null||typeof p.description==="string"))}
  function validProject(p){return!!(validLegacyProject(p)&&(p.name==null||p.name.length<=MAX_PROJECT_NAME)&&(p.description==null||p.description.length<=MAX_PROJECT_DESCRIPTION))}
  function parseArray(raw){try{const v=JSON.parse(raw);return Array.isArray(v)?v:null}catch{return null}}
  function uniqueValidItems(items){const ids=new Set(),out=[];for(const p of items||[]){if(!validProject(p)||ids.has(p.id))continue;ids.add(p.id);out.push(p)}return out}
