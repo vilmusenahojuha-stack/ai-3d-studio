@@ -155,4 +155,27 @@ assert.deepStrictEqual(
   "blocked cross-tab autosave must restore the in-memory project values"
 );
 
+const metadataProject={
+  ...originalProject,
+  id:"p-metadata",
+  print:{printer:"Elegoo Centauri Carbon 2 Combo",nozzle:0.4,layer:"0.20 mm",walls:"4",infill:"25 %",notes:"Centauri-profiili"},
+  sourcePlan:"chatgpt-current",
+  sourceSchema:2,
+  created:200,
+  updated:201
+};
+const metadataBoot=boot(new MemoryStorage({[KEY]:JSON.stringify([metadataProject]),[ACTIVE]:metadataProject.id}));
+assert.strictEqual(metadataBoot.context.window.AI3DProjects.active()?.id,metadataProject.id,"valid print and ChatGPT source metadata must remain loadable");
+
+const invalidMetadataProjects=[
+  {...metadataProject,id:"bad-print-key",print:{...metadataProject.print,temperature:250}},
+  {...metadataProject,id:"bad-print-notes",print:{...metadataProject.print,notes:"x".repeat(1001)}},
+  {...metadataProject,id:"bad-source-schema",sourceSchema:3},
+  {...metadataProject,id:"bad-created",created:"200"}
+];
+for(const project of invalidMetadataProjects){
+  const invalidBoot=boot(new MemoryStorage({[KEY]:JSON.stringify([project]),[ACTIVE]:project.id}));
+  assert.strictEqual(invalidBoot.context.window.AI3DProjects.active(),undefined,`invalid persisted metadata must fail closed: ${project.id}`);
+}
+
 console.log("project storage regression: ok");
