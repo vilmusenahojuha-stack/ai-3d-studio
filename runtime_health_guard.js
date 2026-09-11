@@ -22,7 +22,7 @@
   ["centauri",()=>!centauriReady(),"centauri.js?v=1.9"],
   ["centauriState",()=>!centauriStateReady(),"centauri_state_guard.js?v=1.6"],
   ["centauriOrientation",()=>!centauriOrientationReady(),"centauri_orientation.js?v=1.6"],
-  ["printability",()=>!printabilityReady(),"printability_summary.js?v=1.2"],
+  ["printability",()=>!printabilityReady(),"printability_summary.js?v=1.3"],
   ["fitCalibration",()=>!fitCalibrationReady(),"fit_calibration.js?v=1.1"]
  ];
  let earcutFallbackState="idle",earcutFallbackAttempts=0,cadFallbackAttempts={cadV2Core:0,cadV2:0,cadApplyGuard:0,planPreflight:0,planOperations:0,parametric:0,customPlate:0,projectTools:0,projectOpenGuard:0,storageRecovery:0,storageCommitGuard:0,previewGuard:0,guidedUI:0,measureFocus:0,meshIntegrity:0,centauri:0,centauriState:0,centauriOrientation:0,printability:0,fitCalibration:0};
