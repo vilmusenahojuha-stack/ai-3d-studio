@@ -10,11 +10,12 @@
   ["planOperations",()=>!(fn(window.AI3DPlanOperationGuard?.validate)&&fn(window.AI3DPlanOperationGuard?.run)&&fn(window.AI3DPlanOperationGuard?.getLastResult)&&fn(window.AI3DPlanOperationGuard?.isAllowed)),"plan_operation_guard.js?v=1.10"],
   ["parametric",()=>!parametricReady(),"parametric_parts.js?v=1.9"],
   ["customPlate",()=>!customPlateReady(),"plate_custom.js?v=1.7"],
+  ["projectTools",()=>!projectToolsReady(),"project_tools.js?v=1.14"],
   ["previewGuard",()=>!previewGuardReady(),"preview_guard.js?v=1.6"],
   ["meshIntegrity",()=>!meshIntegrityReady(),"mesh_integrity_guard.js?v=1.6"],
   ["centauri",()=>!centauriReady(),"centauri.js?v=1.9"]
  ];
- let earcutFallbackState="idle",earcutFallbackAttempts=0,cadFallbackAttempts={cadV2Core:0,cadV2:0,planPreflight:0,planOperations:0,parametric:0,customPlate:0,previewGuard:0,meshIntegrity:0,centauri:0};
+ let earcutFallbackState="idle",earcutFallbackAttempts=0,cadFallbackAttempts={cadV2Core:0,cadV2:0,planPreflight:0,planOperations:0,parametric:0,customPlate:0,projectTools:0,previewGuard:0,meshIntegrity:0,centauri:0};
  const cadV2CoreReady=()=>fn(window.AI3DPlanV2CAD?.apply);
  const cadV2EditorReady=()=>fn(window.AI3DV2Editor?.apply);
  const cadV2Ready=()=>cadV2CoreReady()&&cadV2EditorReady();
