@@ -5,7 +5,7 @@ const runtime=fs.readFileSync(path.join(root,"runtime_health_guard.js"),"utf8");
 const index=fs.readFileSync(path.join(root,"index.html"),"utf8");
 assert.match(index,/printability_summary\.js\?v=1\.2/,"index must load current printability summary version");
 assert.match(index,/fit_calibration\.js\?v=1\.1/,"index must load current fit calibration version");
-assert.match(index,/runtime_health_guard\.js\?v=1\.18/,"index must invalidate runtime health cache after Centauri panel recovery changes");
+assert.match(index,/runtime_health_guard\.js\?v=1\.19/,"index must invalidate runtime health cache after Centauri panel recovery changes");
 assert.match(runtime,/\["printability",\(\)=>!printabilityReady\(\),"printability_summary\.js\?v=1\.2"\]/,"runtime fallback must pin current printability summary version");
 assert.match(runtime,/\["fitCalibration",\(\)=>!fitCalibrationReady\(\),"fit_calibration\.js\?v=1\.1"\]/,"runtime fallback must pin current fit calibration version");
 const appended=[];
