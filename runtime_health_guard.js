@@ -8,7 +8,7 @@
   ["cadV2",()=>!cadV2EditorReady(),"cad_v2_editor.js?v=1.5"],
   ["cadApplyGuard",()=>!cadApplyGuardReady(),"cad_apply_guard.js?v=1.4"],
   ["planPreflight",()=>!(fn(window.AI3DPlanPreflight?.validate)&&fn(window.AI3DPlanPreflight?.run)&&fn(window.AI3DPlanPreflight?.getLastResult)),"plan_preflight.js?v=1.13"],
-  ["planOperations",()=>!(fn(window.AI3DPlanOperationGuard?.validate)&&fn(window.AI3DPlanOperationGuard?.run)&&fn(window.AI3DPlanOperationGuard?.getLastResult)&&fn(window.AI3DPlanOperationGuard?.isAllowed)),"plan_operation_guard.js?v=1.10"],
+  ["planOperations",()=>!(fn(window.AI3DPlanOperationGuard?.validate)&&fn(window.AI3DPlanOperationGuard?.run)&&fn(window.AI3DPlanOperationGuard?.getLastResult)&&fn(window.AI3DPlanOperationGuard?.isAllowed)),"plan_operation_guard.js?v=1.11"],
   ["parametric",()=>!parametricReady(),"parametric_parts.js?v=1.9"],
   ["customPlate",()=>!customPlateReady(),"plate_custom.js?v=1.8"],
   ["projectTools",()=>!projectToolsReady(),"project_tools.js?v=1.14"],
