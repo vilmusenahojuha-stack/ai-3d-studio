@@ -6,6 +6,7 @@ const path = require("path");
 
 const source = fs.readFileSync(path.join(__dirname, "..", "plan_sync.js"), "utf8");
 const projectsSource = fs.readFileSync(path.join(__dirname, "..", "projects.js"), "utf8");
+const indexSource = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
 
 assert(source.includes("fetchSeq=0,fetchAbort=null"), "ChatGPT fetch path must track the newest request");
 assert(source.includes("const seq=++fetchSeq"), "each plan fetch must receive a monotonic request token");
@@ -25,6 +26,8 @@ assert(source.includes("async function fetchPlan(){if(applying)return;"), "a new
 assert(source.includes('fp=$("btnFetchChatGPTPlan")'), "the apply path must track the fetch button during asynchronous CAD loading");
 assert(source.includes("if(fp)fp.disabled=true"), "ChatGPT fetch button must be visibly disabled while a plan is being applied");
 assert(source.includes("if(fp)fp.disabled=false"), "ChatGPT fetch button must be restored after apply success or failure");
+assert(source.includes('V2_CAD_URL="cad_plan_v2.js?v=1.5"'), "ChatGPT dynamic CAD v2 loader must use the current CAD core cache version");
+assert(indexSource.includes('cad_plan_v2.js?v=1.5'), "index.html must load the same current CAD v2 core version as ChatGPT dynamic loading");
 
 assert(projectsSource.includes("PLAN_MAX_BYTES=262144"), "production project plan loader must enforce the same ChatGPT plan size limit");
 assert(projectsSource.includes('r.headers?.get?.("content-length")'), "production loader must reject declared oversized ChatGPT plans before reading the body");

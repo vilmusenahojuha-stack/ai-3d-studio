@@ -1,7 +1,7 @@
 "use strict";
 (()=>{
  const $=id=>document.getElementById(id),MATS=new Set(["PLA","PETG","ASA"]);let pending=null,v2Load=null,applying=false,fetchSeq=0,fetchAbort=null;
- const TYPES=new Set(["sleeve","spike","endPlug","mountingPlate","adapter","enclosure"]),V2_CAD_URL="cad_plan_v2.js?v=1.4",PLAN_MAX_BYTES=262144;
+ const TYPES=new Set(["sleeve","spike","endPlug","mountingPlate","adapter","enclosure"]),V2_CAD_URL="cad_plan_v2.js?v=1.5",PLAN_MAX_BYTES=262144;
  function n(v,min,max){return typeof v==="number"&&Number.isFinite(v)&&v>=min&&v<=max}
  function byteLength(v){try{return new TextEncoder().encode(String(v)).byteLength}catch{return new Blob([String(v)]).size}}
  function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c])}
