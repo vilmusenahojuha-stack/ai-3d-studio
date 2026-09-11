@@ -2,13 +2,17 @@
 (()=>{
  const KEY="ai3d:projects:v3",BACKUP=KEY+":backup",CORRUPT=KEY+":corrupt";
  const ALLOWED=new Set(["lightSign","spike","plug","sleeve","plate","adapter","enclosure"]);
- const BLOCKED_KEYS=new Set(["__proto__","prototype","constructor"]),PRINT_KEYS=new Set(["printer","nozzle","layer","walls","infill","notes"]),MAX_PROJECT_NAME=120,MAX_PROJECT_DESCRIPTION=1000;
+ const BLOCKED_KEYS=new Set(["__proto__","prototype","constructor"]),PRINT_KEYS=new Set(["printer","nozzle","layer","walls","infill","notes"]),MAX_PROJECT_NAME=120,MAX_PROJECT_DESCRIPTION=1000,MAX_DATE_MS=8.64e15;
  const state={checked:false,recovered:false,repairedActive:false,reason:"",error:""};
  function validValues(v){if(!v||typeof v!=="object"||Array.isArray(v))return false;const e=Object.entries(v);if(e.length>100)return false;return e.every(([k,x])=>k.length<=160&&!BLOCKED_KEYS.has(k)&&(x===null||["string","number","boolean"].includes(typeof x))&&(typeof x!=="number"||Number.isFinite(x))&&(typeof x!=="string"||x.length<=50000))}
  function validPrint(pr){if(pr==null)return true;if(typeof pr!=="object"||Array.isArray(pr))return false;const entries=Object.entries(pr);if(entries.length>PRINT_KEYS.size)return false;return entries.every(([k,v])=>PRINT_KEYS.has(k)&&["string","number"].includes(typeof v)&&(typeof v!=="number"||Number.isFinite(v))&&String(v).length<=(k==="notes"?1000:160))}
- function validMetadata(p){return validPrint(p.print)&&(p.sourcePlan==null||(typeof p.sourcePlan==="string"&&p.sourcePlan.length<=160))&&(p.sourceSchema==null||p.sourceSchema===1||p.sourceSchema===2)&&(p.created==null||(typeof p.created==="number"&&Number.isFinite(p.created)))&&(p.updated==null||(typeof p.updated==="number"&&Number.isFinite(p.updated)))}
- function validLegacyProject(p){return!!(p&&typeof p==="object"&&!Array.isArray(p)&&typeof p.id==="string"&&p.id.trim()&&p.id.length<=160&&ALLOWED.has(p.type)&&validValues(p.values)&&validMetadata(p)&&(p.name==null||typeof p.name==="string")&&(p.description==null||typeof p.description==="string"))}
+ function validTimestamp(v){return v==null||(typeof v==="number"&&Number.isFinite(v)&&v>=0&&v<=MAX_DATE_MS)}
+ function validMetadata(p){return validPrint(p.print)&&(p.sourcePlan==null||(typeof p.sourcePlan==="string"&&p.sourcePlan.length<=160))&&(p.sourceSchema==null||p.sourceSchema===1||p.sourceSchema===2)&&validTimestamp(p.created)&&validTimestamp(p.updated)}
+ function validMetadataIgnoringTimeRange(p){return validPrint(p.print)&&(p.sourcePlan==null||(typeof p.sourcePlan==="string"&&p.sourcePlan.length<=160))&&(p.sourceSchema==null||p.sourceSchema===1||p.sourceSchema===2)&&(p.created==null||(typeof p.created==="number"&&Number.isFinite(p.created)))&&(p.updated==null||(typeof p.updated==="number"&&Number.isFinite(p.updated)))}
+ function validLegacyProjectWithMetadata(p,metadataValidator){return!!(p&&typeof p==="object"&&!Array.isArray(p)&&typeof p.id==="string"&&p.id.trim()&&p.id.length<=160&&ALLOWED.has(p.type)&&validValues(p.values)&&metadataValidator(p)&&(p.name==null||typeof p.name==="string")&&(p.description==null||typeof p.description==="string"))}
+ function validLegacyProject(p){return validLegacyProjectWithMetadata(p,validMetadata)}
  function validProject(p){return!!(validLegacyProject(p)&&(p.name==null||p.name.length<=MAX_PROJECT_NAME)&&(p.description==null||p.description.length<=MAX_PROJECT_DESCRIPTION))}
+ function validProjectIgnoringTimeRange(p){return!!(validLegacyProjectWithMetadata(p,validMetadataIgnoringTimeRange)&&(p.name==null||p.name.length<=MAX_PROJECT_NAME)&&(p.description==null||p.description.length<=MAX_PROJECT_DESCRIPTION))}
  function parseArray(raw){try{const v=JSON.parse(raw);return Array.isArray(v)?v:null}catch{return null}}
  function uniqueValidItems(items){const ids=new Set(),out=[];for(const p of items||[]){if(!validProject(p)||ids.has(p.id))continue;ids.add(p.id);out.push(p)}return out}
  function parse(raw){const v=parseArray(raw);if(!v)return null;return uniqueValidItems(v).length===v.length?v:null}
@@ -31,6 +35,21 @@
   }catch(e){state.error=e?.message||String(e)}
  }
  function preserveCorrupt(raw){try{if(typeof raw==="string"&&raw.length<=2_000_000)localStorage.setItem(CORRUPT,raw)}catch{}}
+ function repairTimestampRange(raw){
+  const all=parseArray(raw||"");if(!all?.length)return false;
+  const ids=new Set();let needsRepair=false;
+  for(const p of all){if(!validProjectIgnoringTimeRange(p)||ids.has(p.id))return false;ids.add(p.id);if(!validTimestamp(p.created)||!validTimestamp(p.updated))needsRepair=true}
+  if(!needsRepair)return false;
+  const now=Date.now(),repaired=all.map(p=>{const q={...p};let created=p.created,updated=p.updated;if(!validTimestamp(created)){created=validTimestamp(updated)&&updated!=null?Math.min(updated,now):now;q.created=created}if(!validTimestamp(updated)){updated=validTimestamp(created)&&created!=null?created:now;q.updated=updated}return q});
+  try{
+   preserveCorrupt(raw);
+   writeVerified(KEY,JSON.stringify(repaired));
+   state.recovered=true;
+   state.reason="Projektitallennuksen Date-alueen ulkopuoliset aikaleimat korjattiin turvallisesti. CAD-arvoja tai projektien sisältöä ei muutettu.";
+   repairActive(repaired);
+   return true
+  }catch(e){state.error=e?.message||String(e);state.reason="Virheellisten projektiaikaleimojen automaattinen korjaus epäonnistui.";return false}
+ }
  function repairLegacyText(raw){
   const all=parseArray(raw||"");if(!all?.length)return false;
   const ids=new Set();for(const p of all){if(!validLegacyProject(p)||ids.has(p.id))return false;ids.add(p.id)}
@@ -81,6 +100,7 @@
   }
   const main=parse(mainRaw);
   if(main){repairActive(main);return}
+  if(repairTimestampRange(mainRaw))return;
   if(repairLegacyText(mainRaw))return;
   const backup=parse(backupRaw||"");
   if(backup?.length){preserveCorrupt(mainRaw);restoreBackup(backup,`Vioittunut projektitallennus palautettiin rakenteellisesti tarkistetusta paikallisesta varmuuskopiosta (${backup.length} projektia).`);return}
