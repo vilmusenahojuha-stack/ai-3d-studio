@@ -3,6 +3,14 @@ const assert=require("assert");
 const fs=require("fs");
 const vm=require("vm");
 
+const parametricSource=fs.readFileSync("parametric_parts.js","utf8");
+const indexSource=fs.readFileSync("index.html","utf8");
+const fallbackProjectTools=parametricSource.match(/project_tools\.js\?v=([0-9.]+)/)?.[1];
+const productionProjectTools=indexSource.match(/project_tools\.js\?v=([0-9.]+)/)?.[1];
+assert.ok(fallbackProjectTools,"parametric project tools fallback version should be declared");
+assert.ok(productionProjectTools,"production project tools version should be declared");
+assert.strictEqual(fallbackProjectTools,productionProjectTools,"parametric fallback must use the same project_tools.js version as production");
+
 function makeElement(value=""){
  return {value:String(value),valueAsNumber:Number(value),hidden:false,disabled:false,style:{},textContent:"",innerHTML:"",id:"",querySelector(){return null},addEventListener(){},appendChild(){},insertBefore(){}};
 }
@@ -35,7 +43,7 @@ const context={
 };
 context.window.window=context.window;
 vm.createContext(context);
-vm.runInContext(fs.readFileSync("parametric_parts.js","utf8"),context,{filename:"parametric_parts.js"});
+vm.runInContext(parametricSource,context,{filename:"parametric_parts.js"});
 assert.strictEqual(typeof context.window.AI3DParametric?.generate,"function");
 
 // Valid fallback model still generates without touching the normal UI path.
