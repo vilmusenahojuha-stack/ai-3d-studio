@@ -14,9 +14,10 @@
   ["storageCommitGuard",()=>!storageCommitGuardReady(),"storage_commit_guard.js?v=1.9"],
   ["previewGuard",()=>!previewGuardReady(),"preview_guard.js?v=1.6"],
   ["meshIntegrity",()=>!meshIntegrityReady(),"mesh_integrity_guard.js?v=1.6"],
-  ["centauri",()=>!centauriReady(),"centauri.js?v=1.9"]
+  ["centauri",()=>!centauriReady(),"centauri.js?v=1.9"],
+  ["centauriState",()=>!centauriStateReady(),"centauri_state_guard.js?v=1.6"]
  ];
- let earcutFallbackState="idle",earcutFallbackAttempts=0,cadFallbackAttempts={cadV2Core:0,cadV2:0,planPreflight:0,planOperations:0,parametric:0,customPlate:0,projectTools:0,storageCommitGuard:0,previewGuard:0,meshIntegrity:0,centauri:0};
+ let earcutFallbackState="idle",earcutFallbackAttempts=0,cadFallbackAttempts={cadV2Core:0,cadV2:0,planPreflight:0,planOperations:0,parametric:0,customPlate:0,projectTools:0,storageCommitGuard:0,previewGuard:0,meshIntegrity:0,centauri:0,centauriState:0};
  const cadV2CoreReady=()=>fn(window.AI3DPlanV2CAD?.apply);
  const cadV2EditorReady=()=>fn(window.AI3DV2Editor?.apply);
  const cadV2Ready=()=>cadV2CoreReady()&&cadV2EditorReady();
@@ -79,7 +80,7 @@
    cadFallbackAttempts[key]++;started=true;
    const s=document.createElement("script");s.src=src+"&healthRetry="+Date.now();s.async=true;s.dataset.ai3dCadFallback=key;
    if(key==="centauri")s.dataset.ai3dCentauri="1";
-   s.onload=()=>{if(key==="centauri")recoverCentauriState();start()};s.onerror=()=>start();document.body.appendChild(s)
+   s.onload=()=>{if(key==="centauri"||key==="centauriState")recoverCentauriState();start()};s.onerror=()=>start();document.body.appendChild(s)
   }
   return started
  }
