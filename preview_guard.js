@@ -10,9 +10,10 @@
   try{
    try{currentMesh=null}catch{}
    try{currentFitMesh=null}catch{}
-   const download=$("btnDownload"),fit=$("btnFitTest"),dims=$("dimensions"),overlay=$("measureOverlay"),validation=$("validation");
+   const download=$("btnDownload"),fit=$("btnFitTest"),centauri=$("btnCentauriStl"),dims=$("dimensions"),overlay=$("measureOverlay"),validation=$("validation");
    if(download)download.disabled=true;
    if(fit)fit.disabled=true;
+   if(centauri)centauri.disabled=true;
    if(dims)dims.textContent="–";
    if(overlay){overlay.innerHTML="";overlay.hidden=true}
    if(validation&&reason&&!validation.querySelector?.(".check.fail")){
