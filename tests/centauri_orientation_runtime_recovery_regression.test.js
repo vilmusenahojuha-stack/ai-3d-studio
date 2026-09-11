@@ -4,7 +4,7 @@ const root=path.resolve(__dirname,"..");
 const runtime=fs.readFileSync(path.join(root,"runtime_health_guard.js"),"utf8");
 const index=fs.readFileSync(path.join(root,"index.html"),"utf8");
 assert.match(index,/centauri_orientation\.js\?v=1\.6/,"index must load current Centauri orientation version");
-assert.match(index,/runtime_health_guard\.js\?v=1\.16/,"index must invalidate runtime health cache after orientation recovery changes");
+assert.match(index,/runtime_health_guard\.js\?v=1\.17/,"index must invalidate runtime health cache after orientation recovery changes");
 assert.match(runtime,/\["centauriOrientation",\(\)=>!centauriOrientationReady\(\),"centauri_orientation\.js\?v=1\.6"\]/,"runtime fallback must pin the same Centauri orientation version");
 const appended=[];
 const warning={hidden:true,textContent:""};
