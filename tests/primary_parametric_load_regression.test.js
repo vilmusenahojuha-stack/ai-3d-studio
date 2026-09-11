@@ -3,13 +3,15 @@ const assert=require("assert");
 const fs=require("fs");
 
 const html=fs.readFileSync("index.html","utf8");
+const plateCustom=fs.readFileSync("plate_custom.js","utf8");
+const runtime=fs.readFileSync("runtime_health_guard.js","utf8");
 const scripts=[...html.matchAll(/<script\s+src="([^"]+)"/g)].map(m=>m[1]);
 const indexOf=prefix=>scripts.findIndex(src=>src.startsWith(prefix));
 
 const app=indexOf("app.js?");
 const earcut=scripts.findIndex(src=>src.includes("earcut@2.2.4"));
 const parametric=indexOf("parametric_parts.js?v=1.9");
-const customPlate=indexOf("plate_custom.js?v=1.7");
+const customPlate=indexOf("plate_custom.js?v=1.8");
 const projects=indexOf("projects.js?");
 const health=indexOf("runtime_health_guard.js?");
 
@@ -22,5 +24,8 @@ assert.ok(app<parametric,"parametric parts need the base CAD globals from app.js
 assert.ok(earcut<customPlate,"custom plate support needs earcut loaded first");
 assert.ok(parametric<projects&&customPlate<projects,"parametric CAD UI must exist before projects are restored or ChatGPT plans are opened");
 assert.ok(parametric<health&&customPlate<health,"runtime recovery must remain a fallback, not the normal loader");
+assert.ok(plateCustom.includes("window.AI3DPlateCustom={ready:true}"),"custom plate module must expose an explicit runtime-ready marker");
+assert.ok(runtime.includes('window.AI3DPlateCustom?.ready===true'),"runtime health must require the custom plate module itself, not only its UI fields");
+assert.ok(runtime.includes('"plate_custom.js?v=1.8"'),"runtime fallback must stay pinned to the primary custom plate version");
 
 console.log("primary parametric load regression: OK");

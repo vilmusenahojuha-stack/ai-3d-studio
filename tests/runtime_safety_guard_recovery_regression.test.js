@@ -8,7 +8,7 @@ assert.match(index,/project_open_guard\.js\?v=1\.3/,"index must load current pro
 assert.match(index,/storage_recovery\.js\?v=1\.12/,"index must load current project storage recovery version");
 assert.match(index,/ui_simplify\.js\?v=1\.4/,"index must load current guided UI helper version");
 assert.match(index,/measure_focus_guard\.js\?v=1\.0/,"index must load current measure focus guard version");
-assert.match(index,/runtime_health_guard\.js\?v=1\.20/,"index must invalidate runtime health cache after guided UI recovery changes");
+assert.match(index,/runtime_health_guard\.js\?v=1\.21/,"index must invalidate runtime health cache after guided UI recovery changes");
 assert.match(runtime,/\["cadApplyGuard",\(\)=>!cadApplyGuardReady\(\),"cad_apply_guard\.js\?v=1\.4"\]/,"runtime fallback must pin current CAD apply guard version");
 assert.match(runtime,/\["projectOpenGuard",\(\)=>!projectOpenGuardReady\(\),"project_open_guard\.js\?v=1\.3"\]/,"runtime fallback must pin current project open guard version");
 assert.match(runtime,/\["storageRecovery",\(\)=>!storageRecoveryReady\(\),"storage_recovery\.js\?v=1\.12"\]/,"runtime fallback must pin current project storage recovery version");
