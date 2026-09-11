@@ -114,6 +114,18 @@ function makeRuntime(seed={}){
   const badSource={...valid,sourceSchema:99};
   const badSourceRuntime=makeRuntime({[KEY]:JSON.stringify([badSource])});
   assert.strictEqual(badSourceRuntime.context.window.AI3DStorageCommitGuard.hasConflict,true,"unknown source schema metadata must fail closed");
+
+  const maxDate={...valid,created:8.64e15,updated:8.64e15};
+  const maxDateRuntime=makeRuntime({[KEY]:JSON.stringify([maxDate])});
+  assert.strictEqual(maxDateRuntime.context.window.AI3DStorageCommitGuard.hasConflict,false,"the exact JavaScript Date boundary must remain valid");
+
+  const negativeDate={...valid,created:-1};
+  const negativeDateRuntime=makeRuntime({[KEY]:JSON.stringify([negativeDate])});
+  assert.strictEqual(negativeDateRuntime.context.window.AI3DStorageCommitGuard.hasConflict,true,"negative persisted project timestamps must fail closed until storage recovery repairs them");
+
+  const oversizedDate={...valid,updated:8.64e15+1};
+  const oversizedDateRuntime=makeRuntime({[KEY]:JSON.stringify([oversizedDate])});
+  assert.strictEqual(oversizedDateRuntime.context.window.AI3DStorageCommitGuard.hasConflict,true,"timestamps outside JavaScript Date range must fail closed until storage recovery repairs them");
 }
 
 console.log("storage cross-tab guard: ok");
