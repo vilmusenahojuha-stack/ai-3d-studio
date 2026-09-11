@@ -21,7 +21,7 @@
   ["meshIntegrity",()=>!meshIntegrityReady(),"mesh_integrity_guard.js?v=1.6"],
   ["centauri",()=>!centauriReady(),"centauri.js?v=1.9"],
   ["centauriState",()=>!centauriStateReady(),"centauri_state_guard.js?v=1.6"],
-  ["centauriOrientation",()=>!centauriOrientationReady(),"centauri_orientation.js?v=1.6"],
+  ["centauriOrientation",()=>!centauriOrientationReady(),"centauri_orientation.js?v=1.7"],
   ["printability",()=>!printabilityReady(),"printability_summary.js?v=1.3"],
   ["fitCalibration",()=>!fitCalibrationReady(),"fit_calibration.js?v=1.1"]
  ];
