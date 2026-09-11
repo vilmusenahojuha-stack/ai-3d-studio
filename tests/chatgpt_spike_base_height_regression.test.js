@@ -5,7 +5,7 @@ const projects=fs.readFileSync(path.join(root,"projects.js"),"utf8");
 const app=fs.readFileSync(path.join(root,"app.js"),"utf8");
 const index=fs.readFileSync(path.join(root,"index.html"),"utf8");
 
-assert.match(index,/projects\.js\?v=1\.27/,"index must invalidate the project normalization cache");
+assert.match(index,/projects\.js\?v=1\.28/,"index must invalidate the project normalization cache");
 assert.match(app,/p\.totalHeight<=p\.baseHeight\+8/,"spike CAD must retain the existing 8 mm base-to-tip headroom guard");
 assert.doesNotMatch(projects,/baseHeight:p\.baseHeight\?\?24/,"Schema v2 spike import must not silently force a fixed 24 mm base height");
 assert.match(projects,/baseHeight=p\.baseHeight!=null\?num\(p\.baseHeight\):Math\.min\(24,height\*\.4\)/,"missing Schema v2 baseHeight must use the established proportional fallback");
