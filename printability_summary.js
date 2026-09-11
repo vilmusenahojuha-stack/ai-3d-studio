@@ -32,8 +32,8 @@
   const tris=m?.triangles;if(!Array.isArray(tris)||!tris.length||tris.length>120000)return null;
   const parent=new Int32Array(tris.length);for(let i=0;i<parent.length;i++)parent[i]=i;
   const find=x=>{while(parent[x]!==x){parent[x]=parent[parent[x]];x=parent[x]}return x},join=(a,b)=>{a=find(a);b=find(b);if(a!==b)parent[b]=a};
-  const seen=new Map(),key=q=>`${Number(q.x).toFixed(5)},${Number(q.y).toFixed(5)},${Number(q.z).toFixed(5)}`;
-  for(let i=0;i<tris.length;i++)for(const q of tris[i]){const k=key(q),j=seen.get(k);if(j==null)seen.set(k,i);else join(i,j)}
+  const seen=new Map(),key=q=>`${Number(q.x).toFixed(5)},${Number(q.y).toFixed(5)},${Number(q.z).toFixed(5)}`,edge=(a,b)=>{const A=key(a),B=key(b);return A<B?A+"|"+B:B+"|"+A};
+  for(let i=0;i<tris.length;i++){const t=tris[i];if(!Array.isArray(t)||t.length!==3)return null;for(const[a,b]of[[t[0],t[1]],[t[1],t[2]],[t[2],t[0]]]){const k=edge(a,b),j=seen.get(k);if(j==null)seen.set(k,i);else join(i,j)}}
   const counts=new Map();for(let i=0;i<tris.length;i++){const r=find(i);counts.set(r,(counts.get(r)||0)+1)}const sizes=[...counts.values()].sort((a,b)=>b-a);return{count:sizes.length,sizes,small:sizes.filter(x=>x<Math.max(8,tris.length*.002)).length}
  }
  function orientation(){
