@@ -1,6 +1,6 @@
 "use strict";
 const assert=require("node:assert/strict"),fs=require("node:fs"),vm=require("node:vm");
-const SOURCE=fs.readFileSync("storage_recovery.js","utf8"),KEY="ai3d:projects:v3",BACKUP=KEY+":backup",ACTIVE=KEY+":active,CORRUPT=KEY+":corrupt",MAX_DATE_MS=8.64e15;
+const SOURCE=fs.readFileSync("storage_recovery.js","utf8"),KEY="ai3d:projects:v3",BACKUP=KEY+":backup",ACTIVE=KEY+":active",CORRUPT=KEY+":corrupt",MAX_DATE_MS=8.64e15;
 class MemoryStorage{constructor(seed={}){this.map=new Map(Object.entries(seed))}getItem(k){return this.map.has(k)?this.map.get(k):null}setItem(k,v){this.map.set(k,String(v))}removeItem(k){this.map.delete(k)}}
 function run(project){const raw=JSON.stringify([project]),localStorage=new MemoryStorage({[KEY]:raw,[BACKUP]:"[]",[ACTIVE]:project.id}),window={};const context={window,localStorage,console,JSON,Set,Object,String,Number,Array,Error,Date,Math};vm.createContext(context);vm.runInContext(SOURCE,context,{filename:"storage_recovery.js"});return{raw,localStorage,state:window.AI3DStorageRecovery}}
 function project(extra={}){return{id:"p-time",name:"Aikaleimatesti",type:"sleeve",values:{sleeveID:20,sleeveWall:3,sleeveLength:30,material:"PETG"},created:1,updated:2,...extra}}
