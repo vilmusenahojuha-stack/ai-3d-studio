@@ -6,11 +6,13 @@
  const CAD_FALLBACKS=[
   ["cadV2Core",()=>!cadV2CoreReady(),"cad_plan_v2.js?v=1.5"],
   ["cadV2",()=>!cadV2EditorReady(),"cad_v2_editor.js?v=1.5"],
+  ["cadApplyGuard",()=>!cadApplyGuardReady(),"cad_apply_guard.js?v=1.4"],
   ["planPreflight",()=>!(fn(window.AI3DPlanPreflight?.validate)&&fn(window.AI3DPlanPreflight?.run)&&fn(window.AI3DPlanPreflight?.getLastResult)),"plan_preflight.js?v=1.13"],
   ["planOperations",()=>!(fn(window.AI3DPlanOperationGuard?.validate)&&fn(window.AI3DPlanOperationGuard?.run)&&fn(window.AI3DPlanOperationGuard?.getLastResult)&&fn(window.AI3DPlanOperationGuard?.isAllowed)),"plan_operation_guard.js?v=1.10"],
   ["parametric",()=>!parametricReady(),"parametric_parts.js?v=1.9"],
   ["customPlate",()=>!customPlateReady(),"plate_custom.js?v=1.7"],
   ["projectTools",()=>!projectToolsReady(),"project_tools.js?v=1.14"],
+  ["projectOpenGuard",()=>!projectOpenGuardReady(),"project_open_guard.js?v=1.3"],
   ["storageCommitGuard",()=>!storageCommitGuardReady(),"storage_commit_guard.js?v=1.9"],
   ["previewGuard",()=>!previewGuardReady(),"preview_guard.js?v=1.6"],
   ["meshIntegrity",()=>!meshIntegrityReady(),"mesh_integrity_guard.js?v=1.6"],
@@ -20,13 +22,15 @@
   ["printability",()=>!printabilityReady(),"printability_summary.js?v=1.2"],
   ["fitCalibration",()=>!fitCalibrationReady(),"fit_calibration.js?v=1.1"]
  ];
- let earcutFallbackState="idle",earcutFallbackAttempts=0,cadFallbackAttempts={cadV2Core:0,cadV2:0,planPreflight:0,planOperations:0,parametric:0,customPlate:0,projectTools:0,storageCommitGuard:0,previewGuard:0,meshIntegrity:0,centauri:0,centauriState:0,centauriOrientation:0,printability:0,fitCalibration:0};
+ let earcutFallbackState="idle",earcutFallbackAttempts=0,cadFallbackAttempts={cadV2Core:0,cadV2:0,cadApplyGuard:0,planPreflight:0,planOperations:0,parametric:0,customPlate:0,projectTools:0,projectOpenGuard:0,storageCommitGuard:0,previewGuard:0,meshIntegrity:0,centauri:0,centauriState:0,centauriOrientation:0,printability:0,fitCalibration:0};
  const cadV2CoreReady=()=>fn(window.AI3DPlanV2CAD?.apply);
  const cadV2EditorReady=()=>fn(window.AI3DV2Editor?.apply);
  const cadV2Ready=()=>cadV2CoreReady()&&cadV2EditorReady();
+ const cadApplyGuardReady=()=>fn(window.AI3DCADApplyGuard?.check)&&fn(window.AI3DCADApplyGuard?.wrapV2)&&fn(window.AI3DCADApplyGuard?.validatePlanHoleBounds)&&window.AI3D?.__applyGuard===true;
  const parametricReady=()=>fn(window.AI3DParametric?.generate)&&!!$("fields-adapter")&&!!$("fields-enclosure")&&!!$("partType")?.querySelector?.('option[value="adapter"]')&&!!$("partType")?.querySelector?.('option[value="enclosure"]');
  const customPlateReady=()=>!!$("plateCustomHoles")&&!!$("plateHolePattern")?.querySelector?.('option[value="custom"]');
  const projectToolsReady=()=>!!$("btnDuplicateProject")&&!!$("btnExportAllProjects")&&!!$("btnImportAllProjects")&&!!$("btnRestoreProjects");
+ const projectOpenGuardReady=()=>fn(window.AI3DProjectOpenGuard?.check);
  const storageRecoveryReady=()=>window.AI3DStorageRecovery?.checked===true&&!window.AI3DStorageRecovery?.error;
  const storageCommitGuardReady=()=>fn(window.AI3DStorageCommitGuard?.verify);
  const previewGuardReady=()=>fn(window.AI3DPreviewGuard?.clear)&&fn(window.AI3DPreviewGuard?.check)&&fn(window.AI3DPreviewGuard?.failureReason);
@@ -40,8 +44,10 @@
   ["CAD-moottori",()=>fn(window.AI3D?.setPart)],
   ["CAD v2 -ydin",cadV2CoreReady],
   ["CAD v2 -editori",cadV2EditorReady],
+  ["CAD-sovellussuoja",cadApplyGuardReady],
   ["projektit",()=>fn(window.AI3DProjects?.active)],
   ["projektityökalut",projectToolsReady],
+  ["projektin avaussuoja",projectOpenGuardReady],
   ["projektitallennuksen palautus",storageRecoveryReady],
   ["ChatGPT-ennakkotarkistus",()=>fn(window.AI3DPlanPreflight?.validate)&&fn(window.AI3DPlanPreflight?.run)&&fn(window.AI3DPlanPreflight?.getLastResult)],
   ["ChatGPT-operaatiotarkistus",()=>fn(window.AI3DPlanOperationGuard?.validate)&&fn(window.AI3DPlanOperationGuard?.run)&&fn(window.AI3DPlanOperationGuard?.getLastResult)&&fn(window.AI3DPlanOperationGuard?.isAllowed)],
@@ -115,6 +121,6 @@
   const tick=()=>{attempts++;if(render(false))return;if(attempts>=20){if(loadCadFallbacks())return;render(true);return}timer=setTimeout(tick,250)};timer=setTimeout(tick,150)
  }
  function init(){start();document.addEventListener("visibilitychange",()=>{if(!document.hidden)start()});window.addEventListener("online",()=>{if(!fn(window.earcut)&&earcutFallbackState==="failed")earcutFallbackState="idle";resetMissingCadRetries();start()})}
- window.AI3DRuntimeHealth={check:()=>render(true),missing,retryDependencies:()=>{if(!fn(window.earcut)&&earcutFallbackState!=="loading")earcutFallbackState="idle";resetMissingCadRetries();loadEarcutFallback();loadCadFallbacks();start()},dependencyState:()=>({earcut:fn(window.earcut)?"ready":earcutFallbackState,earcutFallbackAttempts,cadV2:cadV2Ready()?"ready":"missing",cadV2Core:cadV2CoreReady()?"ready":"missing",cadV2Editor:cadV2EditorReady()?"ready":"missing",planPreflight:fn(window.AI3DPlanPreflight?.validate)&&fn(window.AI3DPlanPreflight?.run)&&fn(window.AI3DPlanPreflight?.getLastResult)?"ready":"missing",planOperations:fn(window.AI3DPlanOperationGuard?.validate)&&fn(window.AI3DPlanOperationGuard?.run)&&fn(window.AI3DPlanOperationGuard?.getLastResult)&&fn(window.AI3DPlanOperationGuard?.isAllowed)?"ready":"missing",parametric:parametricReady()?"ready":"missing",customPlate:customPlateReady()?"ready":"missing",previewGuard:previewGuardReady()?"ready":"missing",meshIntegrity:meshIntegrityReady()?"ready":"missing",projectTools:projectToolsReady()?"ready":"missing",storageRecovery:storageRecoveryReady()?"ready":"missing",storageCommitGuard:storageCommitGuardReady()?"ready":"missing",centauriProfile:centauriReady()?"ready":"missing",centauriState:centauriStateReady()?"ready":"missing",centauriOrientation:centauriOrientationReady()?"ready":"missing",printability:printabilityReady()?"ready":"missing",fitCalibration:fitCalibrationReady()?"ready":"missing",cadFallbackAttempts:{...cadFallbackAttempts}})};
+ window.AI3DRuntimeHealth={check:()=>render(true),missing,retryDependencies:()=>{if(!fn(window.earcut)&&earcutFallbackState!=="loading")earcutFallbackState="idle";resetMissingCadRetries();loadEarcutFallback();loadCadFallbacks();start()},dependencyState:()=>({earcut:fn(window.earcut)?"ready":earcutFallbackState,earcutFallbackAttempts,cadV2:cadV2Ready()?"ready":"missing",cadV2Core:cadV2CoreReady()?"ready":"missing",cadV2Editor:cadV2EditorReady()?"ready":"missing",cadApplyGuard:cadApplyGuardReady()?"ready":"missing",planPreflight:fn(window.AI3DPlanPreflight?.validate)&&fn(window.AI3DPlanPreflight?.run)&&fn(window.AI3DPlanPreflight?.getLastResult)?"ready":"missing",planOperations:fn(window.AI3DPlanOperationGuard?.validate)&&fn(window.AI3DPlanOperationGuard?.run)&&fn(window.AI3DPlanOperationGuard?.getLastResult)&&fn(window.AI3DPlanOperationGuard?.isAllowed)?"ready":"missing",parametric:parametricReady()?"ready":"missing",customPlate:customPlateReady()?"ready":"missing",previewGuard:previewGuardReady()?"ready":"missing",meshIntegrity:meshIntegrityReady()?"ready":"missing",projectTools:projectToolsReady()?"ready":"missing",projectOpenGuard:projectOpenGuardReady()?"ready":"missing",storageRecovery:storageRecoveryReady()?"ready":"missing",storageCommitGuard:storageCommitGuardReady()?"ready":"missing",centauriProfile:centauriReady()?"ready":"missing",centauriState:centauriStateReady()?"ready":"missing",centauriOrientation:centauriOrientationReady()?"ready":"missing",printability:printabilityReady()?"ready":"missing",fitCalibration:fitCalibrationReady()?"ready":"missing",cadFallbackAttempts:{...cadFallbackAttempts}})};
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
