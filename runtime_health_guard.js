@@ -15,7 +15,7 @@
   ["projectOpenGuard",()=>!projectOpenGuardReady(),"project_open_guard.js?v=1.3"],
   ["storageRecovery",()=>!storageRecoveryReady(),"storage_recovery.js?v=1.12"],
   ["storageCommitGuard",()=>!storageCommitGuardReady(),"storage_commit_guard.js?v=1.9"],
-  ["previewGuard",()=>!previewGuardReady(),"preview_guard.js?v=1.6"],
+  ["previewGuard",()=>!previewGuardReady(),"preview_guard.js?v=1.7"],
   ["guidedUI",()=>!guidedUIReady(),"ui_simplify.js?v=1.4"],
   ["measureFocus",()=>!measureFocusReady(),"measure_focus_guard.js?v=1.0"],
   ["meshIntegrity",()=>!meshIntegrityReady(),"mesh_integrity_guard.js?v=1.6"],

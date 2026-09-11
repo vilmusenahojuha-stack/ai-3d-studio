@@ -10,6 +10,8 @@ assert(src.includes('target?.id==="partType"||target?.closest?.(".part-fields")'
 assert(src.includes('new Set(["material","filamentPriceKg","ledCost","powerCost","miscCost"])'),"material and cost-only fields must not invalidate unchanged geometry");
 assert(src.includes('NON_GEOMETRY_PART_FIELDS.has(target.id)'),"non-geometry part fields must bypass stale geometry invalidation");
 assert(src.includes('currentMesh||currentFitMesh'),"parameter edits should only clear an existing generated mesh");
+assert(src.includes('centauri=$("btnCentauriStl")'),"preview invalidation must include the Centauri export control in the immediate fail-safe lock");
+assert(src.includes('if(centauri)centauri.disabled=true'),"preview invalidation must disable Centauri STL export before deferred printer checks run");
 assert(src.includes("Mallin mittoja tai osatyyppiä muutettiin"),"stale preview must explain that geometry or part type changed");
 assert(src.includes("Luo ja tarkista 3D-malli uudelleen ennen STL-vientiä"),"stale preview must explain why STL export was disabled");
 assert(/try\s*\{[\s\S]*lastError=reason\|\|lastError[\s\S]*\}\s*finally\s*\{\s*clearing=false/.test(src),"preview invalidation must always release its re-entrancy lock even if an unexpected UI operation throws");
@@ -38,6 +40,7 @@ function projectFailureReason(activeProject){
 function deferredFailuresAreContained(){
   const jobs=[];
   let caught=0;
+  const centauriButton={disabled:false};
   const rejected={catch(fn){assert.equal(typeof fn,"function");caught++;return this;}};
   const window={
     CentauriProfile:{check(){return rejected;}},
@@ -46,7 +49,7 @@ function deferredFailuresAreContained(){
   };
   const document={
     readyState:"loading",
-    getElementById(id){return id==="orientationResult"?{}:null;},
+    getElementById(id){if(id==="orientationResult")return{};if(id==="btnCentauriStl")return centauriButton;return null;},
     addEventListener(){},
     createElement(){return{append(){},className:"",textContent:""};},
     createTextNode(text){return{textContent:text};}
@@ -55,6 +58,7 @@ function deferredFailuresAreContained(){
   vm.createContext(context);
   vm.runInContext(src,context,{filename:"preview_guard.js"});
   assert.doesNotThrow(()=>context.window.AI3DPreviewGuard.clear("test failure"));
+  assert.strictEqual(centauriButton.disabled,true,"Centauri export must lock synchronously even when its deferred profile check later fails");
   assert.equal(jobs.length,3,"preview clear must still schedule all three background refreshes");
   for(const job of jobs)assert.doesNotThrow(job,"a deferred background refresh must not escape into the global error handler");
   assert.equal(caught,2,"promise-returning background refreshes must attach rejection handlers");
