@@ -13,6 +13,7 @@
   ["customPlate",()=>!customPlateReady(),"plate_custom.js?v=1.7"],
   ["projectTools",()=>!projectToolsReady(),"project_tools.js?v=1.14"],
   ["projectOpenGuard",()=>!projectOpenGuardReady(),"project_open_guard.js?v=1.3"],
+  ["storageRecovery",()=>!storageRecoveryReady(),"storage_recovery.js?v=1.12"],
   ["storageCommitGuard",()=>!storageCommitGuardReady(),"storage_commit_guard.js?v=1.9"],
   ["previewGuard",()=>!previewGuardReady(),"preview_guard.js?v=1.6"],
   ["meshIntegrity",()=>!meshIntegrityReady(),"mesh_integrity_guard.js?v=1.6"],
@@ -22,7 +23,7 @@
   ["printability",()=>!printabilityReady(),"printability_summary.js?v=1.2"],
   ["fitCalibration",()=>!fitCalibrationReady(),"fit_calibration.js?v=1.1"]
  ];
- let earcutFallbackState="idle",earcutFallbackAttempts=0,cadFallbackAttempts={cadV2Core:0,cadV2:0,cadApplyGuard:0,planPreflight:0,planOperations:0,parametric:0,customPlate:0,projectTools:0,projectOpenGuard:0,storageCommitGuard:0,previewGuard:0,meshIntegrity:0,centauri:0,centauriState:0,centauriOrientation:0,printability:0,fitCalibration:0};
+ let earcutFallbackState="idle",earcutFallbackAttempts=0,cadFallbackAttempts={cadV2Core:0,cadV2:0,cadApplyGuard:0,planPreflight:0,planOperations:0,parametric:0,customPlate:0,projectTools:0,projectOpenGuard:0,storageRecovery:0,storageCommitGuard:0,previewGuard:0,meshIntegrity:0,centauri:0,centauriState:0,centauriOrientation:0,printability:0,fitCalibration:0};
  const cadV2CoreReady=()=>fn(window.AI3DPlanV2CAD?.apply);
  const cadV2EditorReady=()=>fn(window.AI3DV2Editor?.apply);
  const cadV2Ready=()=>cadV2CoreReady()&&cadV2EditorReady();
