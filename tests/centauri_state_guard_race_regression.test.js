@@ -68,8 +68,16 @@ guard.markDirty();
 assert.equal(guard.isDirty(),true,"geometry change must mark Centauri state dirty");
 assert.equal(centauriButton.disabled,true,"geometry change must disable Centauri STL export immediately");
 assert.equal(timers.size,0,"geometry change must cancel a queued stale compatibility refresh");
+
+// A direct profile check must not be able to reopen export synchronously while geometry is still dirty.
+centauriButton.disabled=false;
+assert.equal(context.window.CentauriProfile.check(),true,"successful direct checker may still run while geometry is dirty");
+assert.equal(centauriButton.disabled,true,"successful direct Centauri check must keep export locked while geometry is dirty");
+assert.equal(guard.isDirty(),true,"successful direct check must not clear dirty geometry state");
+assert.equal(checks,3,"dirty direct wrapped check must execute the underlying checker exactly once");
+
 runTimers();
-assert.equal(checks,2,"cancelled stale refresh must not add another compatibility check");
+assert.equal(checks,3,"cancelled stale refresh must not add another compatibility check");
 assert.equal(guard.isDirty(),true,"cancelled stale refresh must not clear the dirty state");
 
 centauriButton.disabled=false;
@@ -101,7 +109,7 @@ context.window.CentauriProfile={check(){checks++}};
 guard.refresh(true);
 runTimers();
 assert.equal(guard.isDirty(),false,"successful Centauri checker may clear dirty state");
-assert.equal(checks,3,"successful refresh must execute one additional compatibility check");
+assert.equal(checks,4,"successful refresh must execute one additional compatibility check");
 
 centauriButton.disabled=false;
 buttonObserver.callback();
