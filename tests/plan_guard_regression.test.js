@@ -52,6 +52,20 @@ const validPlate = {
 
 assert.equal(validate(validPlate).ok, true, "valid mounting plate should pass operation guard");
 
+const scalarBoundarySleeve = {
+  schemaVersion: 2,
+  status: "ready",
+  material: "PETG",
+  partType: "sleeve",
+  parameters: { insideDiameter: 20, wall: 1, length: 5000 },
+  operations: []
+};
+assert.equal(validate(scalarBoundarySleeve).ok, true, "Schema v2 scalar dimension at the declared 5000 mm maximum must remain valid");
+const oversizedScalarSleeve = structuredClone(scalarBoundarySleeve);
+oversizedScalarSleeve.parameters.length = 5000.01;
+assert.equal(validate(oversizedScalarSleeve).ok, false, "Schema v2 scalar dimension above 5000 mm must fail before a project is opened");
+assert(validate(oversizedScalarSleeve).errors.some(x => /5000 mm/.test(x)), "oversized scalar rejection should explain the shared Schema v2 limit");
+
 const zeroCenterHole = structuredClone(validPlate);
 zeroCenterHole.parameters.holes = [];
 zeroCenterHole.parameters.centerHole = 0;
