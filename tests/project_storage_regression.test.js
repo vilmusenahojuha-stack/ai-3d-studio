@@ -7,6 +7,7 @@ const vm=require("vm");
 const SOURCE=fs.readFileSync("projects.js","utf8");
 const KEY="ai3d:projects:v3";
 const ACTIVE=KEY+":active";
+const MAX_DATE_MS=8.64e15;
 
 class MemoryStorage{
   constructor(seed={}){this.map=new Map(Object.entries(seed));this.failOnceKey=null;}
@@ -167,11 +168,17 @@ const metadataProject={
 const metadataBoot=boot(new MemoryStorage({[KEY]:JSON.stringify([metadataProject]),[ACTIVE]:metadataProject.id}));
 assert.strictEqual(metadataBoot.context.window.AI3DProjects.active()?.id,metadataProject.id,"valid print and ChatGPT source metadata must remain loadable");
 
+const boundaryProject={...metadataProject,id:"p-date-boundary",created:MAX_DATE_MS,updated:MAX_DATE_MS};
+const boundaryBoot=boot(new MemoryStorage({[KEY]:JSON.stringify([boundaryProject]),[ACTIVE]:boundaryProject.id}));
+assert.strictEqual(boundaryBoot.context.window.AI3DProjects.active()?.id,boundaryProject.id,"JavaScript Date boundary timestamps must remain loadable");
+
 const invalidMetadataProjects=[
   {...metadataProject,id:"bad-print-key",print:{...metadataProject.print,temperature:250}},
   {...metadataProject,id:"bad-print-notes",print:{...metadataProject.print,notes:"x".repeat(1001)}},
   {...metadataProject,id:"bad-source-schema",sourceSchema:3},
-  {...metadataProject,id:"bad-created",created:"200"}
+  {...metadataProject,id:"bad-created",created:"200"},
+  {...metadataProject,id:"bad-created-negative",created:-1},
+  {...metadataProject,id:"bad-updated-range",updated:MAX_DATE_MS+1}
 ];
 for(const project of invalidMetadataProjects){
   const invalidBoot=boot(new MemoryStorage({[KEY]:JSON.stringify([project]),[ACTIVE]:project.id}));

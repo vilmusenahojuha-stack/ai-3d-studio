@@ -3,6 +3,7 @@ const assert=require("assert");
 const fs=require("fs");
 
 const html=fs.readFileSync("index.html","utf8");
+const projectsSource=fs.readFileSync("projects.js","utf8");
 const plateCustom=fs.readFileSync("plate_custom.js","utf8");
 const runtime=fs.readFileSync("runtime_health_guard.js","utf8");
 const scripts=[...html.matchAll(/<script\s+src="([^"]+)"/g)].map(m=>m[1]);
@@ -27,5 +28,10 @@ assert.ok(parametric<health&&customPlate<health,"runtime recovery must remain a 
 assert.ok(plateCustom.includes("window.AI3DPlateCustom={ready:true}"),"custom plate module must expose an explicit runtime-ready marker");
 assert.ok(runtime.includes('window.AI3DPlateCustom?.ready===true'),"runtime health must require the custom plate module itself, not only its UI fields");
 assert.ok(runtime.includes('"plate_custom.js?v=1.8"'),"runtime fallback must stay pinned to the primary custom plate version");
+assert.ok(projectsSource.includes('loadAddon("parametric_parts.js?v=1.9"'),"project startup fallback must use the primary parametric version");
+assert.ok(projectsSource.includes('loadAddon("plate_custom.js?v=1.8"'),"project startup fallback must use the primary custom plate version");
+assert.ok(projectsSource.includes('()=>typeof window.AI3DParametric?.generate==="function"'),"project startup must skip duplicate parametric loading when the primary module is already ready");
+assert.ok(projectsSource.includes('()=>window.AI3DPlateCustom?.ready===true'),"project startup must skip duplicate custom plate loading when the primary module is already ready");
+assert.ok(!projectsSource.includes('plate_custom.js?v=1.7'),"project startup must not retain the stale custom plate cache key");
 
 console.log("primary parametric load regression: OK");
