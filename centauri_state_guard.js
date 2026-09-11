@@ -14,7 +14,7 @@
   if(typeof check!=="function")return false;
   if(check.__ai3dSafeCheck)return true;
   const raw=check.bind(profile);
-  function safeCheck(){try{raw();return true}catch{failCheck();return false}}
+  function safeCheck(){try{raw();enforceDirtyExportLock();return true}catch{failCheck();return false}}
   safeCheck.__ai3dSafeCheck=true;
   profile.check=safeCheck;
   return true
