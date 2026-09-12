@@ -15,6 +15,13 @@ const timers=new Map();
 const observers=[];
 let checks=0;
 
+function markCompatible(){
+ const status=elements.get("centauriStatus");
+ if(status)status.className="printer-status ok";
+ const button=elements.get("btnCentauriStl");
+ if(button)button.disabled=false;
+}
+
 const context=vm.createContext({
  console,
  document:{
@@ -24,7 +31,7 @@ const context=vm.createContext({
   querySelector:()=>null,
   addEventListener(){}
  },
- window:{CentauriProfile:{check(){checks++}}},
+ window:{CentauriProfile:{check(){checks++;markCompatible()}}},
  MutationObserver:function(callback){this.observe=(target,options)=>observers.push({callback,target,options})},
  setTimeout(fn){const id=nextTimer++;timers.set(id,fn);return id},
  clearTimeout(id){timers.delete(id)}
@@ -58,7 +65,7 @@ assert.equal(centauriButton.disabled,true,"failed direct Centauri check must dis
 assert.equal(guard.isDirty(),true,"failed direct Centauri check must mark compatibility state dirty");
 assert.match(status.innerHTML,/Centauri-tarkistus epäonnistui/,"failed direct check must surface a clear fail-closed state");
 
-context.window.CentauriProfile={check(){checks++;centauriButton.disabled=false}};
+context.window.CentauriProfile={check(){checks++;markCompatible()}};
 assert.equal(guard.installSafeCheck(),true);
 assert.equal(context.window.CentauriProfile.check(),true,"successful wrapped direct check should report success");
 assert.equal(checks,2,"successful direct wrapped check must execute the underlying checker once in addition to initial refresh");
@@ -111,14 +118,14 @@ assert.equal(centauriButton.disabled,true,"failed background Centauri refresh mu
 assert.equal(status.className,"printer-status fail","failed background Centauri refresh must show a fail status");
 
 // A normal Centauri check can fail by leaving the export disabled without throwing (oversize/invalid mesh).
-context.window.CentauriProfile={check(){checks++;centauriButton.disabled=true}};
+context.window.CentauriProfile={check(){checks++;status.className="printer-status fail";centauriButton.disabled=true}};
 guard.refresh(true);
 runTimers();
 assert.equal(guard.isDirty(),true,"non-throwing incompatible Centauri result must keep dirty state fail-closed");
 assert.equal(centauriButton.disabled,true,"non-throwing incompatible Centauri result must keep export disabled");
 assert.equal(checks,4,"incompatible refresh must execute the underlying checker exactly once");
 
-context.window.CentauriProfile={check(){checks++;centauriButton.disabled=false}};
+context.window.CentauriProfile={check(){checks++;markCompatible()}};
 guard.refresh(true);
 runTimers();
 assert.equal(guard.isDirty(),false,"successful Centauri checker may clear dirty state");
@@ -129,13 +136,22 @@ centauriButton.disabled=false;
 buttonObserver.callback();
 assert.equal(centauriButton.disabled,false,"clean Centauri state must not fight a legitimate export enable");
 
+// The status result and export control must agree. A stale enabled button must not override a failed status panel.
+status.className="printer-status fail";
+centauriButton.disabled=false;
+context.window.CentauriProfile={check(){checks++;status.className="printer-status fail";centauriButton.disabled=false}};
+assert.equal(guard.installSafeCheck(),true,"checker must be wrapped before stale-status regression");
+assert.equal(context.window.CentauriProfile.check(),false,"failed Centauri status must make a stale-enabled export fail closed");
+assert.equal(checks,6,"stale-status regression must execute the underlying checker exactly once");
+assert.equal(centauriButton.disabled,true,"failed Centauri status must disable a stale-enabled export");
+
 // The status panel is part of the compatibility result. If it disappears while the export control stays stale-enabled,
 // the safe wrapper must fail closed instead of accepting the button state alone.
 elements.delete("centauriStatus");
 context.window.CentauriProfile={check(){checks++;centauriButton.disabled=false}};
 assert.equal(guard.installSafeCheck(),true,"checker must still be wrapped after a partial Centauri panel loss");
 assert.equal(context.window.CentauriProfile.check(),false,"missing Centauri status control must make a direct compatibility check fail closed");
-assert.equal(checks,6,"missing-status regression must execute the underlying checker exactly once");
+assert.equal(checks,7,"missing-status regression must execute the underlying checker exactly once");
 assert.equal(guard.isDirty(),true,"missing Centauri status control must mark compatibility state dirty");
 assert.equal(centauriButton.disabled,true,"missing Centauri status control must disable a stale export immediately");
 
