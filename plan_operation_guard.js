@@ -28,7 +28,7 @@
   if(!positive(L)||!positive(W))return;
   if(!positiveMm(L)||!positiveMm(W))errors.push(`Levyn pituus ja leveys saavat olla enintään ${MAX_MM} mm.`);
   if(Number.isFinite(L)&&L<=2||Number.isFinite(W)&&W<=2)errors.push("Kiinnikelevyn pituuden ja leveyden pitää olla yli 2 mm.");
-  if(Number.isFinite(Th)&&Th<.5)errors.push("Kiinnikelevyn paksuuden pitää olla vähintään 0,5 mm.");
+  if(!positive(p.thickness))errors.push("Kiinnikelevyn paksuus puuttuu tai ei ole positiivinen luku.");else if(Th<.5)errors.push("Kiinnikelevyn paksuuden pitää olla vähintään 0,5 mm.");
   if(cornerRaw!=null&&(!finite(cornerRaw)||Number(cornerRaw)<0||Number(cornerRaw)>MAX_MM))errors.push(`cornerRadius pitää olla välillä 0…${MAX_MM} mm.`);
   if(chamferRaw!=null&&(!finite(chamferRaw)||Number(chamferRaw)<0||Number(chamferRaw)>MAX_MM))errors.push(`chamfer pitää olla välillä 0…${MAX_MM} mm.`);
   if(positive(cornerRaw)&&positive(chamferRaw))errors.push("Levylle ei voi määrittää yhtä aikaa sekä cornerRadius- että chamfer-arvoa; valitse yksi kulmatyyli.");
@@ -48,8 +48,10 @@
  function validateAdapterGeometry(raw,errors){
   const p=raw.parameters||{},L=Number(p.length),id1=Number(p.insideDiameter1??p.insideDiameter),id2=Number(p.insideDiameter2??p.insideDiameter??id1),wall=Number(p.wall||0),od1=Number(p.outsideDiameter1??p.outsideDiameter??(id1+2*wall)),od2=Number(p.outsideDiameter2??p.outsideDiameter??(id2+2*wall));
   if([L,id1,id2,od1,od2].some(x=>Number.isFinite(x)&&Math.abs(x)>MAX_MM))errors.push(`Adapterin mitat saavat olla enintään ${MAX_MM} mm.`);
+  if(!finite(p.length)||L<2)errors.push("Adapterin pituuden pitää olla vähintään 2 mm.");
+  if(!positive(p.insideDiameter1??p.insideDiameter))errors.push("Adapterin sisähalkaisija alussa puuttuu tai ei ole positiivinen luku.");
+  if(p.insideDiameter2!==undefined&&!positive(p.insideDiameter2))errors.push("Adapterin sisähalkaisija lopussa ei ole positiivinen luku.");
   if(p.wall!==undefined&&(!finite(p.wall)||Number(p.wall)<.4||Number(p.wall)>200))errors.push("Adapterin wall pitää olla kelvollinen luku välillä 0,4…200 mm.");
-  if(finite(L)&&L<2)errors.push("Adapterin pituuden pitää olla vähintään 2 mm.");
   if(Number.isFinite(id1)&&Number.isFinite(od1)&&od1<=id1+.8)errors.push("Adapterin alkuosan seinämän pitää olla yli 0,4 mm (ulko- ja sisähalkaisijan erotus yli 0,8 mm).");
   if(Number.isFinite(id2)&&Number.isFinite(od2)&&od2<=id2+.8)errors.push("Adapterin loppuosan seinämän pitää olla yli 0,4 mm (ulko- ja sisähalkaisijan erotus yli 0,8 mm).")
  }
