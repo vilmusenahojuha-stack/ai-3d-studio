@@ -14,12 +14,19 @@
   if(typeof check!=="function")return false;
   if(check.__ai3dSafeCheck)return true;
   const raw=check.bind(profile);
-  function safeCheck(){try{raw();enforceDirtyExportLock();return true}catch{failCheck();return false}}
+  function safeCheck(){
+   try{
+    const result=raw(),button=$("btnCentauriStl");
+    const accepted=result===false?false:button?button.disabled===false:result===true;
+    enforceDirtyExportLock();
+    return accepted
+   }catch{failCheck();return false}
+  }
   safeCheck.__ai3dSafeCheck=true;
   profile.check=safeCheck;
   return true
  }
- function refresh(clearDirty=false){clearTimeout(timer);timer=setTimeout(()=>{timer=0;if(!installSafeCheck())return;const check=window.CentauriProfile?.check;if(typeof check!=="function")return;const ok=check.call(window.CentauriProfile);if(ok!==false&&clearDirty)dirty=false},0)}
+ function refresh(clearDirty=false){clearTimeout(timer);timer=setTimeout(()=>{timer=0;if(!installSafeCheck())return;const check=window.CentauriProfile?.check;if(typeof check!=="function")return;const ok=check.call(window.CentauriProfile);if(ok===true&&clearDirty){dirty=false;const button=$("btnCentauriStl");if(button)button.disabled=false}},0)}
  function geometryInput(target){return!!target&&!nonGeometryIds.has(target.id)&&!!(target.closest?.(".part-fields")||target.id==="partType")}
  function enforceDirtyExportLock(){const button=$("btnCentauriStl");if(dirty&&button&&!button.disabled)button.disabled=true}
  function markGeometryDirty(){

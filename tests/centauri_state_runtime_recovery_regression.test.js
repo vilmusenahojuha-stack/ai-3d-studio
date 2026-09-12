@@ -3,9 +3,9 @@ const assert=require("assert"),fs=require("fs"),path=require("path"),vm=require(
 const root=path.resolve(__dirname,"..");
 const runtime=fs.readFileSync(path.join(root,"runtime_health_guard.js"),"utf8");
 const index=fs.readFileSync(path.join(root,"index.html"),"utf8");
-assert.match(index,/centauri_state_guard\.js\?v=1\.6/,"index must load current Centauri state guard version");
+assert.match(index,/centauri_state_guard\.js\?v=1\.7/,"index must load current Centauri state guard version");
 assert.match(index,/runtime_health_guard\.js\?v=1\.23/,"index must invalidate the runtime health guard cache after Centauri state recovery support changes");
-assert.match(runtime,/\["centauriState",\(\)=>!centauriStateReady\(\),"centauri_state_guard\.js\?v=1\.6"\]/,"runtime fallback must pin the same Centauri state guard version");
+assert.match(runtime,/\["centauriState",\(\)=>!centauriStateReady\(\),"centauri_state_guard\.js\?v=1\.7"\]/,"runtime fallback must pin the same Centauri state guard version");
 const appended=[];
 const warning={hidden:true,textContent:""};
 const elements={projectPrintInfo:{after(){}},runtimeHealthWarning:warning};
@@ -18,7 +18,7 @@ assert.strictEqual(window.AI3DRuntimeHealth.dependencyState().centauriState,"mis
 window.AI3DRuntimeHealth.retryDependencies();
 const state=appended.find(s=>s.dataset.ai3dCadFallback==="centauriState");
 assert.ok(state,"manual dependency retry must append a Centauri state guard recovery script");
-assert.match(state.src,/^centauri_state_guard\.js\?v=1\.6&healthRetry=\d+$/,"Centauri state guard recovery must be cache-busted without changing pinned version");
+assert.match(state.src,/^centauri_state_guard\.js\?v=1\.7&healthRetry=\d+$/,"Centauri state guard recovery must be cache-busted without changing pinned version");
 let installed=0,refreshed=0;
 window.AI3DCentauriStateGuard={refresh(force){if(force)refreshed++},isDirty(){return false},installSafeCheck(){installed++}};
 state.onload();
