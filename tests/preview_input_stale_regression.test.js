@@ -9,7 +9,8 @@ assert(src.includes('document.addEventListener?.("change",geometryInputChanged,t
 assert(src.includes('target?.id==="partType"||target?.closest?.(".part-fields")'),"part type changes and part parameter fields must both invalidate stale geometry");
 assert(src.includes('new Set(["material","filamentPriceKg","ledCost","powerCost","miscCost"])'),"material and cost-only fields must not invalidate unchanged geometry");
 assert(src.includes('NON_GEOMETRY_PART_FIELDS.has(target.id)'),"non-geometry part fields must bypass stale geometry invalidation");
-assert(src.includes('currentMesh||currentFitMesh'),"parameter edits should only clear an existing generated mesh");
+assert(src.includes('currentMesh||currentFitMesh'),"parameter edits should clear an existing generated mesh");
+assert(src.includes('hasStaleExport=download?.disabled===false||centauri?.disabled===false'),"geometry edits must also fail closed when an export control is stale-enabled after mesh state is lost");
 assert(src.includes('centauri=$("btnCentauriStl")'),"preview invalidation must include the Centauri export control in the immediate fail-safe lock");
 assert(src.includes('if(centauri)centauri.disabled=true'),"preview invalidation must disable Centauri STL export before deferred printer checks run");
 assert(src.includes("Mallin mittoja tai osatyyppiä muutettiin"),"stale preview must explain that geometry or part type changed");
@@ -64,6 +65,35 @@ function deferredFailuresAreContained(){
   assert.equal(caught,2,"promise-returning background refreshes must attach rejection handlers");
 }
 
+function geometryEditLocksStaleExportsWithoutMesh(){
+  const listeners={};
+  const download={disabled:false};
+  const centauri={disabled:false};
+  const dimensions={textContent:"old"};
+  const validation={innerHTML:"",querySelector(){return null;},appendChild(){}};
+  const elements={btnDownload:download,btnCentauriStl:centauri,dimensions,validation};
+  const document={
+    readyState:"complete",
+    getElementById(id){return elements[id]||null;},
+    addEventListener(type,fn){listeners[type]=fn;},
+    createElement(){return{append(){},className:"",textContent:""};},
+    createTextNode(text){return{textContent:text};}
+  };
+  const context={window:{},document,setTimeout(){},MutationObserver:function(){this.observe=()=>{};},console};
+  vm.createContext(context);
+  vm.runInContext(src,context,{filename:"preview_guard.js"});
+  assert.equal(typeof listeners.input,"function","preview guard must register the geometry input listener");
+  const target={
+    id:"plateL",
+    closest(selector){return selector===".part-fields"?{}:null;},
+    matches(selector){return selector==="input,select,textarea";}
+  };
+  listeners.input({target});
+  assert.strictEqual(download.disabled,true,"stale primary STL export must lock even when mesh state was already lost");
+  assert.strictEqual(centauri.disabled,true,"stale Centauri export must lock even when mesh state was already lost");
+  assert.strictEqual(dimensions.textContent,"–","stale dimensions must be cleared together with stale export state");
+}
+
 assert.match(
   projectFailureReason(null),
   /Projektia ei voitu avata/,
@@ -75,5 +105,6 @@ assert.strictEqual(
   "a project-open warning must not invalidate preview state when a valid active project still exists"
 );
 deferredFailuresAreContained();
+geometryEditLocksStaleExportsWithoutMesh();
 
 console.log("preview input stale regression OK");
