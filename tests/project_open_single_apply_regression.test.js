@@ -8,7 +8,7 @@ const storageGuardPos=html.indexOf('storage_commit_guard.js?v=1.9');
 const openGuardPos=html.indexOf('project_open_guard.js?v=1.4');
 assert(storageGuardPos>=0&&openGuardPos>storageGuardPos,"project open guard must load after storage commit guard in production");
 
-const KEY="ai3d:projects:v3";
+const KEY="ai3d:projects:v3",MAX_DATE_MS=8.64e15;
 const project={id:"p1",name:"Adapteri",type:"adapter",values:{adapterLength:30,adapterID1:20,adapterID2:20,adapterOD1:26,adapterOD2:26,material:"PETG"},print:{printer:"Elegoo Centauri Carbon 2 Combo",nozzle:0.4,notes:"PETG"},sourcePlan:"chatgpt-1",sourceSchema:2,created:1,updated:2};
 const store=new Map([[KEY,JSON.stringify([project])],[KEY+":active","p1"]]);
 let captureHandler=null,setPartCalls=0,prevented=0,stopped=0;
@@ -42,23 +42,29 @@ assert.equal(stopped,0);
 context.window.AI3DProjectOpenGuard.check(project);
 assert.equal(setPartCalls,1,"explicit check API must still validate through CAD");
 
-// Project-open validation must match projects.js metadata rules.
+// Date-range validation must match storage recovery/commit guards exactly at the JavaScript Date boundary.
+assert.doesNotThrow(()=>context.window.AI3DProjectOpenGuard.check({...project,created:MAX_DATE_MS,updated:MAX_DATE_MS}),"JavaScript Date maximum boundary must remain valid for project opening");
+assert.equal(setPartCalls,2,"valid Date-boundary metadata must still reach CAD validation");
+
+// Project-open validation must match projects.js/storage metadata rules.
 for(const bad of [
   {...project,print:{...project.print,unknown:"x"}},
   {...project,print:{...project.print,notes:"x".repeat(1001)}},
   {...project,sourcePlan:"x".repeat(161)},
   {...project,sourceSchema:3},
   {...project,created:"1"},
-  {...project,updated:Infinity}
+  {...project,updated:Infinity},
+  {...project,created:-1},
+  {...project,updated:MAX_DATE_MS+1}
 ]){
   assert.throws(()=>context.window.AI3DProjectOpenGuard.check(bad),/rakennetarkistusta/);
 }
-assert.equal(setPartCalls,1,"invalid metadata must be rejected before CAD generation");
+assert.equal(setPartCalls,2,"invalid metadata must be rejected before CAD generation");
 
 // Cross-tab conflict remains fail-closed before the normal click handler can run.
 context.window.AI3DStorageCommitGuard={hasConflict:true,lastIssue:"Uudempi projektiversio toisessa välilehdessä."};
 captureHandler({target,preventDefault:()=>{prevented++},stopImmediatePropagation:()=>{stopped++}});
-assert.equal(setPartCalls,1);
+assert.equal(setPartCalls,2);
 assert.equal(prevented,1);
 assert.equal(stopped,1);
 assert.match(elements.planSyncStatus.textContent,/Uudempi projektiversio/);
@@ -67,7 +73,7 @@ assert.match(elements.planSyncStatus.textContent,/Uudempi projektiversio/);
 delete context.window.AI3DStorageCommitGuard;
 store.set(KEY,"");
 captureHandler({target,preventDefault:()=>{prevented++},stopImmediatePropagation:()=>{stopped++}});
-assert.equal(setPartCalls,1,"corrupt project storage must be blocked before CAD generation");
+assert.equal(setPartCalls,2,"corrupt project storage must be blocked before CAD generation");
 assert.equal(prevented,2,"corrupt project storage must prevent the normal project click handler");
 assert.equal(stopped,2,"corrupt project storage must stop propagation before projects.js can act on stale state");
 assert.match(elements.planSyncStatus.textContent,/ei läpäissyt rakennetarkistusta/i,"corrupt project storage must surface a controlled warning");
@@ -75,7 +81,7 @@ assert.match(elements.planSyncStatus.textContent,/ei läpäissyt rakennetarkistu
 // A stale rendered project button must not fall through to projects.js when the current storage no longer contains that id.
 store.set(KEY,"[]");
 captureHandler({target,preventDefault:()=>{prevented++},stopImmediatePropagation:()=>{stopped++}});
-assert.equal(setPartCalls,1,"missing project id must be blocked before CAD generation");
+assert.equal(setPartCalls,2,"missing project id must be blocked before CAD generation");
 assert.equal(prevented,3,"missing project id must prevent the stale project click handler");
 assert.equal(stopped,3,"missing project id must stop propagation before projects.js can open stale in-memory state");
 assert.match(elements.planSyncStatus.textContent,/ei enää löydy nykyisestä projektitallennuksesta/i,"missing project id must surface a controlled refresh warning");
