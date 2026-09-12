@@ -21,5 +21,7 @@ assert.match(source,/function downloadProject\([^\n]+autosaveTimer\?flushAutosav
   "project export must not leave a stale delayed autosave behind");
 assert.match(source,/window\.addEventListener\("pagehide",\(\)=>\{clearTimeout\(autosaveTimer\);autosaveTimer=0;autosave\(\)\}\)/,
   "pagehide must cancel the delayed timer and perform one final synchronous autosave");
+assert.match(source,/const snapshot=snapshotValues\(type\),values=type===p\.type\?\{\.\.\.p\.values,\.\.\.snapshot\}:snapshot/,
+  "changing the project part type must replace old-type values instead of carrying stale parameters into the new type");
 
 console.log("Project autosave switch regression: OK");
