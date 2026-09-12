@@ -3,9 +3,9 @@ const assert=require("assert"),fs=require("fs"),path=require("path"),vm=require(
 const root=path.resolve(__dirname,"..");
 const runtime=fs.readFileSync(path.join(root,"runtime_health_guard.js"),"utf8");
 const index=fs.readFileSync(path.join(root,"index.html"),"utf8");
-assert.match(index,/centauri_orientation\.js\?v=1\.7/,"index must load current Centauri orientation version");
-assert.match(index,/runtime_health_guard\.js\?v=1\.24/,"index must invalidate runtime health cache after CAD apply guard recovery changes");
-assert.match(runtime,/\["centauriOrientation",\(\)=>!centauriOrientationReady\(\),"centauri_orientation\.js\?v=1\.7"\]/,"runtime fallback must pin the same Centauri orientation version");
+assert.match(index,/centauri_orientation\.js\?v=1\.8/,"index must load current Centauri orientation version");
+assert.match(index,/runtime_health_guard\.js\?v=1\.25/,"index must invalidate runtime health cache after ChatGPT operation guard recovery changes");
+assert.match(runtime,/\["centauriOrientation",\(\)=>!centauriOrientationReady\(\),"centauri_orientation\.js\?v=1\.8"\]/,"runtime fallback must pin the same Centauri orientation version");
 const appended=[];
 const warning={hidden:true,textContent:""};
 const elements={projectPrintInfo:{after(){}},runtimeHealthWarning:warning};
@@ -18,7 +18,7 @@ assert.strictEqual(window.AI3DRuntimeHealth.dependencyState().centauriOrientatio
 window.AI3DRuntimeHealth.retryDependencies();
 const orientation=appended.find(s=>s.dataset.ai3dCadFallback==="centauriOrientation");
 assert.ok(orientation,"manual dependency retry must append a Centauri orientation recovery script");
-assert.match(orientation.src,/^centauri_orientation\.js\?v=1\.7&healthRetry=\d+$/,"orientation recovery must be cache-busted without changing pinned version");
+assert.match(orientation.src,/^centauri_orientation\.js\?v=1\.8&healthRetry=\d+$/,"orientation recovery must be cache-busted without changing pinned version");
 window.CentauriOrientation={analyse(){}};
 assert.strictEqual(window.AI3DRuntimeHealth.dependencyState().centauriOrientation,"missing","partial orientation API must not be treated as ready");
 window.CentauriOrientation={analyse(){},render(){},stability(){}};

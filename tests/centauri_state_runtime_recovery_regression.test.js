@@ -4,7 +4,7 @@ const root=path.resolve(__dirname,"..");
 const runtime=fs.readFileSync(path.join(root,"runtime_health_guard.js"),"utf8");
 const index=fs.readFileSync(path.join(root,"index.html"),"utf8");
 assert.match(index,/centauri_state_guard\.js\?v=1\.7/,"index must load current Centauri state guard version");
-assert.match(index,/runtime_health_guard\.js\?v=1\.24/,"index must invalidate the runtime health guard cache after CAD apply guard recovery changes");
+assert.match(index,/runtime_health_guard\.js\?v=1\.25/,"index must invalidate the runtime health guard cache after ChatGPT operation guard recovery changes");
 assert.match(runtime,/\["centauriState",\(\)=>!centauriStateReady\(\),"centauri_state_guard\.js\?v=1\.7"\]/,"runtime fallback must pin the same Centauri state guard version");
 const appended=[];
 const warning={hidden:true,textContent:""};

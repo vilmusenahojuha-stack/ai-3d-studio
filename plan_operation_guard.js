@@ -46,6 +46,7 @@
  function validateAdapterGeometry(raw,errors){
   const p=raw.parameters||{},L=Number(p.length),id1=Number(p.insideDiameter1??p.insideDiameter),id2=Number(p.insideDiameter2??p.insideDiameter??id1),wall=Number(p.wall||0),od1=Number(p.outsideDiameter1??p.outsideDiameter??(id1+2*wall)),od2=Number(p.outsideDiameter2??p.outsideDiameter??(id2+2*wall));
   if([L,id1,id2,od1,od2].some(x=>Number.isFinite(x)&&Math.abs(x)>MAX_MM))errors.push(`Adapterin mitat saavat olla enintään ${MAX_MM} mm.`);
+  if(p.wall!=null&&(!finite(p.wall)||Number(p.wall)<0))errors.push("Adapterin wall ei voi olla negatiivinen tai ei-numeerinen.");
   if(finite(L)&&L<2)errors.push("Adapterin pituuden pitää olla vähintään 2 mm.");
   if(Number.isFinite(id1)&&Number.isFinite(od1)&&od1<=id1+.8)errors.push("Adapterin alkuosan seinämän pitää olla yli 0,4 mm (ulko- ja sisähalkaisijan erotus yli 0,8 mm).");
   if(Number.isFinite(id2)&&Number.isFinite(od2)&&od2<=id2+.8)errors.push("Adapterin loppuosan seinämän pitää olla yli 0,4 mm (ulko- ja sisähalkaisijan erotus yli 0,8 mm).")
