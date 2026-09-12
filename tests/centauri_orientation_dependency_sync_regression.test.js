@@ -19,5 +19,5 @@ for(const file of ["plan_preflight.js","plan_operation_guard.js","preview_guard.
   );
 }
 
-assert.strictEqual(versionFrom(index,"centauri_orientation.js"),"1.8","Centauri orientation cache-version pitää nostaa muutoksen mukana");
+assert.strictEqual(versionFrom(index,"centauri_orientation.js"),"1.9","Centauri orientation cache-version pitää nostaa muutoksen mukana");
 console.log("centauri orientation dependency sync regression: ok");
