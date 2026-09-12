@@ -17,7 +17,7 @@
   function safeCheck(){
    try{
     const result=raw(),button=$("btnCentauriStl");
-    const accepted=result===false?false:button?button.disabled===false:result===true;
+    const accepted=!!button&&button.disabled===false;
     enforceDirtyExportLock();
     return accepted
    }catch{failCheck();return false}
