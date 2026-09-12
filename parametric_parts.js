@@ -1,6 +1,6 @@
 "use strict";
 (()=>{
- const $=id=>document.getElementById(id),num=(x,d=0)=>Number.isFinite(+x)?+x:d,N=64,MAX_MM=5000;
+ const $=id=>document.getElementById(id),num=(x,d=NaN)=>{const s=String(x??"").trim();return s!==""&&Number.isFinite(+s)?+s:d},N=64,MAX_MM=5000;
  const esc=s=>String(s??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
  const isExtra=()=>["adapter","enclosure"].includes($("partType")?.value);
  function ring(r,z){return Array.from({length:N},(_,i)=>v(r*Math.cos(i*2*Math.PI/N),r*Math.sin(i*2*Math.PI/N),z))}
