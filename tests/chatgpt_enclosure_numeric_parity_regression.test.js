@@ -18,7 +18,7 @@ const valid={
 };
 assert.equal(validate(valid).ok,true,"valid enclosure must remain accepted");
 
-for(const [field,value] of [["width","abc"],["depth",""],["height",null],["wall","abc"],["floorThickness","abc"]]){
+for(const [field,value] of [["width","abc"],["depth",""],["height",null],["wall","abc"],["floorThickness","abc"],["floorThickness",null]]){
  const plan=structuredClone(valid);
  plan.parameters[field]=value;
  const result=validate(plan);
