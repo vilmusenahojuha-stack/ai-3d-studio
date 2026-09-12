@@ -7,7 +7,8 @@ const vm=require("node:vm");
 const source=fs.readFileSync("centauri_state_guard.js","utf8");
 const elements=new Map([
  ["centauriStatus",{className:"",innerHTML:""}],
- ["btnCentauriStl",{disabled:false}]
+ ["btnCentauriStl",{disabled:false}],
+ ["btnDownload",{disabled:false}]
 ]);
 let nextTimer=1;
 const timers=new Map();
