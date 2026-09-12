@@ -52,7 +52,10 @@
   if(Number.isFinite(id2)&&Number.isFinite(od2)&&od2<=id2+.8)errors.push("Adapterin loppuosan seinämän pitää olla yli 0,4 mm (ulko- ja sisähalkaisijan erotus yli 0,8 mm).")
  }
  function validateEnclosureGeometry(raw,errors){
-  const p=raw.parameters||{},W=Number(p.width),D=Number(p.length??p.depth),H=Number(p.height),wall=Number(p.wall??p.thickness),floor=Number(p.floorThickness??p.thickness??p.wall);
+  const p=raw.parameters||{},widthRaw=p.width,depthRaw=p.length??p.depth,heightRaw=p.height,wallRaw=p.wall??p.thickness,floorRaw=p.floorThickness??p.thickness??p.wall,W=Number(widthRaw),D=Number(depthRaw),H=Number(heightRaw),wall=Number(wallRaw),floor=Number(floorRaw);
+  if(!finite(widthRaw)||!finite(depthRaw)||!finite(heightRaw))errors.push("Kotelon width, length/depth ja height pitää antaa kelvollisina numeroina.");
+  if(!finite(wallRaw))errors.push("Kotelon wall/thickness pitää antaa kelvollisena numerona.");
+  if(!finite(floorRaw))errors.push("Kotelon floorThickness/thickness/wall pitää antaa kelvollisena numerona.");
   if([W,D,H,wall,floor].some(x=>Number.isFinite(x)&&Math.abs(x)>MAX_MM))errors.push(`Kotelon mitat saavat olla enintään ${MAX_MM} mm.`);
   if(Number.isFinite(wall)&&wall<.8)errors.push("Kotelon seinämän pitää olla vähintään 0,8 mm.");
   if(Number.isFinite(floor)&&floor<.8)errors.push("Kotelon pohjan pitää olla vähintään 0,8 mm.");
