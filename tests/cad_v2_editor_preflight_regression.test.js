@@ -3,7 +3,7 @@ const assert=require("node:assert/strict"),fs=require("node:fs"),path=require("n
 const ROOT=path.resolve(__dirname,"..");
 function el(extra={}){return{value:"",valueAsNumber:NaN,min:"",max:"",defaultValue:"",hidden:false,disabled:false,textContent:"",innerHTML:"",style:{},querySelector(){return null},querySelectorAll(){return[]},insertAdjacentHTML(){},appendChild(){},...extra}}
 const elements={
- partType:el({value:"adapter",onchange:null}),"fields-plate":el(),"fields-adapter":el(),"fields-enclosure":el(),btnGenerate:el({onclick:null}),material:el({value:"PETG"}),status:el(),validation:el(),btnDownload:el(),btnFitTest:el(),dimensions:el(),partTitle:el(),
+ partType:el({value:"adapter",onchange:null}),"fields-plate":el(),"fields-adapter":el(),"fields-enclosure":el(),btnGenerate:el({onclick:null}),material:el({value:"PETG"}),status:el(),validation:el(),btnDownload:el(),btnFitTest:el(),btnCentauriSTL:el(),dimensions:el(),partTitle:el(),
  adapterLength:el({valueAsNumber:30,min:"2",max:"5000"}),adapterID1:el({valueAsNumber:20,min:"0.1",max:"5000"}),adapterID2:el({valueAsNumber:20,min:"0.1",max:"5000"}),adapterOD1:el({valueAsNumber:26,min:"0.1",max:"5000"}),adapterOD2:el({valueAsNumber:26,min:"0.1",max:"5000"}),
  enclosureW:el({valueAsNumber:80,min:"3",max:"5000"}),enclosureD:el({valueAsNumber:60,min:"3",max:"5000"}),enclosureH:el({valueAsNumber:30,min:"3",max:"5000"}),enclosureWall:el({valueAsNumber:2.4,min:"0.8",max:"5000"}),enclosureFloor:el({valueAsNumber:2.4,min:"0.8",max:"5000"})
 };
@@ -16,11 +16,13 @@ vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(ROOT,"cad_v2
 assert.ok(window.AI3DV2Editor,"CAD v2 editor test API must initialize");
 assert.equal(window.AI3DV2Editor.apply("adapter"),true,"valid adapter must still reach CAD generator");
 assert.equal(applied.length,1);
+elements.btnCentauriSTL.disabled=false;
 elements.adapterOD1.valueAsNumber=20.7;
 assert.equal(window.AI3DV2Editor.apply("adapter"),false,"adapter below 0.4 mm radial wall must be rejected before CAD generation");
 assert.equal(applied.length,1,"invalid adapter must not reach CAD generator");
 assert.match(elements.status.textContent,/vähintään 0,4 mm seinämä/);
 assert.equal(elements.btnDownload.disabled,true,"failed preflight must disable stale STL download");
+assert.equal(elements.btnCentauriSTL.disabled,true,"failed preflight must disable stale Centauri STL download");
 elements.adapterOD1.valueAsNumber=26;
 elements.partType.value="enclosure";
 elements.enclosureW.valueAsNumber=6;
@@ -37,12 +39,14 @@ context.currentMesh={stale:true};
 context.currentFitMesh={stale:true};
 elements.btnDownload.disabled=false;
 elements.btnFitTest.disabled=false;
+elements.btnCentauriSTL.disabled=false;
 elements.dimensions.textContent="80 × 60 × 30 mm";
 assert.throws(()=>window.AI3D.setPart("adapter",{material:"ABS"}),/tulostusmateriaalia ei tueta/);
 assert.equal(context.currentMesh,null,"unsupported project material must clear stale main mesh");
 assert.equal(context.currentFitMesh,null,"unsupported project material must clear stale fit mesh");
 assert.equal(elements.btnDownload.disabled,true,"unsupported project material must disable stale STL download");
 assert.equal(elements.btnFitTest.disabled,true,"unsupported project material must disable stale fit-test download");
+assert.equal(elements.btnCentauriSTL.disabled,true,"unsupported project material must disable stale Centauri STL download");
 assert.equal(elements.dimensions.textContent,"–","unsupported project material must clear stale dimensions");
 assert.match(elements.status.textContent,/^Virhe: .*tulostusmateriaalia ei tueta/);
 
