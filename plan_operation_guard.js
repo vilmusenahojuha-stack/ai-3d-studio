@@ -24,9 +24,11 @@
  }
  function holeFits(h,L,W,style,size,margin=.4){const r=h.d/2+margin;for(let i=0;i<32;i++){const a=i*2*Math.PI/32;if(!insidePlate(h.x+r*Math.cos(a),h.y+r*Math.sin(a),L,W,style,size))return false}return true}
  function validatePlateGeometry(raw,errors,warnings){
-  const p=raw.parameters||{},L=Number(p.length),W=Number(p.width),holes=plateHoles(raw),cornerRaw=p.cornerRadius,chamferRaw=p.chamfer,cornerRadius=Math.max(0,Number(cornerRaw)||0),chamfer=Math.max(0,Number(chamferRaw)||0),style=cornerRadius>0?"round":chamfer>0?"chamfer":"square",size=cornerRadius||chamfer||0;
+  const p=raw.parameters||{},L=Number(p.length),W=Number(p.width),Th=Number(p.thickness),holes=plateHoles(raw),cornerRaw=p.cornerRadius,chamferRaw=p.chamfer,cornerRadius=Math.max(0,Number(cornerRaw)||0),chamfer=Math.max(0,Number(chamferRaw)||0),style=cornerRadius>0?"round":chamfer>0?"chamfer":"square",size=cornerRadius||chamfer||0;
   if(!positive(L)||!positive(W))return;
   if(!positiveMm(L)||!positiveMm(W))errors.push(`Levyn pituus ja leveys saavat olla enintään ${MAX_MM} mm.`);
+  if(Number.isFinite(L)&&L<=2||Number.isFinite(W)&&W<=2)errors.push("Kiinnikelevyn pituuden ja leveyden pitää olla yli 2 mm.");
+  if(Number.isFinite(Th)&&Th<.5)errors.push("Kiinnikelevyn paksuuden pitää olla vähintään 0,5 mm.");
   if(cornerRaw!=null&&(!finite(cornerRaw)||Number(cornerRaw)<0||Number(cornerRaw)>MAX_MM))errors.push(`cornerRadius pitää olla välillä 0…${MAX_MM} mm.`);
   if(chamferRaw!=null&&(!finite(chamferRaw)||Number(chamferRaw)<0||Number(chamferRaw)>MAX_MM))errors.push(`chamfer pitää olla välillä 0…${MAX_MM} mm.`);
   if(positive(cornerRaw)&&positive(chamferRaw))errors.push("Levylle ei voi määrittää yhtä aikaa sekä cornerRadius- että chamfer-arvoa; valitse yksi kulmatyyli.");
