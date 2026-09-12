@@ -52,7 +52,7 @@
   if(Number.isFinite(id2)&&Number.isFinite(od2)&&od2<=id2+.8)errors.push("Adapterin loppuosan seinämän pitää olla yli 0,4 mm (ulko- ja sisähalkaisijan erotus yli 0,8 mm).")
  }
  function validateEnclosureGeometry(raw,errors){
-  const p=raw.parameters||{},widthRaw=p.width,depthRaw=p.length??p.depth,heightRaw=p.height,wallRaw=p.wall??p.thickness,floorRaw=p.floorThickness??p.thickness??p.wall,W=Number(widthRaw),D=Number(depthRaw),H=Number(heightRaw),wall=Number(wallRaw),floor=Number(floorRaw);
+  const p=raw.parameters||{},widthRaw=p.width,depthRaw=p.length??p.depth,heightRaw=p.height,wallRaw=p.wall??p.thickness,floorRaw=p.floorThickness!==undefined?p.floorThickness:(p.thickness!==undefined?p.thickness:wallRaw),W=Number(widthRaw),D=Number(depthRaw),H=Number(heightRaw),wall=Number(wallRaw),floor=Number(floorRaw);
   if(!finite(widthRaw)||!finite(depthRaw)||!finite(heightRaw))errors.push("Kotelon width, length/depth ja height pitää antaa kelvollisina numeroina.");
   if(!finite(wallRaw))errors.push("Kotelon wall/thickness pitää antaa kelvollisena numerona.");
   if(!finite(floorRaw))errors.push("Kotelon floorThickness/thickness/wall pitää antaa kelvollisena numerona.");
