@@ -85,9 +85,13 @@ buttonObserver.callback();
 assert.equal(centauriButton.disabled,true,"external Centauri status refresh must not re-enable export while geometry is dirty");
 
 context.window.CentauriProfile=null;
+centauriButton.disabled=false;
 guard.refresh(true);
 runTimers();
 assert.equal(guard.isDirty(),true,"missing Centauri checker must not clear dirty state");
+assert.equal(centauriButton.disabled,true,"missing Centauri checker must disable a stale export immediately when refresh executes");
+assert.equal(status.className,"printer-status fail","missing Centauri checker must surface a fail status instead of silently returning");
+assert.match(status.innerHTML,/Centauri-tarkistus epäonnistui/,"missing compatibility checker must explain why Centauri export is locked");
 
 context.window.CentauriProfile={check(){throw new Error("checker failed")}};
 guard.refresh(true);
