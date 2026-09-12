@@ -10,7 +10,7 @@ assert(src.includes('target?.id==="partType"||target?.closest?.(".part-fields")'
 assert(src.includes('new Set(["material","filamentPriceKg","ledCost","powerCost","miscCost"])'),"material and cost-only fields must not invalidate unchanged geometry");
 assert(src.includes('NON_GEOMETRY_PART_FIELDS.has(target.id)'),"non-geometry part fields must bypass stale geometry invalidation");
 assert(src.includes('currentMesh||currentFitMesh'),"parameter edits should clear an existing generated mesh");
-assert(src.includes('hasStaleExport=download?.disabled===false||centauri?.disabled===false'),"geometry edits must also fail closed when an export control is stale-enabled after mesh state is lost");
+assert(src.includes('hasStaleExport=download?.disabled===false||centauri?.disabled===false'),"preview guard must fail closed when an export control is stale-enabled after mesh state is lost");
 assert(src.includes('centauri=$("btnCentauriStl")'),"preview invalidation must include the Centauri export control in the immediate fail-safe lock");
 assert(src.includes('if(centauri)centauri.disabled=true'),"preview invalidation must disable Centauri STL export before deferred printer checks run");
 assert(src.includes("Mallin mittoja tai osatyyppiä muutettiin"),"stale preview must explain that geometry or part type changed");
@@ -94,6 +94,31 @@ function geometryEditLocksStaleExportsWithoutMesh(){
   assert.strictEqual(dimensions.textContent,"–","stale dimensions must be cleared together with stale export state");
 }
 
+function repeatedFailureLocksReenabledExportsWithoutMesh(){
+  const download={disabled:false};
+  const centauri={disabled:false};
+  const status={textContent:"Virhe: mallin generointi epäonnistui."};
+  const validation={innerHTML:"",querySelector(){return null;},appendChild(){}};
+  const elements={btnDownload:download,btnCentauriStl:centauri,status,validation};
+  const document={
+    readyState:"complete",
+    getElementById(id){return elements[id]||null;},
+    addEventListener(){},
+    createElement(){return{append(){},className:"",textContent:""};},
+    createTextNode(text){return{textContent:text};}
+  };
+  const context={window:{},document,setTimeout(){},MutationObserver:function(){this.observe=()=>{};},console};
+  vm.createContext(context);
+  vm.runInContext(src,context,{filename:"preview_guard.js"});
+  assert.strictEqual(download.disabled,true,"initial failure must disable primary STL export");
+  assert.strictEqual(centauri.disabled,true,"initial failure must disable Centauri export");
+  download.disabled=false;
+  centauri.disabled=false;
+  assert.doesNotThrow(()=>context.window.AI3DPreviewGuard.check(),"repeated failure inspection must remain safe after mesh state is already absent");
+  assert.strictEqual(download.disabled,true,"same repeated failure must relock a stale primary STL export even without a mesh reference");
+  assert.strictEqual(centauri.disabled,true,"same repeated failure must relock a stale Centauri export even without a mesh reference");
+}
+
 assert.match(
   projectFailureReason(null),
   /Projektia ei voitu avata/,
@@ -106,5 +131,6 @@ assert.strictEqual(
 );
 deferredFailuresAreContained();
 geometryEditLocksStaleExportsWithoutMesh();
+repeatedFailureLocksReenabledExportsWithoutMesh();
 
 console.log("preview input stale regression OK");
