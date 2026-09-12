@@ -57,7 +57,7 @@ assert.equal(centauriButton.disabled,true,"failed direct Centauri check must dis
 assert.equal(guard.isDirty(),true,"failed direct Centauri check must mark compatibility state dirty");
 assert.match(status.innerHTML,/Centauri-tarkistus epäonnistui/,"failed direct check must surface a clear fail-closed state");
 
-context.window.CentauriProfile={check(){checks++}};
+context.window.CentauriProfile={check(){checks++;centauriButton.disabled=false}};
 assert.equal(guard.installSafeCheck(),true);
 assert.equal(context.window.CentauriProfile.check(),true,"successful wrapped direct check should report success");
 assert.equal(checks,2,"successful direct wrapped check must execute the underlying checker once in addition to initial refresh");
@@ -105,11 +105,20 @@ assert.equal(guard.isDirty(),true,"failed background Centauri refresh must mark 
 assert.equal(centauriButton.disabled,true,"failed background Centauri refresh must disable stale Centauri export");
 assert.equal(status.className,"printer-status fail","failed background Centauri refresh must show a fail status");
 
-context.window.CentauriProfile={check(){checks++}};
+// A normal Centauri check can fail by leaving the export disabled without throwing (oversize/invalid mesh).
+context.window.CentauriProfile={check(){checks++;centauriButton.disabled=true}};
+guard.refresh(true);
+runTimers();
+assert.equal(guard.isDirty(),true,"non-throwing incompatible Centauri result must keep dirty state fail-closed");
+assert.equal(centauriButton.disabled,true,"non-throwing incompatible Centauri result must keep export disabled");
+assert.equal(checks,4,"incompatible refresh must execute the underlying checker exactly once");
+
+context.window.CentauriProfile={check(){checks++;centauriButton.disabled=false}};
 guard.refresh(true);
 runTimers();
 assert.equal(guard.isDirty(),false,"successful Centauri checker may clear dirty state");
-assert.equal(checks,4,"successful refresh must execute one additional compatibility check");
+assert.equal(centauriButton.disabled,false,"successful clear-dirty refresh must restore the export state produced by the checker");
+assert.equal(checks,5,"successful refresh must execute one additional compatibility check");
 
 centauriButton.disabled=false;
 buttonObserver.callback();
