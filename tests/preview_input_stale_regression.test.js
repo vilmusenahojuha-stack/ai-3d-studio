@@ -73,7 +73,7 @@ function geometryEditLocksStaleExportsWithoutMesh(){
   const validation={innerHTML:"",querySelector(){return null;},appendChild(){}};
   const elements={btnDownload:download,btnCentauriStl:centauri,dimensions,validation};
   const document={
-    readyState:"loading",
+    readyState:"complete",
     getElementById(id){return elements[id]||null;},
     addEventListener(type,fn){listeners[type]=fn;},
     createElement(){return{append(){},className:"",textContent:""};},
