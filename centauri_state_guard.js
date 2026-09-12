@@ -17,9 +17,10 @@
   function safeCheck(){
    try{
     raw();
-    const root=$("centauriStatus"),button=$("btnCentauriStl");
-    if(!root||!button){failCheck();return false}
-    const accepted=button.disabled===false;
+    const root=$("centauriStatus"),button=$("btnCentauriStl"),download=$("btnDownload");
+    if(!root||!button||!download){failCheck();return false}
+    if(download.disabled&&!button.disabled)button.disabled=true;
+    const accepted=download.disabled===false&&button.disabled===false;
     enforceDirtyExportLock();
     return accepted
    }catch{failCheck();return false}
