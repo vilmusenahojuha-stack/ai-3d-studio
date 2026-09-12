@@ -121,12 +121,27 @@ const negativeWallAdapter = structuredClone(unsupportedAdapterOperation);
 negativeWallAdapter.operations = [];
 negativeWallAdapter.parameters.wall = -1;
 assert.equal(validate(negativeWallAdapter).ok, false, "explicit negative adapter wall must be rejected even when outside diameters make the mesh otherwise constructible");
-assert(validate(negativeWallAdapter).errors.some(x => /wall.*negatiivinen/i.test(x)), "negative adapter wall rejection should identify the contradictory wall parameter");
+assert(validate(negativeWallAdapter).errors.some(x => /wall.*0,4.*200/i.test(x)), "negative adapter wall rejection should identify the allowed wall range");
 
 const nonNumericWallAdapter = structuredClone(unsupportedAdapterOperation);
 nonNumericWallAdapter.operations = [];
 nonNumericWallAdapter.parameters.wall = "abc";
 assert.equal(validate(nonNumericWallAdapter).ok, false, "explicit non-numeric adapter wall must be rejected before project creation");
+
+const belowCadWallAdapter = structuredClone(unsupportedAdapterOperation);
+belowCadWallAdapter.operations = [];
+belowCadWallAdapter.parameters.wall = 0.39;
+assert.equal(validate(belowCadWallAdapter).ok, false, "adapter wall below the Schema v2 CAD minimum must fail before project creation even with explicit outside diameters");
+
+const cadWallBoundaryAdapter = structuredClone(unsupportedAdapterOperation);
+cadWallBoundaryAdapter.operations = [];
+cadWallBoundaryAdapter.parameters.wall = 0.4;
+assert.equal(validate(cadWallBoundaryAdapter).ok, true, "adapter wall exactly at the Schema v2 CAD minimum must remain valid");
+
+const aboveCadWallMaxAdapter = structuredClone(unsupportedAdapterOperation);
+aboveCadWallMaxAdapter.operations = [];
+aboveCadWallMaxAdapter.parameters.wall = 200.01;
+assert.equal(validate(aboveCadWallMaxAdapter).ok, false, "adapter wall above the Schema v2 CAD maximum must fail before project creation");
 
 const invalidEnclosure = {
   schemaVersion: 2,
