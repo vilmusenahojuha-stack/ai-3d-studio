@@ -55,7 +55,10 @@
   if(!reason){lastError="";return}
   if(reason!==lastError)clearPreview(reason);
   else if(!clearing){
-   try{if(currentMesh||currentFitMesh)clearPreview(reason)}catch{}
+   let hasMesh=false;
+   try{hasMesh=!!(currentMesh||currentFitMesh)}catch{}
+   const download=$("btnDownload"),centauri=$("btnCentauriStl"),hasStaleExport=download?.disabled===false||centauri?.disabled===false;
+   if(hasMesh||hasStaleExport)clearPreview(reason)
   }
  }
  function geometryInputChanged(e){
