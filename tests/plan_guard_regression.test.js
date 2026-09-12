@@ -117,6 +117,17 @@ thinAdapter.operations = [];
 thinAdapter.parameters.outsideDiameter1 = 20.6;
 assert.equal(validate(thinAdapter).ok, false, "adapter wall thinner than guard limit must be rejected");
 
+const negativeWallAdapter = structuredClone(unsupportedAdapterOperation);
+negativeWallAdapter.operations = [];
+negativeWallAdapter.parameters.wall = -1;
+assert.equal(validate(negativeWallAdapter).ok, false, "explicit negative adapter wall must be rejected even when outside diameters make the mesh otherwise constructible");
+assert(validate(negativeWallAdapter).errors.some(x => /wall.*negatiivinen/i.test(x)), "negative adapter wall rejection should identify the contradictory wall parameter");
+
+const nonNumericWallAdapter = structuredClone(unsupportedAdapterOperation);
+nonNumericWallAdapter.operations = [];
+nonNumericWallAdapter.parameters.wall = "abc";
+assert.equal(validate(nonNumericWallAdapter).ok, false, "explicit non-numeric adapter wall must be rejected before project creation");
+
 const invalidEnclosure = {
   schemaVersion: 2,
   status: "ready",
