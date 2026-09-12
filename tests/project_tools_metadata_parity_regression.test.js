@@ -42,7 +42,9 @@ for(const [label,invalid] of [
   ["boolean print value",{...valid,id:"p-bad-2",print:{...valid.print,walls:true}}],
   ["unknown source schema",{...valid,id:"p-bad-3",sourceSchema:3}],
   ["oversized source plan",{...valid,id:"p-bad-4",sourcePlan:"x".repeat(161)}],
-  ["invalid timestamp type",{...valid,id:"p-bad-5",updated:"not-a-timestamp"}]
+  ["invalid timestamp type",{...valid,id:"p-bad-5",updated:"not-a-timestamp"}],
+  ["negative timestamp",{...valid,id:"p-bad-6",created:-1}],
+  ["out-of-range timestamp",{...valid,id:"p-bad-7",updated:8.64e15+1}]
 ]){
   const backupRaw=JSON.stringify([valid]);
   const storage=new MemoryStorage({[KEY]:JSON.stringify([invalid]),[ACTIVE]:invalid.id,[BACKUP]:backupRaw});
