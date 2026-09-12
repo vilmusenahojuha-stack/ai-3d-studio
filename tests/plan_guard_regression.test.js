@@ -66,6 +66,18 @@ oversizedScalarSleeve.parameters.length = 5000.01;
 assert.equal(validate(oversizedScalarSleeve).ok, false, "Schema v2 scalar dimension above 5000 mm must fail before a project is opened");
 assert(validate(oversizedScalarSleeve).errors.some(x => /5000 mm/.test(x)), "oversized scalar rejection should explain the shared Schema v2 limit");
 
+const numericStringBoundarySleeve = structuredClone(scalarBoundarySleeve);
+numericStringBoundarySleeve.parameters.length = "5000";
+assert.equal(validate(numericStringBoundarySleeve).ok, true, "numeric-string dimensions already accepted by Schema v2 must remain compatible at the 5000 mm boundary");
+const oversizedNumericStringSleeve = structuredClone(scalarBoundarySleeve);
+oversizedNumericStringSleeve.parameters.length = "5000.01";
+assert.equal(validate(oversizedNumericStringSleeve).ok, false, "numeric-string Schema v2 dimensions must not bypass the shared 5000 mm safety bound");
+assert(validate(oversizedNumericStringSleeve).errors.some(x => /parameters\.length.*5000 mm/.test(x)), "numeric-string rejection should identify the parameter and shared limit");
+
+const nonNumericStringSleeve = structuredClone(scalarBoundarySleeve);
+nonNumericStringSleeve.parameters.label = "M";
+assert.equal(validate(nonNumericStringSleeve).ok, true, "non-numeric scalar strings must not be misclassified as dimensions by the generic safety bound");
+
 const zeroCenterHole = structuredClone(validPlate);
 zeroCenterHole.parameters.holes = [];
 zeroCenterHole.parameters.centerHole = 0;
