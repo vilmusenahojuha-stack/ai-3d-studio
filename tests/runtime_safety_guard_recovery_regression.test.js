@@ -3,13 +3,13 @@ const assert=require("assert"),fs=require("fs"),path=require("path"),vm=require(
 const root=path.resolve(__dirname,"..");
 const runtime=fs.readFileSync(path.join(root,"runtime_health_guard.js"),"utf8");
 const index=fs.readFileSync(path.join(root,"index.html"),"utf8");
-assert.match(index,/cad_apply_guard\.js\?v=1\.4/,"index must load current CAD apply guard version");
+assert.match(index,/cad_apply_guard\.js\?v=1\.5/,"index must load current CAD apply guard version");
 assert.match(index,/project_open_guard\.js\?v=1\.4/,"index must load current project open guard version");
 assert.match(index,/storage_recovery\.js\?v=1\.12/,"index must load current project storage recovery version");
 assert.match(index,/ui_simplify\.js\?v=1\.4/,"index must load current guided UI helper version");
 assert.match(index,/measure_focus_guard\.js\?v=1\.0/,"index must load current measure focus guard version");
-assert.match(index,/runtime_health_guard\.js\?v=1\.23/,"index must keep the current runtime health cache key when only its dependency pin changes");
-assert.match(runtime,/\["cadApplyGuard",\(\)=>!cadApplyGuardReady\(\),"cad_apply_guard\.js\?v=1\.4"\]/,"runtime fallback must pin current CAD apply guard version");
+assert.match(index,/runtime_health_guard\.js\?v=1\.24/,"index must invalidate runtime health cache after CAD apply guard recovery changes");
+assert.match(runtime,/\["cadApplyGuard",\(\)=>!cadApplyGuardReady\(\),"cad_apply_guard\.js\?v=1\.5"\]/,"runtime fallback must pin current CAD apply guard version");
 assert.match(runtime,/\["projectOpenGuard",\(\)=>!projectOpenGuardReady\(\),"project_open_guard\.js\?v=1\.4"\]/,"runtime fallback must pin current project open guard version");
 assert.match(runtime,/\["storageRecovery",\(\)=>!storageRecoveryReady\(\),"storage_recovery\.js\?v=1\.12"\]/,"runtime fallback must pin current project storage recovery version");
 assert.match(runtime,/\["guidedUI",\(\)=>!guidedUIReady\(\),"ui_simplify\.js\?v=1\.4"\]/,"runtime fallback must pin current guided UI helper version");
@@ -42,7 +42,7 @@ assert.ok(project,"manual dependency retry must append project open guard recove
 assert.ok(storage,"manual dependency retry must append project storage recovery script");
 assert.ok(guided,"manual dependency retry must append guided UI recovery script");
 assert.ok(measure,"manual dependency retry must append 3D measure focus recovery script");
-assert.match(cad.src,/^cad_apply_guard\.js\?v=1\.4&healthRetry=\d+$/);
+assert.match(cad.src,/^cad_apply_guard\.js\?v=1\.5&healthRetry=\d+$/);
 assert.match(project.src,/^project_open_guard\.js\?v=1\.4&healthRetry=\d+$/);
 assert.match(storage.src,/^storage_recovery\.js\?v=1\.12&healthRetry=\d+$/);
 assert.match(guided.src,/^ui_simplify\.js\?v=1\.4&healthRetry=\d+$/);
