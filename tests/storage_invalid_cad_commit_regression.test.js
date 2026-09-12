@@ -1,0 +1,20 @@
+"use strict";
+const assert=require("node:assert/strict"),fs=require("node:fs"),vm=require("node:vm");
+const source=fs.readFileSync("storage_commit_guard.js","utf8"),KEY="ai3d:projects:v3";
+const project={id:"p1",name:"Holkki",type:"sleeve",values:{sleeveID:20,sleeveWall:3,sleeveLength:30,material:"PETG"},created:1,updated:2};
+const map=new Map([[KEY,JSON.stringify([project])],[KEY+":active","p1"]]);
+const localStorage={getItem:k=>map.has(k)?map.get(k):null,setItem:(k,v)=>map.set(k,String(v)),removeItem:k=>map.delete(k)};
+const status={textContent:"Virhe: CAD-generointi epäonnistui"},validation={querySelector:()=>({className:"check fail"})},box={textContent:"",className:"",dataset:{},classList:{contains:()=>false}};
+const document={readyState:"loading",visibilityState:"visible",getElementById:id=>({status,validation,planSyncStatus:box}[id]||null),addEventListener(){}};
+const window={AI3DProjects:{active:()=>project},addEventListener(){}};
+class MutationObserver{observe(){}}
+const context={window,document,localStorage,MutationObserver,console,setTimeout:fn=>{fn();return 1},clearTimeout(){},JSON,Number,Object,String,Math,Set,Array,Error};
+vm.createContext(context);vm.runInContext(source,context,{filename:"storage_commit_guard.js"});
+const guard=window.AI3DStorageCommitGuard;
+assert.equal(guard.hasConflict,true,"an active CAD failure must block a project commit before it can replace the last valid saved project");
+assert.match(guard.lastIssue,/CAD-malli ei läpäissyt tarkistusta/i,"the blocked commit must explain that the CAD state is invalid");
+assert.equal(guard.verify(),false,"verification must fail closed while the active CAD model is invalid");
+validation.querySelector=()=>null;status.textContent="Malli luotu";
+assert.equal(guard.hasConflict,false,"a corrected CAD state must become saveable again without reloading the page");
+assert.equal(guard.verify(),true,"verification must recover after the CAD error is corrected");
+console.log("storage invalid CAD commit regression: ok");
