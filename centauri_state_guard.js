@@ -16,8 +16,10 @@
   const raw=check.bind(profile);
   function safeCheck(){
    try{
-    const result=raw(),button=$("btnCentauriStl");
-    const accepted=!!button&&button.disabled===false;
+    raw();
+    const root=$("centauriStatus"),button=$("btnCentauriStl");
+    if(!root||!button){failCheck();return false}
+    const accepted=button.disabled===false;
     enforceDirtyExportLock();
     return accepted
    }catch{failCheck();return false}
