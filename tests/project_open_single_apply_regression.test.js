@@ -5,7 +5,7 @@ const vm=require("vm");
 
 const html=fs.readFileSync("index.html","utf8");
 const storageGuardPos=html.indexOf('storage_commit_guard.js?v=1.9');
-const openGuardPos=html.indexOf('project_open_guard.js?v=1.3');
+const openGuardPos=html.indexOf('project_open_guard.js?v=1.4');
 assert(storageGuardPos>=0&&openGuardPos>storageGuardPos,"project open guard must load after storage commit guard in production");
 
 const KEY="ai3d:projects:v3";

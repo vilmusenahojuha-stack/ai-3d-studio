@@ -12,7 +12,7 @@
   ["parametric",()=>!parametricReady(),"parametric_parts.js?v=1.9"],
   ["customPlate",()=>!customPlateReady(),"plate_custom.js?v=1.8"],
   ["projectTools",()=>!projectToolsReady(),"project_tools.js?v=1.14"],
-  ["projectOpenGuard",()=>!projectOpenGuardReady(),"project_open_guard.js?v=1.3"],
+  ["projectOpenGuard",()=>!projectOpenGuardReady(),"project_open_guard.js?v=1.4"],
   ["storageRecovery",()=>!storageRecoveryReady(),"storage_recovery.js?v=1.12"],
   ["storageCommitGuard",()=>!storageCommitGuardReady(),"storage_commit_guard.js?v=1.9"],
   ["previewGuard",()=>!previewGuardReady(),"preview_guard.js?v=1.7"],
@@ -33,7 +33,7 @@
  const parametricReady=()=>fn(window.AI3DParametric?.generate)&&!!$("fields-adapter")&&!!$("fields-enclosure")&&!!$("partType")?.querySelector?.('option[value="adapter"]')&&!!$("partType")?.querySelector?.('option[value="enclosure"]');
  const customPlateReady=()=>window.AI3DPlateCustom?.ready===true&&!!$("plateCustomHoles")&&!!$("plateHolePattern")?.querySelector?.('option[value="custom"]');
  const projectToolsReady=()=>!!$("btnDuplicateProject")&&!!$("btnExportAllProjects")&&!!$("btnImportAllProjects")&&!!$("btnRestoreProjects");
- const projectOpenGuardReady=()=>fn(window.AI3DProjectOpenGuard?.check);
+ const projectOpenGuardReady=()=>fn(window.AI3DProjectOpenGuard?.check)&&fn(window.AI3DProjectOpenGuard?.resetValues)&&fn(window.AI3DProjectOpenGuard?.install)&&window.AI3D?.setPart?.__ai3dProjectDefaults===true;
  const storageRecoveryReady=()=>window.AI3DStorageRecovery?.checked===true&&!window.AI3DStorageRecovery?.error;
  const storageCommitGuardReady=()=>fn(window.AI3DStorageCommitGuard?.verify);
  const previewGuardReady=()=>fn(window.AI3DPreviewGuard?.clear)&&fn(window.AI3DPreviewGuard?.check)&&fn(window.AI3DPreviewGuard?.failureReason);
