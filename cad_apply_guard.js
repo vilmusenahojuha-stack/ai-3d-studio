@@ -15,9 +15,10 @@
   try{if(typeof window.AI3DPreviewGuard?.clear==="function"){window.AI3DPreviewGuard.clear(message);return}}catch{}
   try{currentMesh=null}catch{}
   try{currentFitMesh=null}catch{}
-  const download=$("btnDownload"),fit=$("btnFitTest"),dims=$("dimensions"),status=$("status");
+  const download=$("btnDownload"),fit=$("btnFitTest"),centauri=$("btnCentauriStl"),dims=$("dimensions"),status=$("status");
   if(download)download.disabled=true;
   if(fit)fit.disabled=true;
+  if(centauri)centauri.disabled=true;
   if(dims)dims.textContent="–";
   if(status&&!/^Virhe\s*:/i.test(status.textContent||""))status.textContent="Virhe: "+message;
   try{draw()}catch{}
