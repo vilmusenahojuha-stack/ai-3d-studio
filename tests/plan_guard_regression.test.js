@@ -128,6 +128,12 @@ nonNumericWallAdapter.operations = [];
 nonNumericWallAdapter.parameters.wall = "abc";
 assert.equal(validate(nonNumericWallAdapter).ok, false, "explicit non-numeric adapter wall must be rejected before project creation");
 
+const nullWallAdapter = structuredClone(unsupportedAdapterOperation);
+nullWallAdapter.operations = [];
+nullWallAdapter.parameters.wall = null;
+assert.equal(validate(nullWallAdapter).ok, false, "explicit null adapter wall must be rejected consistently with CAD v2 even when outside diameters are provided");
+assert(validate(nullWallAdapter).errors.some(x => /wall.*0,4.*200/i.test(x)), "null adapter wall rejection should identify the allowed wall range");
+
 const belowCadWallAdapter = structuredClone(unsupportedAdapterOperation);
 belowCadWallAdapter.operations = [];
 belowCadWallAdapter.parameters.wall = 0.39;
