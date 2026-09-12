@@ -19,8 +19,9 @@
     raw();
     const root=$("centauriStatus"),button=$("btnCentauriStl"),download=$("btnDownload");
     if(!root||!button||!download){failCheck();return false}
-    if(download.disabled&&!button.disabled)button.disabled=true;
-    const accepted=download.disabled===false&&button.disabled===false;
+    const statusOk=/(?:^|\s)ok(?:\s|$)/.test(String(root.className||""));
+    if((download.disabled||!statusOk)&&!button.disabled)button.disabled=true;
+    const accepted=statusOk&&download.disabled===false&&button.disabled===false;
     enforceDirtyExportLock();
     return accepted
    }catch{failCheck();return false}
