@@ -52,6 +52,17 @@ assert.ok(context.currentMesh,"valid adapter should produce a mesh");
 assert.strictEqual(elements.btnDownload.disabled,false);
 assert.ok(centauriChecks>0,"Centauri check should refresh after generation");
 
+// Blank and non-numeric required dimensions must fail closed instead of silently becoming zero.
+elements.adapterLength.value="";
+context.window.AI3DParametric.generate();
+assert.strictEqual(context.currentMesh,null);
+assert.strictEqual(elements.btnDownload.disabled,true);
+assert.match(elements.status.textContent,/anna kelvolliset numerot/i);
+elements.adapterLength.value="abc";
+context.window.AI3DParametric.generate();
+assert.strictEqual(context.currentMesh,null);
+assert.match(elements.status.textContent,/anna kelvolliset numerot/i);
+
 // Extreme dimensions are rejected even when the newer v2 editor failed to load.
 elements.adapterLength.value="5001";
 context.window.AI3DParametric.generate();
