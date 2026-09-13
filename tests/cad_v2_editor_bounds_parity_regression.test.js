@@ -4,11 +4,11 @@ const assert=require("assert");
 const fs=require("fs");
 
 const editor=fs.readFileSync("cad_v2_editor.js","utf8");
-const core=fs.readFileSync("cad_plan_v2.js","utf8");
+const plans=fs.readFileSync("plan_sync.js","utf8");
 
 const field=(id,min,max)=>{
   const re=new RegExp(`id="${id}"[^>]*min="${String(min).replace(".","\\.")}"[^>]*max="${String(max).replace(".","\\.")}"`);
-  assert.match(editor,re,`${id} editor bounds must match CAD v2 core limits`);
+  assert.match(editor,re,`${id} editor bounds must match ChatGPT plan validation limits`);
 };
 
 field("adapterLength",2,2000);
@@ -22,13 +22,17 @@ field("enclosureH",5,2000);
 field("enclosureWall",0.8,200);
 field("enclosureFloor",0.8,200);
 
-assert.match(core,/length[^\n]*2[^\n]*2000|number\([^\n]*length[^\n]*2[^\n]*2000/i,
-  "CAD v2 core must retain the adapter length boundary used by the editor");
-assert.match(core,/insideDiameter[^\n]*1000|insideDiameter1[^\n]*1000/i,
-  "CAD v2 core must retain the adapter inside-diameter ceiling used by the editor");
-assert.match(core,/outsideDiameter[^\n]*1500/i,
-  "CAD v2 core must retain the adapter outside-diameter ceiling used by the editor");
-assert.match(core,/width[^\n]*2000|enclosure[^\n]*2000/i,
-  "CAD v2 core must retain the enclosure dimension ceiling used by the editor");
+assert.match(plans,/if\(!n\(p\.length,2,2000\)\)/,
+  "ChatGPT plan validation must retain the adapter length range used by the editor");
+assert.match(plans,/if\(!n\(i1,1,1000\)\|\|!n\(i2,1,1000\)\)/,
+  "ChatGPT plan validation must retain the adapter inside-diameter range used by the editor");
+assert.match(plans,/!n\(value,1,1500\)/,
+  "ChatGPT plan validation must retain the adapter outside-diameter range used by the editor");
+assert.match(plans,/if\(!n\(W,5,2000\)\|\|!n\(D,5,2000\)\|\|!n\(H,5,2000\)\)/,
+  "ChatGPT plan validation must retain the enclosure dimension range used by the editor");
+assert.match(plans,/if\(!n\(wall,\.8,200\)\)/,
+  "ChatGPT plan validation must retain the enclosure wall range used by the editor");
+assert.match(plans,/if\(!n\(floor,\.8,200\)\)/,
+  "ChatGPT plan validation must retain the enclosure floor range used by the editor");
 
-console.log("CAD v2 editor bounds parity regression: OK");
+console.log("CAD v2 editor / ChatGPT plan bounds parity regression: OK");
