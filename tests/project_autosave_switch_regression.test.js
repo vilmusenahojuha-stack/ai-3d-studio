@@ -40,5 +40,9 @@ assert.match(guard,/const NAV_SELECTOR='\[data-id\],\[data-plan\],#btnNewProject
   "project/plan navigation and plan reload must stay blocked while a validated edit is still unsaved");
 assert.match(guard,/document\.addEventListener\("click",blockNavigation,true\)/,
   "navigation protection must run in capture phase before existing project handlers can replace live CAD values");
+assert.match(guard,/function protectUnload\(e\)\{[\s\S]*if\(!pending\|\|verifySaved\(\)\)return;[\s\S]*e\?\.preventDefault\?\.\(\);[\s\S]*e\.returnValue=""/,
+  "page exit protection must only prompt when a pending CAD edit still cannot be verified as saved");
+assert.match(guard,/window\.addEventListener\?\.\("beforeunload",protectUnload\)/,
+  "pending validated CAD edits must be protected against reload, tab close and external navigation");
 
 console.log("Project autosave switch regression: OK");
