@@ -19,7 +19,7 @@
   if(!valid||totalArea<=0)return null;const overhangPct=100*severeArea/totalArea,downPct=100*downArea/totalArea,bedPct=100*bedArea/totalArea,footprint=Math.max(.01,b.dims[0]*b.dims[1]),bedFootprintPct=Math.min(100,100*bedArea/footprint);return{overhangPct,downPct,bedPct,bedArea,bedFootprintPct,validTriangles:valid}
  }
  function activeValues(){return window.AI3DProjects?.active?.()?.values||{}}
- function liveNumber(id,fallback){const e=$(id);if(e){const x=e.type==="number"?e.valueAsNumber:Number(e.value);if(Number.isFinite(x))return x}const y=Number(fallback);return Number.isFinite(y)?y:NaN}
+ function liveNumber(id,fallback){const e=$(id);if(e){const raw=String(e.value??"").trim();if(!raw)return NaN;const x=e.type==="number"?e.valueAsNumber:Number(raw);return Number.isFinite(x)?x:NaN}const y=Number(fallback);return Number.isFinite(y)?y:NaN}
  function thinFeature(){
   const type=$("partType")?.value||"",v=activeValues(),c=[];
   const add=(name,x)=>{x=+x;if(Number.isFinite(x)&&x>0)c.push([name,x])};
