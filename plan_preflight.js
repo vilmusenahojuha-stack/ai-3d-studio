@@ -4,9 +4,9 @@
  const supportedV2=new Set(["sleeve","spike","nutCover","spikeNut","endPlug","plug","mountingPlate","plate","adapter","enclosure","box","case"]);
  const supportedV1=new Set(["sleeve","spike","plug","plate"]);
  const materials=new Set(["PLA","PETG","ASA"]);
- const positive=v=>Number.isFinite(Number(v))&&Number(v)>0;
- const finite=v=>v!==null&&v!==undefined&&!(typeof v==="string"&&!v.trim())&&Number.isFinite(Number(v));
- const nonNegative=v=>Number.isFinite(Number(v))&&Number(v)>=0;
+ const positive=v=>typeof v==="number"&&Number.isFinite(v)&&v>0;
+ const finite=v=>typeof v==="number"&&Number.isFinite(v);
+ const nonNegative=v=>typeof v==="number"&&Number.isFinite(v)&&v>=0;
  const safeScalar=v=>v===null||["string","number","boolean"].includes(typeof v);
  let lastResult=null,running=true;
  function fingerprint(raw){try{return JSON.stringify(raw)}catch{return null}}
