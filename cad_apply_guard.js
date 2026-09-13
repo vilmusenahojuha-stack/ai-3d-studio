@@ -51,6 +51,15 @@
   }
   return true
  }
+ function validatePlanParameterTypes(plan){
+  if(!plan||plan.schemaVersion!==2||!plan.parameters||typeof plan.parameters!=="object"||Array.isArray(plan.parameters))return true;
+  const p=plan.parameters,check=(key,label=key)=>{if(Object.prototype.hasOwnProperty.call(p,key)&&!finite(p[key]))throw Error(`parameters.${label}: anna kelvollinen numero.`)};
+  const type=({plate:"mountingPlate",box:"enclosure",case:"enclosure"})[plan.partType]||plan.partType;
+  if(type==="adapter")for(const key of ["length","insideDiameter","insideDiameter1","insideDiameter2","wall","outsideDiameter","outsideDiameter1","outsideDiameter2"])check(key);
+  if(type==="enclosure")for(const key of ["width","length","depth","height","wall","thickness","floorThickness"])check(key);
+  if(type==="mountingPlate")for(const key of ["length","width","thickness","cornerRadius","chamfer","holeDiameter"])check(key);
+  return true
+ }
  api.setPart=(type,values={})=>{
   try{
    const result=original(type,values);
@@ -67,6 +76,7 @@
   const originalApply=v2.apply.bind(v2);
   v2.apply=plan=>{
    try{
+    validatePlanParameterTypes(plan);
     validatePlanHoleBounds(plan);
     const result=originalApply(plan);
     const error=failureMessage();
@@ -94,5 +104,5 @@
  }
  const watching=watchV2Assignment();
  if(!watching&&!wrapV2()&&document.readyState==="loading")document.addEventListener?.("DOMContentLoaded",wrapV2,{once:true});
- window.AI3DCADApplyGuard={check:failureMessage,wrapV2,validatePlanHoleBounds};
+ window.AI3DCADApplyGuard={check:failureMessage,wrapV2,validatePlanHoleBounds,validatePlanParameterTypes};
 })();
