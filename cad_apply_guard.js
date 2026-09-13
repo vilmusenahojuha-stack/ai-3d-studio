@@ -3,7 +3,7 @@
  const $=id=>document.getElementById(id),api=window.AI3D,HOLE_XY_MAX=2000,HOLE_D_MIN=.2,HOLE_D_MAX=500,MAX_OPS=200,MAX_HOLES=200;
  if(!api||typeof api.setPart!=="function"||api.__applyGuard)return;
  const original=api.setPart.bind(api);
- const finite=v=>v!==null&&v!==undefined&&!(typeof v==="string"&&!v.trim())&&Number.isFinite(Number(v));
+ const finite=v=>typeof v==="number"&&Number.isFinite(v);
  function failureMessage(){
   const status=$("status")?.textContent?.trim()||"";
   const validation=$("validation");
@@ -46,7 +46,7 @@
   if(holes.length>MAX_HOLES)throw Error(`Suunnitelmassa on yhteensä yli ${MAX_HOLES} reikää.`);
   for(const h of holes){
    if(!finite(h.x)||!finite(h.y)||!finite(h.d))throw Error(`${h.label}: x/y pitää olla välillä -${HOLE_XY_MAX}…${HOLE_XY_MAX} mm ja diameter välillä ${HOLE_D_MIN}…${HOLE_D_MAX} mm.`);
-   const x=Number(h.x),y=Number(h.y),d=Number(h.d);
+   const x=h.x,y=h.y,d=h.d;
    if(Math.abs(x)>HOLE_XY_MAX||Math.abs(y)>HOLE_XY_MAX||d<HOLE_D_MIN||d>HOLE_D_MAX)throw Error(`${h.label}: x/y pitää olla välillä -${HOLE_XY_MAX}…${HOLE_XY_MAX} mm ja diameter välillä ${HOLE_D_MIN}…${HOLE_D_MAX} mm.`);
   }
   return true
