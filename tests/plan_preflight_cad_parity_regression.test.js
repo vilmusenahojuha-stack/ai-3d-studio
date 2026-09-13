@@ -59,6 +59,8 @@ assert.equal(validate(v1("sleeve", { sleeveID: 20, sleeveWall: 0.99, sleeveLengt
   "Schema v1 sleeve wall below CAD minimum must fail preflight");
 assert.equal(validate(v1("sleeve", { sleeveID: 20, sleeveWall: 1, sleeveLength: 2 })).ok, false,
   "Schema v1 sleeve length at CAD-invalid 2 mm boundary must fail preflight");
+assert.equal(validate(v1("sleeve", { sleeveID: "20", sleeveWall: 1, sleeveLength: 20 })).ok, false,
+  "Schema v1 preflight must reject numeric strings because final import requires actual JSON numbers");
 
 const validV2Sleeve = v2("sleeve", { insideDiameter: 20, wall: 1, length: 2.01 });
 assert.equal(validate(validV2Sleeve).ok, true,
@@ -69,6 +71,10 @@ assert.equal(validate(v2("sleeve", { insideDiameter: 20, outsideDiameter: 21.99,
   "Schema v2 outsideDiameter must leave at least 1 mm radial wall");
 assert.equal(validate(v2("sleeve", { insideDiameter: 20, outsideDiameter: 22, length: 2.01 })).ok, true,
   "Schema v2 outsideDiameter with exactly 1 mm radial wall should pass");
+assert.equal(validate(v2("sleeve", { insideDiameter: "20", wall: 1, length: 20 })).ok, false,
+  "Schema v2 preflight must reject numeric-string dimensions before final import");
+assert.equal(validate(v2("sleeve", { insideDiameter: 20, wall: "1", length: 20 })).ok, false,
+  "Schema v2 preflight must reject numeric-string wall values before final import");
 
 assert.equal(validate(v1("plug", {
   tubeW: 30, tubeH: 30, tubeWall: 2, plugClear: 0.25, insertDepth: 2.01, capThickness: 1.01
@@ -92,6 +98,9 @@ assert.equal(validate(v2("endPlug", {
 assert.equal(validate(v2("endPlug", {
   width: 30, height: 30, wall: 2, clearance: 0.25, insertDepth: 10, capThickness: 3, overhang: -0.1
 })).ok, false, "Schema v2 negative overhang must fail preflight like final import validation");
+assert.equal(validate(v2("endPlug", {
+  width: 30, height: 30, wall: 2, clearance: "0.25", insertDepth: 10, capThickness: 3, overhang: 1
+})).ok, false, "Schema v2 preflight must reject numeric-string non-negative values like final import validation");
 
 const validPlate = v2("mountingPlate", {
   length: 100, width: 60, thickness: 4, holes: [{ x: 0, y: 0, diameter: 6 }]
@@ -104,6 +113,9 @@ assert.equal(validate(v2("mountingPlate", {
 assert.equal(validate(v2("mountingPlate", {
   length: 100, width: 60, thickness: 4, holes: [{ x: " ", y: 0, diameter: 6 }]
 })).ok, false, "Preflight must reject blank hole coordinates instead of coercing them to zero");
+assert.equal(validate(v2("mountingPlate", {
+  length: 100, width: 60, thickness: 4, holes: [{ x: "0", y: 0, diameter: 6 }]
+})).ok, false, "Preflight must reject numeric-string hole coordinates like final import validation");
 assert.equal(validate(v2("mountingPlate", {
   length: 100, width: 60, thickness: 4, holes: [{ y: 0, diameter: 6 }]
 })).ok, false, "Preflight must reject missing hole coordinates instead of defaulting them to zero");
