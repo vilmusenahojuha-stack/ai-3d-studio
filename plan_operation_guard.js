@@ -52,6 +52,7 @@
   if(!positive(p.insideDiameter1??p.insideDiameter))errors.push("Adapterin sisähalkaisija alussa puuttuu tai ei ole positiivinen luku.");
   if(p.insideDiameter2!==undefined&&!positive(p.insideDiameter2))errors.push("Adapterin sisähalkaisija lopussa ei ole positiivinen luku.");
   if(p.wall!==undefined&&(!finite(p.wall)||Number(p.wall)<.4||Number(p.wall)>200))errors.push("Adapterin wall pitää olla kelvollinen luku välillä 0,4…200 mm.");
+  for(const key of ["outsideDiameter","outsideDiameter1","outsideDiameter2"])if(p[key]!==undefined&&!finite(p[key]))errors.push(`Adapterin ${key} pitää olla kelvollinen numero.`);
   if(Number.isFinite(id1)&&Number.isFinite(od1)&&od1<=id1+.8)errors.push("Adapterin alkuosan seinämän pitää olla yli 0,4 mm (ulko- ja sisähalkaisijan erotus yli 0,8 mm).");
   if(Number.isFinite(id2)&&Number.isFinite(od2)&&od2<=id2+.8)errors.push("Adapterin loppuosan seinämän pitää olla yli 0,4 mm (ulko- ja sisähalkaisijan erotus yli 0,8 mm).")
  }
