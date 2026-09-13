@@ -58,4 +58,15 @@ assert.equal(validate(plan("adapter", { ...validAdapter, insideDiameter1: 0 })).
 assert.equal(validate(plan("adapter", { ...validAdapter, insideDiameter2: 0 })).ok, false,
   "explicit zero adapter end inside diameter must fail in the operation guard");
 
+for (const key of ["outsideDiameter", "outsideDiameter1", "outsideDiameter2"]) {
+  const base = { length: 30, insideDiameter1: 20, insideDiameter2: 24, wall: 3 };
+  assert.equal(validate(plan("adapter", { ...base, [key]: "not-a-number" })).ok, false,
+    `explicit non-numeric adapter ${key} must fail before CAD generation`);
+  assert.equal(validate(plan("adapter", { ...base, [key]: null })).ok, false,
+    `explicit null adapter ${key} must fail before CAD generation`);
+}
+
+assert.equal(validate(plan("adapter", { length: 30, insideDiameter1: 20, insideDiameter2: 24, wall: 3 })).ok, true,
+  "adapter may still derive outer diameters from a valid wall when explicit outer diameters are omitted");
+
 console.log("CAD Plan required parameter parity regression: OK");
