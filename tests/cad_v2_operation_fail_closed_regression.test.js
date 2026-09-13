@@ -19,6 +19,11 @@ assert.throws(()=>apply({...enclosure,operations:[{type:"hole",x:0,y:0,diameter:
 const plate={schemaVersion:2,partType:"plate",parameters:{length:120,width:60,thickness:5}};
 assert.doesNotThrow(()=>apply({...plate,operations:[{type:"hole",x:0,y:0,diameter:4}]}),"supported plate hole operation must remain valid");
 assert.doesNotThrow(()=>apply({...plate,operations:[{type:"holes",holes:[{x:-20,y:0,diameter:4},{x:20,y:0,diameter:4}]}]}),"supported plate holes operation must remain valid");
+assert.doesNotThrow(()=>apply({...plate,parameters:{...plate.parameters,holes:[{x:0,y:0,diameter:4}]}}),"explicit numeric zero coordinates must remain valid");
+assert.throws(()=>apply({...plate,parameters:{...plate.parameters,holes:[{x:null,y:5,diameter:4}]}}),/x\/y pitää olla välillä/i,"parameter hole null x must fail closed in CAD core instead of coercing to zero");
+assert.throws(()=>apply({...plate,parameters:{...plate.parameters,holes:[{x:" ",y:5,diameter:4}]}}),/x\/y pitää olla välillä/i,"parameter hole blank x must fail closed in CAD core instead of coercing to zero");
+assert.throws(()=>apply({...plate,operations:[{type:"hole",x:5,y:null,diameter:4}]}),/x\/y pitää olla välillä/i,"operation hole null y must fail closed in CAD core instead of coercing to zero");
+assert.throws(()=>apply({...plate,operations:[{type:"holes",holes:[{x:5,y:" ",diameter:4}]}]}),/x\/y pitää olla välillä/i,"nested operation hole blank y must fail closed in CAD core instead of coercing to zero");
 assert.throws(()=>apply({...plate,operations:[{type:"cutout"}]}),/ei toteuta operaatiota cutout/i,"unsupported plate operation must fail closed");
 assert.throws(()=>apply({...plate,operations:[{type:"holes"}]}),/holes-taulukko puuttuu/i,"malformed holes operation must fail closed");
 console.log("CAD v2 operation fail-closed regression: ok");
