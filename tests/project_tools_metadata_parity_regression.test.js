@@ -9,6 +9,9 @@ const KEY="ai3d:projects:v3";
 const ACTIVE=KEY+":active";
 const BACKUP=KEY+":backup";
 
+assert.match(SOURCE,/function cleanTime\(v,fallback\)\{if\(v===null\|\|v===undefined\|\|\(typeof v==="string"&&!v\.trim\(\)\)\)return fallback;const n=Number\(v\)/,
+  "backup import must treat null, undefined and blank timestamps as missing instead of coercing them to Unix epoch zero");
+
 class MemoryStorage{
   constructor(seed={}){this.map=new Map(Object.entries(seed));}
   getItem(key){return this.map.has(key)?this.map.get(key):null;}
