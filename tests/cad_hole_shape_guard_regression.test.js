@@ -63,6 +63,46 @@ assert.throws(
   () => window.AI3DPlanV2CAD.apply({
     schemaVersion: 2,
     partType: "mountingPlate",
+    parameters: { holes: [{ x: null, y: 5, diameter: 6 }] }
+  }),
+  /x\/y pitää olla välillä/,
+  "null x must be rejected instead of being coerced to zero"
+);
+
+assert.throws(
+  () => window.AI3DPlanV2CAD.apply({
+    schemaVersion: 2,
+    partType: "mountingPlate",
+    parameters: { holes: [{ x: 5, y: null, diameter: 6 }] }
+  }),
+  /x\/y pitää olla välillä/,
+  "null y must be rejected instead of being coerced to zero"
+);
+
+assert.throws(
+  () => window.AI3DPlanV2CAD.apply({
+    schemaVersion: 2,
+    partType: "mountingPlate",
+    parameters: { holes: [{ x: " ", y: 0, diameter: 6 }] }
+  }),
+  /x\/y pitää olla välillä/,
+  "blank coordinates must be rejected instead of being coerced to zero"
+);
+
+assert.throws(
+  () => window.AI3DPlanV2CAD.apply({
+    schemaVersion: 2,
+    partType: "mountingPlate",
+    parameters: { holes: [{ x: 0, y: 0, diameter: null }] }
+  }),
+  /diameter välillä/,
+  "null diameter must be rejected instead of being coerced to zero"
+);
+
+assert.throws(
+  () => window.AI3DPlanV2CAD.apply({
+    schemaVersion: 2,
+    partType: "mountingPlate",
     parameters: { holes: [{ x: 0, y: 0, d: 6 }] }
   }),
   /puuttuu diameter/,
@@ -124,6 +164,6 @@ assert.throws(
 );
 
 assert.strictEqual(calls, 2, "malformed or over-budget plans must never reach CAD geometry generation");
-assert.ok(previewClears.length >= 8, "each rejected malformed or over-budget plan must clear stale preview/export state");
+assert.ok(previewClears.length >= 12, "each rejected malformed or over-budget plan must clear stale preview/export state");
 
 console.log("CAD hole shape guard regression: OK");
