@@ -70,7 +70,7 @@ function makeRuntime() {
   let source = fs.readFileSync(path.join(ROOT, "centauri.js"), "utf8");
   const end = source.lastIndexOf("})();");
   assert.ok(end > 0, "centauri.js:n moduulin loppua ei löytynyt");
-  source = `${source.slice(0, end)}window.__CentauriRegression={PROFILE,bounds,status};${source.slice(end)}`;
+  source = `${source.slice(0, end)}window.__CentauriRegression={PROFILE,bounds,status,liveNumber};${source.slice(end)}`;
   vm.runInContext(source, context, { filename: "centauri.js" });
 
   assert.ok(context.window.__CentauriRegression, "Centauri-testirajapintaa ei saatu ladattua");
@@ -133,10 +133,28 @@ function testMissingPrimaryValidationControlFailsClosed(runtime) {
   assert.match(elements.get("centauriStatus").innerHTML, /Mesh-tarkistus ei ole vielä hyväksytty/);
 }
 
+function testInvalidLiveNumericDoesNotUseStoredFallback(runtime) {
+  const { elements, api } = runtime;
+  elements.set("liveNumeric", makeElement({ value: "", valueAsNumber: NaN, type: "number" }));
+  assert.equal(Number.isNaN(api.liveNumber("liveNumeric", 12.5)), true, "Tyhjä näkyvä numerokenttä ei saa palautua projektin vanhaan arvoon Centauri-analyysissä");
+
+  elements.get("liveNumeric").value = "virhe";
+  elements.get("liveNumeric").valueAsNumber = NaN;
+  assert.equal(Number.isNaN(api.liveNumber("liveNumeric", 12.5)), true, "Virheellinen näkyvä numerokenttä ei saa palautua projektin vanhaan arvoon Centauri-analyysissä");
+
+  elements.get("liveNumeric").value = "0";
+  elements.get("liveNumeric").valueAsNumber = 0;
+  assert.equal(api.liveNumber("liveNumeric", 12.5), 0, "Tarkoituksellinen numeerinen nolla pitää säilyttää");
+
+  elements.delete("liveNumeric");
+  assert.equal(api.liveNumber("liveNumeric", 12.5), 12.5, "Tallennettua arvoa saa käyttää vain silloin, kun kyseistä live-kenttää ei ole käyttöliittymässä");
+}
+
 const runtime = makeRuntime();
 testOfficialProfile(runtime.api);
 testMeshBounds(runtime.api);
 testBuildVolumeBoundary(runtime);
 testMissingPrimaryValidationControlFailsClosed(runtime);
+testInvalidLiveNumericDoesNotUseStoredFallback(runtime);
 
 console.log("centauri regression: OK");
