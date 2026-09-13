@@ -25,10 +25,18 @@
   if(verifySaved())return;
   e.preventDefault?.();e.stopImmediatePropagation?.();setWarning()
  }
+ function protectUnload(e){
+  if(!pending||verifySaved())return;
+  setWarning();
+  e?.preventDefault?.();
+  if(e)e.returnValue="";
+  return""
+ }
  function init(){
   document.addEventListener("input",markPending,true);
   document.addEventListener("change",markPending,true);
   document.addEventListener("click",blockNavigation,true);
+  window.addEventListener?.("beforeunload",protectUnload);
   const validation=$("validation");
   if(validation)new MutationObserver(validationChanged).observe(validation,{childList:true,subtree:true,attributes:true,attributeFilter:["class"]})
  }
