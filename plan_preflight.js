@@ -14,12 +14,14 @@
  function checkFlatValues(v,errors){if(!v||typeof v!=="object"||Array.isArray(v))return;const entries=Object.entries(v);if(entries.length>100)errors.push("values sisältää liian monta arvoa.");for(const[k,x]of entries){if(["__proto__","prototype","constructor"].includes(k)){errors.push("values sisältää kielletyn avaimen: "+k+".");continue}if(k.length>160){errors.push("values sisältää liian pitkän avaimen (enintään 160 merkkiä).");continue}if(!safeScalar(x))errors.push("values."+k+" sisältää tukemattoman rakenteen.");else if(typeof x==="number"&&!Number.isFinite(x))errors.push("values."+k+" ei ole kelvollinen luku.");else if(typeof x==="string"&&x.length>20000)errors.push("values."+k+" on liian pitkä.")}}
  function validateV1(raw){
   const errors=[],warnings=[],v=raw.values;
-  if(raw.status!=null&&!["ready","approved"].includes(raw.status))errors.push("status pitää olla ready tai approved.");
-  if(raw.material!=null&&!materials.has(raw.material))errors.push("Materiaali pitää olla PLA, PETG tai ASA.");
-  if(raw.material==null&&v?.material!=null&&!materials.has(v.material))errors.push("values.material pitää olla PLA, PETG tai ASA.");
+  if(!["ready","approved"].includes(raw.status))errors.push("status pitää olla ready tai approved.");
+  if(!materials.has(raw.material))errors.push("Materiaali pitää olla PLA, PETG tai ASA.");
   if(!supportedV1.has(raw.partType))errors.push("Schema v1 -osatyyppiä ei tueta.");
   if(!v||typeof v!=="object"||Array.isArray(v))errors.push("values-objekti puuttuu.");
   checkFlatValues(v,errors);
+  if(v&&raw.partType==="sleeve"&&(v.sleeveID==null||v.sleeveWall==null||v.sleeveLength==null))errors.push("Schema v1 sleeve vaatii sleeveID-, sleeveWall- ja sleeveLength-kentät.");
+  if(v&&raw.partType==="plug"&&(v.tubeW==null||v.tubeH==null||v.tubeWall==null||v.insertDepth==null))errors.push("Schema v1 plug vaatii tubeW-, tubeH-, tubeWall- ja insertDepth-kentät.");
+  if(v&&raw.partType==="plate"&&(v.plateL==null||v.plateW==null||v.plateT==null))errors.push("Schema v1 plate vaatii plateL-, plateW- ja plateT-kentät.");
   if(v&&raw.partType==="spike"){
    if(!positive(v.nutAf))errors.push("nutAf puuttuu tai ei ole positiivinen luku.");
    if(!positive(v.wall))errors.push("wall puuttuu tai ei ole positiivinen luku.");
