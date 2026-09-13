@@ -9,7 +9,7 @@
  function bounds(m){
   const tris=m?.triangles;if(!Array.isArray(tris)||!tris.length)return null;
   let minX=Infinity,minY=Infinity,minZ=Infinity,maxX=-Infinity,maxY=-Infinity,maxZ=-Infinity,vertices=0;
-  for(const t of tris){if(!Array.isArray(t)||t.length!==3)return null;for(const q of t){const x=+q?.x,y=+q?.y,z=+q?.z;if(![x,y,z].every(Number.isFinite))return null;minX=Math.min(minX,x);minY=Math.min(minY,y);minZ=Math.min(minZ,z);maxX=Math.max(maxX,x);maxY=Math.max(maxY,y);maxZ=Math.max(maxZ,z);vertices++}}
+  for(const t of tris){if(!Array.isArray(t)||t.length!==3)return null;for(const q of t){const x=q?.x,y=q?.y,z=q?.z;if(![x,y,z].every(v=>typeof v==="number"&&Number.isFinite(v)))return null;minX=Math.min(minX,x);minY=Math.min(minY,y);minZ=Math.min(minZ,z);maxX=Math.max(maxX,x);maxY=Math.max(maxY,y);maxZ=Math.max(maxZ,z);vertices++}}
   if(!vertices)return null;const dims=[maxX-minX,maxY-minY,maxZ-minZ];if(!dims.every(x=>Number.isFinite(x)&&x>0))return null;return{min:[minX,minY,minZ],max:[maxX,maxY,maxZ],dims,triangles:tris.length}
  }
  function triMetrics(t){const[a,b,c]=t||[];if(!a||!b||!c)return null;const ux=b.x-a.x,uy=b.y-a.y,uz=b.z-a.z,vx=c.x-a.x,vy=c.y-a.y,vz=c.z-a.z,nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx,len=Math.hypot(nx,ny,nz);if(!Number.isFinite(len)||len<1e-10)return null;return{area:len/2,nz:nz/len,minZ:Math.min(a.z,b.z,c.z),maxZ:Math.max(a.z,b.z,c.z)}}
