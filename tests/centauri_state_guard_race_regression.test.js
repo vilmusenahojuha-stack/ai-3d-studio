@@ -41,6 +41,7 @@ vm.runInContext(source,context,{filename:"centauri_state_guard.js"});
 const guard=context.window.AI3DCentauriStateGuard;
 assert.ok(guard,"Centauri state guard must initialize");
 assert.equal(typeof guard.installSafeCheck,"function","state guard must expose safe-check installation for late profile loads");
+assert.equal(typeof guard.guardExportClick,"function","state guard must expose the synchronous export guard for regression coverage");
 
 function runTimers(){
  const pending=[...timers.entries()];
@@ -154,5 +155,21 @@ assert.equal(context.window.CentauriProfile.check(),false,"missing Centauri stat
 assert.equal(checks,7,"missing-status regression must execute the underlying checker exactly once");
 assert.equal(guard.isDirty(),true,"missing Centauri status control must mark compatibility state dirty");
 assert.equal(centauriButton.disabled,true,"missing Centauri status control must disable a stale export immediately");
+
+// Close the microtask-sized race between CAD validation disabling the normal STL button and the observer disabling Centauri export.
+elements.set("centauriStatus",status);
+context.window.CentauriProfile={check(){checks++;markCompatible()}};
+guard.refresh(true);
+runTimers();
+assert.equal(guard.isDirty(),false,"test setup must restore a clean Centauri state");
+assert.equal(checks,8,"clean-state restore must execute the checker exactly once");
+elements.get("btnDownload").disabled=true;
+centauriButton.disabled=false;
+let prevented=false,stopped=false;
+assert.equal(guard.guardExportClick({preventDefault(){prevented=true},stopImmediatePropagation(){stopped=true}}),false,"Centauri export click must fail closed synchronously when normal STL validation has already failed");
+assert.equal(prevented,true,"blocked Centauri export must prevent the stale click");
+assert.equal(stopped,true,"blocked Centauri export must stop later export handlers in the same click");
+assert.equal(centauriButton.disabled,true,"blocked stale click must disable Centauri export immediately");
+assert.equal(guard.isDirty(),true,"blocked stale click must mark compatibility state dirty");
 
 console.log("centauri state guard race regression: OK");
