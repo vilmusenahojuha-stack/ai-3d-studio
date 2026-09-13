@@ -61,6 +61,20 @@ assert.equal(validate(v1("sleeve", { sleeveID: 20, sleeveWall: 1, sleeveLength: 
   "Schema v1 sleeve length at CAD-invalid 2 mm boundary must fail preflight");
 assert.equal(validate(v1("sleeve", { sleeveID: "20", sleeveWall: 1, sleeveLength: 20 })).ok, false,
   "Schema v1 preflight must reject numeric strings because final import requires actual JSON numbers");
+assert.equal(validate(v1("sleeve", { insideDiameter: 20, wall: 1, length: 20 })).ok, false,
+  "Schema v1 preflight must reject v2-style sleeve aliases that final import does not accept");
+const v1MissingStatus = v1("sleeve", { sleeveID: 20, sleeveWall: 1, sleeveLength: 20 });
+delete v1MissingStatus.status;
+assert.equal(validate(v1MissingStatus).ok, false,
+  "Schema v1 preflight must require ready/approved status like final import");
+const v1NestedMaterial = v1("sleeve", { sleeveID: 20, sleeveWall: 1, sleeveLength: 20, material: "PETG" });
+delete v1NestedMaterial.material;
+assert.equal(validate(v1NestedMaterial).ok, false,
+  "Schema v1 preflight must require root material like final import");
+assert.equal(validate(v1("plug", { width: 30, height: 30, wall: 2, insertDepth: 10, thickness: 3 })).ok, false,
+  "Schema v1 preflight must reject v2-style plug aliases that final import does not accept");
+assert.equal(validate(v1("plate", { length: 100, width: 60, thickness: 4 })).ok, false,
+  "Schema v1 preflight must reject v2-style plate aliases that final import does not accept");
 
 const validV2Sleeve = v2("sleeve", { insideDiameter: 20, wall: 1, length: 2.01 });
 assert.equal(validate(validV2Sleeve).ok, true,
