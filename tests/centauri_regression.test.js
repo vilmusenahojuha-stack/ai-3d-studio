@@ -108,6 +108,9 @@ function testMeshBounds(api) {
   assert.equal(b.triangles, 12);
   assert.equal(api.bounds({ triangles: [] }), null);
   assert.equal(api.bounds({ triangles: [[{ x: 0, y: 0, z: 0 }, { x: NaN, y: 1, z: 0 }, { x: 1, y: 0, z: 1 }]] }), null);
+  assert.equal(api.bounds({ triangles: [[{ x: 0, y: 0, z: 0 }, { x: null, y: 1, z: 0 }, { x: 1, y: 0, z: 1 }]] }), null, "null-meshkoordinaattia ei saa muuntaa hiljaisesti nollaksi");
+  assert.equal(api.bounds({ triangles: [[{ x: 0, y: 0, z: 0 }, { x: "2", y: 1, z: 0 }, { x: 1, y: 0, z: 1 }]] }), null, "merkkijonomuotoista meshkoordinaattia ei saa hyväksyä numeroksi");
+  assert.equal(api.bounds({ triangles: [[{ x: 0, y: 0, z: 0 }, { x: "", y: 1, z: 0 }, { x: 1, y: 0, z: 1 }]] }), null, "tyhjää meshkoordinaattia ei saa muuntaa hiljaisesti nollaksi");
 }
 
 function testBuildVolumeBoundary(runtime) {
