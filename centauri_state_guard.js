@@ -33,6 +33,15 @@
  function refresh(clearDirty=false){clearTimeout(timer);timer=setTimeout(()=>{timer=0;if(!installSafeCheck()){failCheck();return}const check=window.CentauriProfile?.check;if(typeof check!=="function"){failCheck();return}const ok=check.call(window.CentauriProfile);if(ok===true&&clearDirty){dirty=false;const button=$("btnCentauriStl");if(button)button.disabled=false}},0)}
  function geometryInput(target){return!!target&&!nonGeometryIds.has(target.id)&&!!(target.closest?.(".part-fields")||target.id==="partType")}
  function enforceDirtyExportLock(){const button=$("btnCentauriStl");if(dirty&&button&&!button.disabled)button.disabled=true}
+ function guardExportClick(e){
+  const root=$("centauriStatus"),download=$("btnDownload");
+  const statusOk=!!root&&/(?:^|\s)ok(?:\s|$)/.test(String(root.className||""));
+  if(!dirty&&download&&download.disabled===false&&statusOk)return true;
+  e?.preventDefault?.();
+  e?.stopImmediatePropagation?.();
+  failCheck();
+  return false
+ }
  function markGeometryDirty(){
   clearTimeout(timer);timer=0;
   dirty=true;
@@ -45,13 +54,13 @@
   const download=$("btnDownload"),centauriButton=$("btnCentauriStl"),controls=document.querySelector(".controls");
   installSafeCheck();
   if(download)new MutationObserver(()=>{if(!download.disabled)refresh(true);else if(!dirty)refresh(false)}).observe(download,{attributes:true,attributeFilter:["disabled"]});
-  if(centauriButton)new MutationObserver(enforceDirtyExportLock).observe(centauriButton,{attributes:true,attributeFilter:["disabled"]});
+  if(centauriButton){new MutationObserver(enforceDirtyExportLock).observe(centauriButton,{attributes:true,attributeFilter:["disabled"]});centauriButton.addEventListener?.("click",guardExportClick,true)}
   controls?.addEventListener("input",onControlEvent,true);
   controls?.addEventListener("change",onControlEvent,true);
   $("btnGenerate")?.addEventListener("click",()=>setTimeout(()=>{if(!$("btnDownload")?.disabled)refresh(true);else if(dirty)markGeometryDirty();else refresh(false)},80));
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){if(dirty)markGeometryDirty();else refresh(false)}});
   refresh(false)
  }
- window.AI3DCentauriStateGuard={refresh,markDirty:markGeometryDirty,isDirty:()=>dirty,enforceExportLock:enforceDirtyExportLock,installSafeCheck};
+ window.AI3DCentauriStateGuard={refresh,markDirty:markGeometryDirty,isDirty:()=>dirty,enforceExportLock:enforceDirtyExportLock,installSafeCheck,guardExportClick};
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
