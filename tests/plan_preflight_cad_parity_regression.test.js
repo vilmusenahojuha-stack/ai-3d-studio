@@ -93,4 +93,22 @@ assert.equal(validate(v2("endPlug", {
   width: 30, height: 30, wall: 2, clearance: 0.25, insertDepth: 10, capThickness: 3, overhang: -0.1
 })).ok, false, "Schema v2 negative overhang must fail preflight like final import validation");
 
+const validPlate = v2("mountingPlate", {
+  length: 100, width: 60, thickness: 4, holes: [{ x: 0, y: 0, diameter: 6 }]
+});
+assert.equal(validate(validPlate).ok, true,
+  "Schema v2 mounting plate with explicit numeric zero coordinates must remain valid");
+assert.equal(validate(v2("mountingPlate", {
+  length: 100, width: 60, thickness: 4, holes: [{ x: null, y: 0, diameter: 6 }]
+})).ok, false, "Preflight must reject null hole coordinates instead of coercing them to zero");
+assert.equal(validate(v2("mountingPlate", {
+  length: 100, width: 60, thickness: 4, holes: [{ x: " ", y: 0, diameter: 6 }]
+})).ok, false, "Preflight must reject blank hole coordinates instead of coercing them to zero");
+assert.equal(validate(v2("mountingPlate", {
+  length: 100, width: 60, thickness: 4, holes: [{ y: 0, diameter: 6 }]
+})).ok, false, "Preflight must reject missing hole coordinates instead of defaulting them to zero");
+assert.equal(validate(v2("mountingPlate", {
+  length: 100, width: 60, thickness: 4, centerHole: { diameter: 6 }
+})).ok, true, "centerHole object without x/y must still mean a centered hole");
+
 console.log("ChatGPT plan preflight CAD parity regression tests passed");
