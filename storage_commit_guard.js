@@ -5,7 +5,8 @@
  const CROSS_TAB_WARNING="Projektitallennus muuttui toisessa välilehdessä tai ikkunassa. Päivitä tämä sivu ennen jatkamista, jotta uudempi projektiversio ei ylikirjoitu.";
  const INVALID_STORAGE_WARNING="Paikallinen projektitallennus ei läpäissyt rakennetarkistusta. Vie tärkeä työ JSON-varmuuskopioksi ennen sivun sulkemista.";
  const INVALID_CAD_WARNING="Nykyinen CAD-malli ei läpäissyt tarkistusta. Virheellistä mittayhdistelmää ei tallennettu projektin viimeisen toimivan version päälle.";
- let checking=false,lastIssue="",editTimer=0,crossTabConflict=false;
+ const INVALID_LIVE_WARNING="Muokatussa numeerisessa CAD-kentässä on tyhjä tai virheellinen arvo. Korjaa kenttä ennen projektin vaihtamista tai tallennusta.";
+ let checking=false,lastIssue="",editTimer=0,crossTabConflict=false,invalidLiveEdit=false;
  function validValues(v){if(!v||typeof v!=="object"||Array.isArray(v))return false;const entries=Object.entries(v);if(entries.length>100)return false;return entries.every(([k,x])=>k.length<=160&&!BLOCKED_KEYS.has(k)&&(x===null||["string","number","boolean"].includes(typeof x))&&(typeof x!=="number"||Number.isFinite(x))&&(typeof x!=="string"||x.length<=50000))}
  function validPrint(pr){if(pr==null)return true;if(typeof pr!=="object"||Array.isArray(pr))return false;const entries=Object.entries(pr);if(entries.length>PRINT_KEYS.size)return false;return entries.every(([k,v])=>PRINT_KEYS.has(k)&&["string","number"].includes(typeof v)&&(typeof v!=="number"||Number.isFinite(v))&&String(v).length<=(k==="notes"?1000:160))}
  function validTimestamp(v){return v==null||(typeof v==="number"&&Number.isFinite(v)&&v>=0&&v<=MAX_DATE_MS)}
@@ -13,8 +14,9 @@
  function read(){try{const raw=localStorage.getItem(KEY),v=JSON.parse(raw===null?"[]":raw);if(!Array.isArray(v)||!v.every(validProject))return null;const ids=new Set();for(const p of v){if(ids.has(p.id))return null;ids.add(p.id)}return v}catch{return null}}
  function warn(text){lastIssue=text;const box=$("planSyncStatus");if(box){const message="⚠ "+text;box.dataset.storageGuardWarning="1";box.dataset.storageGuardWarningText=message;box.textContent=message;box.className="plan-sync-status warn"}}
  function cadFailure(){const validation=$("validation"),status=$("status")?.textContent||"";return!!validation?.querySelector?.(".check.fail")||/^\s*Virhe\s*:/i.test(status)||/generointi epäonnistui|STL-lataus estetty/i.test(status)}
- function blockingIssue(){if(crossTabConflict)return CROSS_TAB_WARNING;if(read()===null)return INVALID_STORAGE_WARNING;if(window.AI3DProjects?.active?.()?.id&&cadFailure())return INVALID_CAD_WARNING;return""}
- function clearOwnWarning(){if(crossTabConflict)return;const box=$("planSyncStatus");if(box?.dataset.storageGuardWarning==="1"){const ownMessage=box.dataset.storageGuardWarningText||"";delete box.dataset.storageGuardWarning;delete box.dataset.storageGuardWarningText;if(!ownMessage||box.textContent===ownMessage){box.textContent="✓ Projektin paikallinen tallennus varmistettu.";box.className="plan-sync-status ok"}}}
+ function hasInvalidLiveNumber(){const active=window.AI3DProjects?.active?.();if(!active?.id)return false;const type=$("partType")?.value||active.type;for(const id of MAP[type]||[]){const e=$(id);if(e?.type==="number"&&!Number.isFinite(e.valueAsNumber))return true}return false}
+ function blockingIssue(){if(crossTabConflict)return CROSS_TAB_WARNING;if(read()===null)return INVALID_STORAGE_WARNING;if(invalidLiveEdit)return INVALID_LIVE_WARNING;if(window.AI3DProjects?.active?.()?.id&&cadFailure())return INVALID_CAD_WARNING;return""}
+ function clearOwnWarning(){if(crossTabConflict||invalidLiveEdit)return;const box=$("planSyncStatus");if(box?.dataset.storageGuardWarning==="1"){const ownMessage=box.dataset.storageGuardWarningText||"";delete box.dataset.storageGuardWarning;delete box.dataset.storageGuardWarningText;if(!ownMessage||box.textContent===ownMessage){box.textContent="✓ Projektin paikallinen tallennus varmistettu.";box.className="plan-sync-status ok"}}}
  function same(a,b){if(typeof a==="number"||typeof b==="number"){const x=Number(a),y=Number(b);return Number.isFinite(x)&&Number.isFinite(y)&&Math.abs(x-y)<1e-9}return String(a??"")===String(b??"")}
  function liveValues(type){const out={};for(const id of MAP[type]||[]){const e=$(id);if(!e)continue;if(e.type==="number"){if(Number.isFinite(e.valueAsNumber))out[id]=e.valueAsNumber}else out[id]=e.value}return out}
  function verify(requireLive=false){
@@ -25,6 +27,7 @@
    const items=read();
    if(!items){warn(INVALID_STORAGE_WARNING);return false}
    const active=window.AI3DProjects?.active?.();
+   if(requireLive){invalidLiveEdit=hasInvalidLiveNumber();if(invalidLiveEdit){warn(INVALID_LIVE_WARNING);return false}}
    if(active?.id&&cadFailure()){warn(INVALID_CAD_WARNING);return false}
    if(!active?.id){lastIssue="";clearOwnWarning();return true}
    const storedProject=items.find(p=>p.id===active.id),activeId=localStorage.getItem(KEY+":active")||"";
@@ -40,6 +43,7 @@
   finally{checking=false}
  }
  function scheduleLiveVerify(){clearTimeout(editTimer);editTimer=setTimeout(()=>verify(true),650)}
+ function handleLiveEdit(e){if(!e.target?.closest?.(".controls")||!e.target.matches?.("input,select,textarea"))return;invalidLiveEdit=hasInvalidLiveNumber();if(invalidLiveEdit){clearTimeout(editTimer);warn(INVALID_LIVE_WARNING);return}scheduleLiveVerify()}
  function handleStorageChange(e){
   if(e?.storageArea&&e.storageArea!==localStorage)return;
   if(e?.key!==null&&e?.key!==KEY&&e?.key!==KEY+":active")return;
@@ -49,8 +53,8 @@
  function init(){
   const box=$("planSyncStatus");if(!box)return;
   new MutationObserver(()=>{if(checking)return;const ok=box.classList.contains("ok")||/^\s*✓/.test(box.textContent||"");if(ok)setTimeout(()=>verify(false),0)}).observe(box,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:["class"]});
-  document.addEventListener("input",e=>{if(e.target?.closest?.(".controls")&&e.target.matches?.("input,select,textarea"))scheduleLiveVerify()},true);
-  document.addEventListener("change",e=>{if(e.target?.closest?.(".controls")&&e.target.matches?.("input,select,textarea"))scheduleLiveVerify()},true);
+  document.addEventListener("input",handleLiveEdit,true);
+  document.addEventListener("change",handleLiveEdit,true);
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")setTimeout(()=>verify(true),0)});
   window.addEventListener("storage",handleStorageChange);
   setTimeout(()=>verify(false),300)
