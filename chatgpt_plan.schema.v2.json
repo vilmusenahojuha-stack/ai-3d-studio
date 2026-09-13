@@ -78,7 +78,7 @@
     },
     {
       "if": { "properties": { "partType": { "const": "adapter" } } },
-      "then": { "properties": { "parameters": { "required": ["length"], "properties": { "length": { "$ref": "#/$defs/positiveMm" }, "insideDiameter": { "$ref": "#/$defs/positiveMm" }, "insideDiameter1": { "$ref": "#/$defs/positiveMm" }, "insideDiameter2": { "$ref": "#/$defs/positiveMm" }, "outsideDiameter": { "$ref": "#/$defs/positiveMm" }, "outsideDiameter1": { "$ref": "#/$defs/positiveMm" }, "outsideDiameter2": { "$ref": "#/$defs/positiveMm" }, "wall": { "$ref": "#/$defs/positiveMm" } }, "allOf": [ { "anyOf": [ { "required": ["insideDiameter"] }, { "required": ["insideDiameter1"] } ] }, { "anyOf": [ { "required": ["wall"] }, { "required": ["outsideDiameter"] }, { "required": ["outsideDiameter1"] } ] } ] } } }
+      "then": { "properties": { "parameters": { "required": ["length"], "properties": { "length": { "$ref": "#/$defs/positiveMm" }, "insideDiameter": { "$ref": "#/$defs/positiveMm" }, "insideDiameter1": { "$ref": "#/$defs/positiveMm" }, "insideDiameter2": { "$ref": "#/$defs/positiveMm" }, "outsideDiameter": { "$ref": "#/$defs/positiveMm" }, "outsideDiameter1": { "$ref": "#/$defs/positiveMm" }, "outsideDiameter2": { "$ref": "#/$defs/positiveMm" }, "wall": { "$ref": "#/$defs/positiveMm" } }, "allOf": [ { "anyOf": [ { "required": ["insideDiameter"] }, { "required": ["insideDiameter1"] } ] }, { "anyOf": [ { "required": ["wall"] }, { "required": ["outsideDiameter"] }, { "required": ["outsideDiameter1", "outsideDiameter2"] } ] } ] } } }
     },
     {
       "if": { "properties": { "partType": { "const": "enclosure" } } },
