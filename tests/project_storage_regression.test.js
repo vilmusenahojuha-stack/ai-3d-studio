@@ -7,6 +7,7 @@ const vm=require("vm");
 const SOURCE=fs.readFileSync("projects.js","utf8");
 const KEY="ai3d:projects:v3";
 const ACTIVE=KEY+":active";
+const BACKUP=KEY+":backup";
 const MAX_DATE_MS=8.64e15;
 
 class MemoryStorage{
@@ -121,6 +122,7 @@ assert.deepStrictEqual(
   "autosave must persist the current parametric values"
 );
 assert.strictEqual(storage.getItem(ACTIVE),originalProject.id,"active project id must survive save");
+assert.deepStrictEqual(JSON.parse(storage.getItem(BACKUP)),[originalProject],"successful autosave must keep the immediately previous valid project state as backup");
 
 const second=boot(new MemoryStorage(storage.snapshot()),{fieldValues:{sleeveID:1,sleeveWall:1,sleeveLength:1}});
 assert.deepStrictEqual(
@@ -139,6 +141,18 @@ assert.deepStrictEqual(
   JSON.parse(JSON.stringify(rollback.context.window.AI3DProjects.active().values)),
   saved[0].values,
   "failed autosave must restore the in-memory project parameters"
+);
+
+const backupRollbackStorage=new MemoryStorage(storage.snapshot());
+const beforeBackupFailure=backupRollbackStorage.snapshot();
+const backupRollback=boot(backupRollbackStorage,{fieldValues:{sleeveID:26,sleeveWall:4.2,sleeveLength:51}});
+backupRollbackStorage.failOnceKey=BACKUP;
+backupRollback.listeners.window.pagehide();
+assert.deepStrictEqual(backupRollbackStorage.snapshot(),beforeBackupFailure,"failed backup write must roll the main project JSON, active id and previous backup back atomically");
+assert.deepStrictEqual(
+  JSON.parse(JSON.stringify(backupRollback.context.window.AI3DProjects.active().values)),
+  saved[0].values,
+  "failed backup write must also restore the in-memory project parameters"
 );
 
 const conflictStorage=new MemoryStorage(storage.snapshot());
