@@ -79,6 +79,7 @@
     validatePlanParameterTypes(plan);
     validatePlanHoleBounds(plan);
     const result=originalApply(plan);
+    if(result&&typeof result.then==="function")return Promise.resolve(result).then(value=>{const error=failureMessage();if(error)throw Error(error);return value}).catch(error=>{failClosed(error);throw error});
     const error=failureMessage();
     if(error)throw Error(error);
     return result
