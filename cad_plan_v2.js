@@ -1,7 +1,7 @@
 "use strict";
 (()=>{
  const el=id=>document.getElementById(id),N=64,HN=32,MAX_HOLES=200,MAX_MM=5000,HOLE_XY_MAX=2000,HOLE_D_MIN=.2,HOLE_D_MAX=500;
- const reqNum=(value,label)=>{if(value===null||(typeof value==="string"&&!value.trim()))throw Error(`${label}: anna kelvollinen numero.`);const n=Number(value);if(!Number.isFinite(n))throw Error(`${label}: anna kelvollinen numero.`);return n};
+ const reqNum=(value,label)=>{if(typeof value!=="number"||!Number.isFinite(value))throw Error(`${label}: anna kelvollinen numero.`);return value};
  const finiteNum=value=>typeof value==="number"&&Number.isFinite(value);
  const optNum=(value,fallback,label)=>value===undefined?fallback:reqNum(value,label);
  const normalizeType=t=>({plate:"mountingPlate",box:"enclosure",case:"enclosure"})[t]||t;
