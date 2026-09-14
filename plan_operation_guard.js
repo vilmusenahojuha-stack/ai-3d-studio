@@ -4,13 +4,14 @@
  const support={mountingPlate:new Set(["hole","holes"]),plate:new Set(["hole","holes"]),sleeve:new Set(),spike:new Set(),nutCover:new Set(),spikeNut:new Set(),endPlug:new Set(),plug:new Set(),adapter:new Set(),enclosure:new Set(),box:new Set(),case:new Set()};
  let running=true,last={ok:false,errors:["Tarkistus ei ole vielä valmis."],fingerprint:null};
  const finite=v=>typeof v==="number"&&Number.isFinite(v);
+ const numericLike=v=>v!==null&&v!==undefined&&!(typeof v==="string"&&!v.trim())&&Number.isFinite(Number(v));
  const positive=v=>finite(v)&&v>0;
  const withinMm=v=>finite(v)&&Math.abs(v)<=MAX_MM;
  const positiveMm=v=>positive(v)&&v<=MAX_MM;
  const withinHoleXY=v=>finite(v)&&Math.abs(v)<=HOLE_XY_MAX;
  const holeDiameter=v=>finite(v)&&v>=HOLE_D_MIN&&v<=HOLE_D_MAX;
  function fingerprint(raw){try{return JSON.stringify(raw)}catch{return null}}
- function validateScalarParameterBounds(raw,errors){for(const[k,v]of Object.entries(raw?.parameters||{}))if(typeof v==="number"&&finite(v)&&Math.abs(v)>MAX_MM)errors.push(`parameters.${k} ylittää Schema v2:n ${MAX_MM} mm turvarajan.`)}
+ function validateScalarParameterBounds(raw,errors){for(const[k,v]of Object.entries(raw?.parameters||{}))if((typeof v==="number"||typeof v==="string")&&numericLike(v)&&Math.abs(Number(v))>MAX_MM)errors.push(`parameters.${k} ylittää Schema v2:n ${MAX_MM} mm turvarajan.`)}
  function plateHoles(raw){
   const out=[],add=(h,label)=>{if(out.length>=MAX_HOLES+1)return;if(!h||typeof h!=="object"||Array.isArray(h)){out.push({invalid:true,label});return}const x=h.x,y=h.y,d=h.diameter;out.push({x,y,d,invalid:!finite(x)||!finite(y)||!holeDiameter(d),label})};
   const p=raw.parameters||{},ph=p.holes;if(ph!=null&&!Array.isArray(ph))out.push({invalid:true,label:"parameters.holes"});else for(const [i,h] of (ph||[]).slice(0,MAX_HOLES+1).entries())add(h,`parameters.holes ${i+1}`);if(p.centerHole!=null){const h=typeof p.centerHole==="number"?{x:0,y:0,diameter:p.centerHole}:{x:0,y:0,diameter:p.centerHole?.diameter};add(h,"parameters.centerHole")}
