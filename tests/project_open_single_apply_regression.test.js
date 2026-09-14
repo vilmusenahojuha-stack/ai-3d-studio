@@ -20,6 +20,7 @@ const elements={
 const target={closest:selector=>selector==="#projectList [data-id]"?{dataset:{id:"p1"}}:null};
 const context={
   console,
+  Promise,
   localStorage:{getItem:key=>store.has(key)?store.get(key):null},
   document:{
     getElementById:id=>elements[id]||null,
@@ -39,7 +40,7 @@ assert.equal(prevented,0);
 assert.equal(stopped,0);
 
 // The explicit guard API still performs the structural/CAD check when called directly.
-context.window.AI3DProjectOpenGuard.check(project);
+assert.equal(context.window.AI3DProjectOpenGuard.check(project),true);
 assert.equal(setPartCalls,1,"explicit check API must still validate through CAD");
 
 // Date-range validation must match storage recovery/commit guards exactly at the JavaScript Date boundary.
@@ -86,4 +87,21 @@ assert.equal(prevented,3,"missing project id must prevent the stale project clic
 assert.equal(stopped,3,"missing project id must stop propagation before projects.js can open stale in-memory state");
 assert.match(elements.planSyncStatus.textContent,/ei enää löydy nykyisestä projektitallennuksesta/i,"missing project id must surface a controlled refresh warning");
 
-console.log("Project open single-apply regression: OK");
+(async()=>{
+  // Promise-based CAD must not be accepted before its result is known.
+  elements.status.textContent="Malli luotu ja tarkistettu.";
+  context.window.AI3D.setPart=()=>{setPartCalls++;return Promise.resolve(false)};
+  await assert.rejects(()=>context.window.AI3DProjectOpenGuard.check(project),/hylkäsi projektin/i,"async false result must fail closed");
+
+  // A late validation failure must be checked after the async CAD settles, not only before it starts.
+  elements.status.textContent="Malli luotu ja tarkistettu.";
+  context.window.AI3D.setPart=()=>{setPartCalls++;return new Promise(resolve=>{elements.status.textContent="Virhe: async CAD-validointi epäonnistui";resolve(true)})};
+  await assert.rejects(()=>context.window.AI3DProjectOpenGuard.check(project),/async CAD-validointi epäonnistui/i,"late async validation error must fail closed");
+
+  // Rejected CAD execution must remain rejected and must not be converted into success.
+  elements.status.textContent="Malli luotu ja tarkistettu.";
+  context.window.AI3D.setPart=()=>{setPartCalls++;return Promise.reject(new Error("CAD Promise reject"))};
+  await assert.rejects(()=>context.window.AI3DProjectOpenGuard.check(project),/CAD Promise reject/);
+
+  console.log("Project open single-apply regression: OK");
+})().catch(error=>{console.error(error);process.exitCode=1});
