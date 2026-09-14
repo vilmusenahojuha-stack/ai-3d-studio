@@ -6,16 +6,17 @@ const vm=require("vm");
 const source=fs.readFileSync("cad_v2_editor.js","utf8");
 const input=(id,value="")=>({id,value:String(value),defaultValue:String(value),min:"",max:"",style:{},get valueAsNumber(){return Number(this.value)}});
 function fixture(withCore=true){
+ const plate=[input("plateL",80),input("plateW",50),input("plateT",4),input("plateHolePattern","none"),input("plateHoleD",6),input("plateHoleEdge",10),input("plateCornerStyle","square"),input("plateCornerSize",5),input("plateCustomHoles","")];
  const adapter=[input("adapterLength",30),input("adapterID1",20),input("adapterID2",20),input("adapterOD1",26),input("adapterOD2",26)];
  const enclosure=[input("enclosureW",80),input("enclosureD",60),input("enclosureH",30),input("enclosureWall",2.4),input("enclosureFloor",2.4)];
  const roots={
-  "fields-plate":{hidden:false,insertAdjacentHTML(){}},
+  "fields-plate":{hidden:false,insertAdjacentHTML(){},querySelectorAll:()=>plate},
   "fields-adapter":{hidden:true,querySelectorAll:()=>adapter},
   "fields-enclosure":{hidden:true,querySelectorAll:()=>enclosure}
  };
  const partType={value:"plate",onchange:null,querySelector:()=>({}),appendChild(){}};
  const material={value:"PETG"};
- const fieldEntries=Object.fromEntries([...adapter,...enclosure].map(e=>[e.id,e]));
+ const fieldEntries=Object.fromEntries([...plate,...adapter,...enclosure].map(e=>[e.id,e]));
  const elements=new Map(Object.entries({...roots,...fieldEntries,partType,material,btnGenerate:{onclick:null},btnFitTest:{style:{}},partTitle:{textContent:""},status:{textContent:""},validation:{innerHTML:""},dimensions:{textContent:""}}));
  const document={
   getElementById:id=>elements.get(id)||null,
@@ -27,7 +28,7 @@ function fixture(withCore=true){
  if(withCore)window.AI3DPlanV2CAD={apply(plan){rawCalls++;if(plan.fail)throw Error("invalid plan");return true}};
  const context={window,document,console,Error,Object,String,Number,Array,Math,currentMesh:null,currentFitMesh:null,draw(){}};
  vm.runInNewContext(source,context);
- return{window,partType,material,adapter,enclosure,get rawCalls(){return rawCalls},installCore(){window.AI3DPlanV2CAD={apply(plan){rawCalls++;if(plan.fail)throw Error("invalid plan");return true}}}};
+ return{window,partType,material,plate,adapter,enclosure,roots,get rawCalls(){return rawCalls},installCore(){window.AI3DPlanV2CAD={apply(plan){rawCalls++;if(plan.fail)throw Error("invalid plan");return true}}}};
 }
 
 const live=fixture(true);
@@ -42,11 +43,22 @@ assert.equal(live.partType.value,"enclosure","box/case aliases must select the e
 assert.equal(live.material.value,"PLA","ChatGPT enclosure material must stay synchronized with the editor");
 assert.deepEqual(live.enclosure.map(x=>Number(x.value)),[90,70,35,2.5,2.5],"enclosure fields must mirror canonical dimensions and thickness aliases");
 
+apply({schemaVersion:2,partType:"mountingPlate",material:"PETG",parameters:{length:100,width:60,thickness:4,cornerRadius:6,holes:[{x:-20,y:0,diameter:5}],centerHole:8},operations:[{type:"hole",x:20,y:0,diameter:6}]});
+assert.equal(live.partType.value,"plate","ChatGPT mountingPlate import must select the existing editable plate UI");
+assert.equal(live.roots["fields-plate"].hidden,false,"mountingPlate import must show the standard plate fields without rebuilding the UI");
+assert.equal(live.plate.find(x=>x.id==="plateL").value,"100");
+assert.equal(live.plate.find(x=>x.id==="plateW").value,"60");
+assert.equal(live.plate.find(x=>x.id==="plateT").value,"4");
+assert.equal(live.plate.find(x=>x.id==="plateCornerStyle").value,"round");
+assert.equal(live.plate.find(x=>x.id==="plateCornerSize").value,"6");
+assert.equal(live.plate.find(x=>x.id==="plateHolePattern").value,"custom");
+assert.equal(live.plate.find(x=>x.id==="plateCustomHoles").value,"-20;0;5\n0;0;8\n20;0;6","base holes, center hole and hole operations must remain editable after direct ChatGPT CAD apply");
+
 const before=live.adapter.map(x=>x.value);
 assert.throws(()=>apply({schemaVersion:2,partType:"adapter",fail:true,parameters:{length:99}}),/invalid plan/,
  "a rejected CAD plan must still fail closed");
 assert.deepEqual(live.adapter.map(x=>x.value),before,"a rejected CAD plan must not overwrite the last valid editable values");
-assert.equal(live.rawCalls,3,"all calls must continue through the existing guarded CAD apply implementation");
+assert.equal(live.rawCalls,4,"all calls must continue through the existing guarded CAD apply implementation");
 
 const recovered=fixture(false);
 assert.equal(recovered.window.AI3DV2Editor.ensurePlanSyncHook(),false,
