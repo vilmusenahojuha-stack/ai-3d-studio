@@ -26,6 +26,11 @@ assert(source.includes("async function fetchPlan(){if(applying)return;"), "a new
 assert(source.includes('fp=$("btnFetchChatGPTPlan")'), "the apply path must track the fetch button during asynchronous CAD loading");
 assert(source.includes("if(fp)fp.disabled=true"), "ChatGPT fetch button must be visibly disabled while a plan is being applied");
 assert(source.includes("if(fp)fp.disabled=false"), "ChatGPT fetch button must be restored after apply success or failure");
+assert(source.includes("let result;if(plan.schemaVersion===1)"), "ChatGPT apply path must retain the CAD result for every supported schema path");
+assert(source.includes("const cadResult=await result"), "ChatGPT apply path must wait for asynchronous CAD completion before reporting success");
+assert(source.includes("if(cadResult===false)throw Error"), "an explicit false CAD result must fail closed instead of reporting success");
+assert(source.includes("CAD-moottori hylkäsi suunnitelman."), "rejected ChatGPT CAD applies must surface a clear user-facing error");
+assert(source.includes("if(!applied&&material&&previousMaterial!=null)material.value=previousMaterial"), "material selection must roll back after rejected or asynchronous CAD failure");
 assert(source.includes('V2_CAD_URL="cad_plan_v2.js?v=1.5"'), "ChatGPT dynamic CAD v2 loader must use the current CAD core cache version");
 assert(indexSource.includes('cad_plan_v2.js?v=1.5'), "index.html must load the same current CAD v2 core version as ChatGPT dynamic loading");
 
