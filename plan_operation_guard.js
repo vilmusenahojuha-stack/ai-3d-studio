@@ -3,16 +3,17 @@
  const $=id=>document.getElementById(id),MAX_OPS=200,MAX_HOLES=200,MAX_MM=5000,HOLE_XY_MAX=2000,HOLE_D_MIN=.2,HOLE_D_MAX=500;
  const support={mountingPlate:new Set(["hole","holes"]),plate:new Set(["hole","holes"]),sleeve:new Set(),spike:new Set(),nutCover:new Set(),spikeNut:new Set(),endPlug:new Set(),plug:new Set(),adapter:new Set(),enclosure:new Set(),box:new Set(),case:new Set()};
  let running=true,last={ok:false,errors:["Tarkistus ei ole vielä valmis."],fingerprint:null};
- const finite=v=>v!==null&&v!==undefined&&!(typeof v==="string"&&!v.trim())&&Number.isFinite(Number(v));
- const positive=v=>finite(v)&&Number(v)>0;
- const withinMm=v=>finite(v)&&Math.abs(Number(v))<=MAX_MM;
- const positiveMm=v=>positive(v)&&Number(v)<=MAX_MM;
- const withinHoleXY=v=>finite(v)&&Math.abs(Number(v))<=HOLE_XY_MAX;
- const holeDiameter=v=>finite(v)&&Number(v)>=HOLE_D_MIN&&Number(v)<=HOLE_D_MAX;
+ const finite=v=>typeof v==="number"&&Number.isFinite(v);
+ const numericLike=v=>v!==null&&v!==undefined&&!(typeof v==="string"&&!v.trim())&&Number.isFinite(Number(v));
+ const positive=v=>finite(v)&&v>0;
+ const withinMm=v=>finite(v)&&Math.abs(v)<=MAX_MM;
+ const positiveMm=v=>positive(v)&&v<=MAX_MM;
+ const withinHoleXY=v=>finite(v)&&Math.abs(v)<=HOLE_XY_MAX;
+ const holeDiameter=v=>finite(v)&&v>=HOLE_D_MIN&&v<=HOLE_D_MAX;
  function fingerprint(raw){try{return JSON.stringify(raw)}catch{return null}}
- function validateScalarParameterBounds(raw,errors){for(const[k,v]of Object.entries(raw?.parameters||{}))if((typeof v==="number"||typeof v==="string")&&finite(v)&&Math.abs(Number(v))>MAX_MM)errors.push(`parameters.${k} ylittää Schema v2:n ${MAX_MM} mm turvarajan.`)}
+ function validateScalarParameterBounds(raw,errors){for(const[k,v]of Object.entries(raw?.parameters||{}))if((typeof v==="number"||typeof v==="string")&&numericLike(v)&&Math.abs(Number(v))>MAX_MM)errors.push(`parameters.${k} ylittää Schema v2:n ${MAX_MM} mm turvarajan.`)}
  function plateHoles(raw){
-  const out=[],add=(h,label)=>{if(out.length>=MAX_HOLES+1)return;if(!h||typeof h!=="object"||Array.isArray(h)){out.push({invalid:true,label});return}const x=h.x,y=h.y,d=h.diameter;out.push({x:Number(x),y:Number(y),d:Number(d),invalid:!finite(x)||!finite(y)||!holeDiameter(d),label})};
+  const out=[],add=(h,label)=>{if(out.length>=MAX_HOLES+1)return;if(!h||typeof h!=="object"||Array.isArray(h)){out.push({invalid:true,label});return}const x=h.x,y=h.y,d=h.diameter;out.push({x,y,d,invalid:!finite(x)||!finite(y)||!holeDiameter(d),label})};
   const p=raw.parameters||{},ph=p.holes;if(ph!=null&&!Array.isArray(ph))out.push({invalid:true,label:"parameters.holes"});else for(const [i,h] of (ph||[]).slice(0,MAX_HOLES+1).entries())add(h,`parameters.holes ${i+1}`);if(p.centerHole!=null){const h=typeof p.centerHole==="number"?{x:0,y:0,diameter:p.centerHole}:{x:0,y:0,diameter:p.centerHole?.diameter};add(h,"parameters.centerHole")}
   for(const op of (raw.operations||[]).slice(0,MAX_OPS+1)){if(op?.type==="hole")add(op,"hole");if(op?.type==="holes"&&Array.isArray(op.holes))for(const [i,h] of op.holes.slice(0,MAX_HOLES+1).entries())add(h,`holes ${i+1}`)}return out
  }
@@ -24,13 +25,13 @@
  }
  function holeFits(h,L,W,style,size,margin=.4){const r=h.d/2+margin;for(let i=0;i<32;i++){const a=i*2*Math.PI/32;if(!insidePlate(h.x+r*Math.cos(a),h.y+r*Math.sin(a),L,W,style,size))return false}return true}
  function validatePlateGeometry(raw,errors,warnings){
-  const p=raw.parameters||{},L=Number(p.length),W=Number(p.width),Th=Number(p.thickness),holes=plateHoles(raw),cornerRaw=p.cornerRadius,chamferRaw=p.chamfer,cornerRadius=Math.max(0,Number(cornerRaw)||0),chamfer=Math.max(0,Number(chamferRaw)||0),style=cornerRadius>0?"round":chamfer>0?"chamfer":"square",size=cornerRadius||chamfer||0;
-  if(!positive(L)||!positive(W))return;
+  const p=raw.parameters||{},L=p.length,W=p.width,Th=p.thickness,holes=plateHoles(raw),cornerRaw=p.cornerRadius,chamferRaw=p.chamfer,cornerRadius=finite(cornerRaw)?Math.max(0,cornerRaw):0,chamfer=finite(chamferRaw)?Math.max(0,chamferRaw):0,style=cornerRadius>0?"round":chamfer>0?"chamfer":"square",size=cornerRadius||chamfer||0;
+  if(!positive(L)||!positive(W)){errors.push("Kiinnikelevyn pituus ja leveys puuttuvat tai eivät ole positiivisia numeroita.");return}
   if(!positiveMm(L)||!positiveMm(W))errors.push(`Levyn pituus ja leveys saavat olla enintään ${MAX_MM} mm.`);
-  if(Number.isFinite(L)&&L<=2||Number.isFinite(W)&&W<=2)errors.push("Kiinnikelevyn pituuden ja leveyden pitää olla yli 2 mm.");
+  if(L<=2||W<=2)errors.push("Kiinnikelevyn pituuden ja leveyden pitää olla yli 2 mm.");
   if(!positive(p.thickness))errors.push("Kiinnikelevyn paksuus puuttuu tai ei ole positiivinen luku.");else if(Th<.5)errors.push("Kiinnikelevyn paksuuden pitää olla vähintään 0,5 mm.");
-  if(cornerRaw!=null&&(!finite(cornerRaw)||Number(cornerRaw)<0||Number(cornerRaw)>MAX_MM))errors.push(`cornerRadius pitää olla välillä 0…${MAX_MM} mm.`);
-  if(chamferRaw!=null&&(!finite(chamferRaw)||Number(chamferRaw)<0||Number(chamferRaw)>MAX_MM))errors.push(`chamfer pitää olla välillä 0…${MAX_MM} mm.`);
+  if(cornerRaw!=null&&(!finite(cornerRaw)||cornerRaw<0||cornerRaw>MAX_MM))errors.push(`cornerRadius pitää olla välillä 0…${MAX_MM} mm.`);
+  if(chamferRaw!=null&&(!finite(chamferRaw)||chamferRaw<0||chamferRaw>MAX_MM))errors.push(`chamfer pitää olla välillä 0…${MAX_MM} mm.`);
   if(positive(cornerRaw)&&positive(chamferRaw))errors.push("Levylle ei voi määrittää yhtä aikaa sekä cornerRadius- että chamfer-arvoa; valitse yksi kulmatyyli.");
   if(Array.isArray(p.holes)&&p.holes.length>MAX_HOLES)errors.push(`parameters.holes sisältää yli ${MAX_HOLES} reikää.`);
   let holeBudget=(Array.isArray(p.holes)?p.holes.length:0)+(p.centerHole!=null?1:0);for(const op of (raw.operations||[]).slice(0,MAX_OPS+1)){if(op?.type==="hole")holeBudget++;if(op?.type==="holes"&&Array.isArray(op.holes)){holeBudget+=op.holes.length;if(op.holes.length>MAX_HOLES)errors.push(`Yksi holes-operaatio sisältää yli ${MAX_HOLES} reikää.`)}}if(holeBudget>MAX_HOLES)errors.push(`Suunnitelmassa on yhteensä yli ${MAX_HOLES} reikää; jaa työ pienempiin osiin.`);
@@ -46,26 +47,26 @@
   }
  }
  function validateAdapterGeometry(raw,errors){
-  const p=raw.parameters||{},L=Number(p.length),id1=Number(p.insideDiameter1??p.insideDiameter),id2=Number(p.insideDiameter2??p.insideDiameter??id1),wall=Number(p.wall||0),od1=Number(p.outsideDiameter1??p.outsideDiameter??(id1+2*wall)),od2=Number(p.outsideDiameter2??p.outsideDiameter??(id2+2*wall));
-  if([L,id1,id2,od1,od2].some(x=>Number.isFinite(x)&&Math.abs(x)>MAX_MM))errors.push(`Adapterin mitat saavat olla enintään ${MAX_MM} mm.`);
+  const p=raw.parameters||{},L=p.length,id1=p.insideDiameter1??p.insideDiameter,id2=p.insideDiameter2??p.insideDiameter??id1,wall=p.wall??0,od1=p.outsideDiameter1??p.outsideDiameter??(finite(id1)&&finite(wall)?id1+2*wall:NaN),od2=p.outsideDiameter2??p.outsideDiameter??(finite(id2)&&finite(wall)?id2+2*wall:NaN);
+  if([L,id1,id2,od1,od2].some(x=>finite(x)&&Math.abs(x)>MAX_MM))errors.push(`Adapterin mitat saavat olla enintään ${MAX_MM} mm.`);
   if(!finite(p.length)||L<2)errors.push("Adapterin pituuden pitää olla vähintään 2 mm.");
   if(!positive(p.insideDiameter1??p.insideDiameter))errors.push("Adapterin sisähalkaisija alussa puuttuu tai ei ole positiivinen luku.");
   if(p.insideDiameter2!==undefined&&!positive(p.insideDiameter2))errors.push("Adapterin sisähalkaisija lopussa ei ole positiivinen luku.");
-  if(p.wall!==undefined&&(!finite(p.wall)||Number(p.wall)<.4||Number(p.wall)>200))errors.push("Adapterin wall pitää olla kelvollinen luku välillä 0,4…200 mm.");
+  if(p.wall!==undefined&&(!finite(p.wall)||p.wall<.4||p.wall>200))errors.push("Adapterin wall pitää olla kelvollinen luku välillä 0,4…200 mm.");
   for(const key of ["outsideDiameter","outsideDiameter1","outsideDiameter2"])if(p[key]!==undefined&&!finite(p[key]))errors.push(`Adapterin ${key} pitää olla kelvollinen numero.`);
-  if(Number.isFinite(id1)&&Number.isFinite(od1)&&od1<=id1+.8)errors.push("Adapterin alkuosan seinämän pitää olla yli 0,4 mm (ulko- ja sisähalkaisijan erotus yli 0,8 mm).");
-  if(Number.isFinite(id2)&&Number.isFinite(od2)&&od2<=id2+.8)errors.push("Adapterin loppuosan seinämän pitää olla yli 0,4 mm (ulko- ja sisähalkaisijan erotus yli 0,8 mm).")
+  if(finite(id1)&&finite(od1)&&od1<=id1+.8)errors.push("Adapterin alkuosan seinämän pitää olla yli 0,4 mm (ulko- ja sisähalkaisijan erotus yli 0,8 mm).");
+  if(finite(id2)&&finite(od2)&&od2<=id2+.8)errors.push("Adapterin loppuosan seinämän pitää olla yli 0,4 mm (ulko- ja sisähalkaisijan erotus yli 0,8 mm).")
  }
  function validateEnclosureGeometry(raw,errors){
-  const p=raw.parameters||{},widthRaw=p.width,depthRaw=p.length??p.depth,heightRaw=p.height,wallRaw=p.wall??p.thickness,floorRaw=p.floorThickness!==undefined?p.floorThickness:(p.thickness!==undefined?p.thickness:wallRaw),W=Number(widthRaw),D=Number(depthRaw),H=Number(heightRaw),wall=Number(wallRaw),floor=Number(floorRaw);
+  const p=raw.parameters||{},widthRaw=p.width,depthRaw=p.length??p.depth,heightRaw=p.height,wallRaw=p.wall??p.thickness,floorRaw=p.floorThickness!==undefined?p.floorThickness:(p.thickness!==undefined?p.thickness:wallRaw),W=widthRaw,D=depthRaw,H=heightRaw,wall=wallRaw,floor=floorRaw;
   if(!finite(widthRaw)||!finite(depthRaw)||!finite(heightRaw))errors.push("Kotelon width, length/depth ja height pitää antaa kelvollisina numeroina.");
   if(!finite(wallRaw))errors.push("Kotelon wall/thickness pitää antaa kelvollisena numerona.");
   if(!finite(floorRaw))errors.push("Kotelon floorThickness/thickness/wall pitää antaa kelvollisena numerona.");
-  if([W,D,H,wall,floor].some(x=>Number.isFinite(x)&&Math.abs(x)>MAX_MM))errors.push(`Kotelon mitat saavat olla enintään ${MAX_MM} mm.`);
-  if(Number.isFinite(wall)&&wall<.8)errors.push("Kotelon seinämän pitää olla vähintään 0,8 mm.");
-  if(Number.isFinite(floor)&&floor<.8)errors.push("Kotelon pohjan pitää olla vähintään 0,8 mm.");
-  if([W,D,wall].every(Number.isFinite)&&(W<=2*wall+2||D<=2*wall+2))errors.push("Kotelon leveys/pituus on liian pieni seinämäpaksuuteen nähden.");
-  if([H,floor].every(Number.isFinite)&&H<=floor+2)errors.push("Kotelon korkeuden pitää olla yli 2 mm pohjan yläpuolella.")
+  if([W,D,H,wall,floor].some(x=>finite(x)&&Math.abs(x)>MAX_MM))errors.push(`Kotelon mitat saavat olla enintään ${MAX_MM} mm.`);
+  if(finite(wall)&&wall<.8)errors.push("Kotelon seinämän pitää olla vähintään 0,8 mm.");
+  if(finite(floor)&&floor<.8)errors.push("Kotelon pohjan pitää olla vähintään 0,8 mm.");
+  if([W,D,wall].every(finite)&&(W<=2*wall+2||D<=2*wall+2))errors.push("Kotelon leveys/pituus on liian pieni seinämäpaksuuteen nähden.");
+  if([H,floor].every(finite)&&H<=floor+2)errors.push("Kotelon korkeuden pitää olla yli 2 mm pohjan yläpuolella.")
  }
  function validate(raw){const errors=[],warnings=[];if(!raw||raw.schemaVersion!==2)return{ok:true,errors,warnings};validateScalarParameterBounds(raw,errors);const ops=raw.operations;if(ops!=null&&!Array.isArray(ops))return{ok:false,errors:["operations pitää olla taulukko.",...errors],warnings};if(Array.isArray(ops)&&ops.length>MAX_OPS)errors.push(`operations sisältää yli ${MAX_OPS} operaatiota.`);const allowed=support[raw.partType]||new Set();for(const [i,op]of(ops||[]).slice(0,MAX_OPS+1).entries()){if(!op||typeof op!=="object"||Array.isArray(op)){errors.push(`Operaatio ${i+1} ei ole kelvollinen objekti.`);continue}const type=String(op.type||"").trim();if(!type){errors.push(`Operaatio ${i+1}: type puuttuu.`);continue}if(!allowed.has(type))errors.push(`Operaatiota ”${type}” ei toteuteta ${raw.partType||"tämän"}-editorissa.`);if(type==="holes"){if(!Array.isArray(op.holes))errors.push(`Operaatio ${i+1}: holes-taulukko puuttuu.`);else if(op.holes.length>MAX_HOLES)errors.push(`Operaatio ${i+1}: holes sisältää yli ${MAX_HOLES} reikää.`)}}if(["mountingPlate","plate"].includes(raw.partType))validatePlateGeometry(raw,errors,warnings);if(raw.partType==="adapter")validateAdapterGeometry(raw,errors);if(["enclosure","box","case"].includes(raw.partType))validateEnclosureGeometry(raw,errors);return{ok:errors.length===0,errors:[...new Set(errors)],warnings:[...new Set(warnings)]}}
  function sameRevision(){const base=window.AI3DPlanPreflight?.getLastResult?.();return!!(base?.fingerprint&&last.fingerprint&&base.fingerprint===last.fingerprint)}
