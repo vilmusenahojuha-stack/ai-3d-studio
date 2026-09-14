@@ -103,4 +103,22 @@ assert.strictEqual(tabC.context.window.AI3DFitCalibration.getCorrection("PETG"),
 assert.strictEqual(tabC.context.window.AI3DFitCalibration.getCorrection("ASA"),undefined,"removed storage must not leave the last ASA correction active in memory");
 assert.strictEqual(tabC.elements.fitCorrection.value,"","the calibration field must reflect that no saved calibration remains");
 
+const futureRaw=JSON.stringify({version:2,printer:"Elegoo Centauri Carbon 2 Combo",nozzle:0.4,corrections:{ASA:{correction:0.45,updatedAt:Date.now()}}});
+storage.setItem(KEY,futureRaw);
+tabC.listeners.window.storage({key:KEY,storageArea:storage});
+assert.strictEqual(tabC.context.window.AI3DFitCalibration.getCorrection("ASA"),undefined,"unsupported future calibration data must not be used as if it were current v1 data");
+assert.strictEqual(tabC.elements.fitCalibrationState.className,"printer-status fail","unsupported calibration storage must be shown as an explicit failure instead of silently appearing empty");
+assert.match(tabC.elements.fitCalibrationState.innerHTML,/ei ylikirjoiteta automaattisesti/i,"invalid storage warning must explain that the original record is preserved");
+setCorrection(tabC,0.4);
+assert.strictEqual(storage.getItem(KEY),futureRaw,"saving a new correction must not overwrite an unsupported future calibration record");
+assert.strictEqual(tabC.elements.fitCorrection.value,"0.4","blocked save should preserve the user's in-progress correction draft");
+
+tabC.elements.btnClearFitCalibration.handlers.click();
+assert.strictEqual(storage.getItem(KEY),futureRaw,"clearing the current material must also fail closed instead of overwriting unsupported storage");
+
+storage.removeItem(KEY);
+tabC.listeners.window.storage({key:KEY,storageArea:storage});
+setCorrection(tabC,0.4);
+assert.strictEqual(JSON.parse(storage.getItem(KEY)).corrections.ASA.correction,0.4,"normal calibration saving must recover after the invalid external record is explicitly removed");
+
 console.log("fit calibration cross-tab regression: ok");
