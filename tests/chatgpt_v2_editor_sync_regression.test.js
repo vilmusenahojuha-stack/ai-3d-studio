@@ -24,11 +24,12 @@ function fixture(withCore=true){
   createElement:()=>({style:{}})
  };
  let rawCalls=0;
+ const rawApply=plan=>{rawCalls++;if(plan.fail)throw Error("invalid plan");if(plan.softFail)return false;return true};
  const window={AI3D:{setPart(){return true}}};
- if(withCore)window.AI3DPlanV2CAD={apply(plan){rawCalls++;if(plan.fail)throw Error("invalid plan");return true}};
+ if(withCore)window.AI3DPlanV2CAD={apply:rawApply};
  const context={window,document,console,Error,Object,String,Number,Array,Math,currentMesh:null,currentFitMesh:null,draw(){}};
  vm.runInNewContext(source,context);
- return{window,partType,material,plate,adapter,enclosure,roots,get rawCalls(){return rawCalls},installCore(){window.AI3DPlanV2CAD={apply(plan){rawCalls++;if(plan.fail)throw Error("invalid plan");return true}}}};
+ return{window,partType,material,plate,adapter,enclosure,roots,get rawCalls(){return rawCalls},installCore(){window.AI3DPlanV2CAD={apply:rawApply}}};
 }
 
 const live=fixture(true);
@@ -58,7 +59,13 @@ const before=live.adapter.map(x=>x.value);
 assert.throws(()=>apply({schemaVersion:2,partType:"adapter",fail:true,parameters:{length:99}}),/invalid plan/,
  "a rejected CAD plan must still fail closed");
 assert.deepEqual(live.adapter.map(x=>x.value),before,"a rejected CAD plan must not overwrite the last valid editable values");
-assert.equal(live.rawCalls,4,"all calls must continue through the existing guarded CAD apply implementation");
+const beforeSoftFail={partType:live.partType.value,material:live.material.value,adapter:live.adapter.map(x=>x.value)};
+assert.equal(apply({schemaVersion:2,partType:"adapter",material:"ASA",softFail:true,parameters:{length:99,insideDiameter1:30,insideDiameter2:30,wall:4}}),false,
+ "an explicitly rejected CAD apply must preserve its false result");
+assert.equal(live.partType.value,beforeSoftFail.partType,"a false CAD result must not switch the editable part type");
+assert.equal(live.material.value,beforeSoftFail.material,"a false CAD result must not overwrite the editable material");
+assert.deepEqual(live.adapter.map(x=>x.value),beforeSoftFail.adapter,"a false CAD result must not overwrite editable parameter fields");
+assert.equal(live.rawCalls,5,"all calls must continue through the existing guarded CAD apply implementation");
 
 const recovered=fixture(false);
 assert.equal(recovered.window.AI3DV2Editor.ensurePlanSyncHook(),false,
