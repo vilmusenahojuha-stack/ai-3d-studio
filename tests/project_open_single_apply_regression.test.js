@@ -15,7 +15,9 @@ let captureHandler=null,setPartCalls=0,prevented=0,stopped=0;
 const elements={
   validation:{querySelector:()=>null},
   status:{textContent:"Malli luotu ja tarkistettu."},
-  planSyncStatus:{textContent:"",className:""}
+  planSyncStatus:{textContent:"",className:""},
+  adapterLength:{value:"12",defaultValue:"10"},
+  material:{value:"PLA",defaultValue:"PLA"}
 };
 const target={closest:selector=>selector==="#projectList [data-id]"?{dataset:{id:"p1"}}:null};
 const context={
@@ -88,20 +90,29 @@ assert.equal(stopped,3,"missing project id must stop propagation before projects
 assert.match(elements.planSyncStatus.textContent,/ei enää löydy nykyisestä projektitallennuksesta/i,"missing project id must surface a controlled refresh warning");
 
 (async()=>{
-  // Promise-based CAD must not be accepted before its result is known.
+  // Promise-based CAD must not be accepted before its result is known, and failed applies must restore editable controls.
   elements.status.textContent="Malli luotu ja tarkistettu.";
-  context.window.AI3D.setPart=()=>{setPartCalls++;return Promise.resolve(false)};
+  elements.adapterLength.value="12";elements.material.value="PLA";
+  context.window.AI3D.setPart=()=>{setPartCalls++;elements.adapterLength.value="30";elements.material.value="PETG";return Promise.resolve(false)};
   await assert.rejects(()=>context.window.AI3DProjectOpenGuard.check(project),/hylkäsi projektin/i,"async false result must fail closed");
+  assert.equal(elements.adapterLength.value,"12","async false result must restore previous parameter controls");
+  assert.equal(elements.material.value,"PLA","async false result must restore previous material control");
 
-  // A late validation failure must be checked after the async CAD settles, not only before it starts.
+  // A late validation failure must be checked after the async CAD settles, not only before it starts, without leaving rejected values in the editor.
   elements.status.textContent="Malli luotu ja tarkistettu.";
-  context.window.AI3D.setPart=()=>{setPartCalls++;return new Promise(resolve=>{elements.status.textContent="Virhe: async CAD-validointi epäonnistui";resolve(true)})};
+  elements.adapterLength.value="14";elements.material.value="PLA";
+  context.window.AI3D.setPart=()=>{setPartCalls++;elements.adapterLength.value="30";elements.material.value="PETG";return new Promise(resolve=>{elements.status.textContent="Virhe: async CAD-validointi epäonnistui";resolve(true)})};
   await assert.rejects(()=>context.window.AI3DProjectOpenGuard.check(project),/async CAD-validointi epäonnistui/i,"late async validation error must fail closed");
+  assert.equal(elements.adapterLength.value,"14","late validation failure must restore previous parameter controls");
+  assert.equal(elements.material.value,"PLA","late validation failure must restore previous material control");
 
-  // Rejected CAD execution must remain rejected and must not be converted into success.
+  // Rejected CAD execution must remain rejected and must not be converted into success or leave partial editor state.
   elements.status.textContent="Malli luotu ja tarkistettu.";
-  context.window.AI3D.setPart=()=>{setPartCalls++;return Promise.reject(new Error("CAD Promise reject"))};
+  elements.adapterLength.value="16";elements.material.value="PLA";
+  context.window.AI3D.setPart=()=>{setPartCalls++;elements.adapterLength.value="30";elements.material.value="PETG";return Promise.reject(new Error("CAD Promise reject"))};
   await assert.rejects(()=>context.window.AI3DProjectOpenGuard.check(project),/CAD Promise reject/);
+  assert.equal(elements.adapterLength.value,"16","rejected CAD Promise must restore previous parameter controls");
+  assert.equal(elements.material.value,"PLA","rejected CAD Promise must restore previous material control");
 
   console.log("Project open single-apply regression: OK");
 })().catch(error=>{console.error(error);process.exitCode=1});
