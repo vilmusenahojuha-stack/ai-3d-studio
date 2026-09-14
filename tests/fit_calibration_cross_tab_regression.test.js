@@ -96,4 +96,11 @@ tabC.context.document.activeElement=null;
 tabC.listeners.window.storage({key:KEY,storageArea:storage});
 assert.strictEqual(tabC.elements.fitCorrection.value,"0.3","once the draft is no longer focused, storage refresh may render the latest saved calibration into the field");
 
+storage.removeItem(KEY);
+tabC.listeners.window.storage({key:KEY,storageArea:storage});
+assert.strictEqual(tabC.context.window.AI3DFitCalibration.getCorrection("PLA"),undefined,"removing the calibration record in another tab must clear stale PLA calibration state");
+assert.strictEqual(tabC.context.window.AI3DFitCalibration.getCorrection("PETG"),undefined,"removing the calibration record must clear all stale material calibrations");
+assert.strictEqual(tabC.context.window.AI3DFitCalibration.getCorrection("ASA"),undefined,"removed storage must not leave the last ASA correction active in memory");
+assert.strictEqual(tabC.elements.fitCorrection.value,"","the calibration field must reflect that no saved calibration remains");
+
 console.log("fit calibration cross-tab regression: ok");
