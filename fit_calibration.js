@@ -1,14 +1,15 @@
 "use strict";
 (()=>{
- const KEY="ai3d:centauri-fit:v1",$=id=>document.getElementById(id),MATERIALS=new Set(["PLA","PETG","ASA"]),NOZZLE=.4;
+ const KEY="ai3d:centauri-fit:v1",$=id=>document.getElementById(id),MATERIALS=new Set(["PLA","PETG","ASA"]),NOZZLE=.4,MAX_DATE_MS=8.64e15;
  let state={version:1,printer:"Elegoo Centauri Carbon 2 Combo",nozzle:NOZZLE,corrections:{}},storageError="";
  function validCorrection(x){return Number.isFinite(Number(x))&&Number(x)>=-1&&Number(x)<=1}
+ function validUpdatedAt(x){return x==null||(typeof x==="number"&&Number.isFinite(x)&&x>=0&&x<=MAX_DATE_MS)}
  function emptyState(){state={version:1,printer:state.printer,nozzle:NOZZLE,corrections:{}}}
  function read(){
   try{
    const raw=localStorage.getItem(KEY);if(!raw){storageError="";emptyState();return true}
    const v=JSON.parse(raw);if(!v||v.version!==1||v.printer!==state.printer||Number(v.nozzle)!==NOZZLE||!v.corrections||typeof v.corrections!=="object"||Array.isArray(v.corrections))throw Error("Tuntematon kalibrointidata");
-   const next={};for(const [mat,item] of Object.entries(v.corrections)){if(!MATERIALS.has(mat)||!item||typeof item!=="object"||Array.isArray(item)||!validCorrection(item.correction))throw Error("Tuntematon kalibrointimerkintä");next[mat]={correction:Number(item.correction),updatedAt:Number(item.updatedAt)||0}}
+   const next={};for(const [mat,item] of Object.entries(v.corrections)){if(!MATERIALS.has(mat)||!item||typeof item!=="object"||Array.isArray(item)||!validCorrection(item.correction)||!validUpdatedAt(item.updatedAt))throw Error("Tuntematon kalibrointimerkintä");next[mat]={correction:Number(item.correction),updatedAt:item.updatedAt??0}}
    state={...state,corrections:next};storageError="";return true
   }catch{storageError="Tallennettu kalibrointidata on vioittunut tai tämän sovellusversion kanssa yhteensopimaton.";emptyState();return false}
  }

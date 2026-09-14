@@ -126,6 +126,16 @@ assert.strictEqual(storage.getItem(KEY),unknownMaterialRaw,"saving a supported m
 tabC.elements.btnClearFitCalibration.handlers.click();
 assert.strictEqual(storage.getItem(KEY),unknownMaterialRaw,"clearing a supported material must also preserve an unknown calibration entry");
 
+const invalidTimestampRaw=JSON.stringify({version:1,printer:"Elegoo Centauri Carbon 2 Combo",nozzle:0.4,corrections:{ASA:{correction:0.3,updatedAt:"Infinity"}}});
+storage.setItem(KEY,invalidTimestampRaw);
+tabC.listeners.window.storage({key:KEY,storageArea:storage});
+assert.strictEqual(tabC.context.window.AI3DFitCalibration.getCorrection("ASA"),undefined,"non-Date-compatible calibration timestamps must fail closed instead of reaching date rendering");
+assert.strictEqual(tabC.elements.fitCalibrationState.className,"printer-status fail","invalid calibration timestamps must surface an explicit storage failure state");
+setCorrection(tabC,0.4);
+assert.strictEqual(storage.getItem(KEY),invalidTimestampRaw,"saving must preserve a calibration record with an invalid timestamp instead of overwriting it");
+tabC.elements.btnClearFitCalibration.handlers.click();
+assert.strictEqual(storage.getItem(KEY),invalidTimestampRaw,"clearing must also preserve a calibration record with an invalid timestamp");
+
 storage.removeItem(KEY);
 tabC.listeners.window.storage({key:KEY,storageArea:storage});
 setCorrection(tabC,0.4);
