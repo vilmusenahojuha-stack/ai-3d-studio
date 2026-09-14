@@ -84,4 +84,16 @@ tabC.listeners.window.storage({key:KEY,storageArea:storage});
 assert.strictEqual(tabC.context.window.AI3DFitCalibration.getCorrection("PLA"),0.15,"storage event must refresh calibration state from the other tab");
 assert.strictEqual(tabC.context.window.AI3DFitCalibration.getCorrection("PETG"),0.2,"storage refresh must retain other material calibrations");
 
+const tabD=boot(storage,"ASA");
+tabC.elements.fitCorrection.value="0.35";
+tabC.elements.fitCorrection.valueAsNumber=0.35;
+tabC.context.document.activeElement=tabC.elements.fitCorrection;
+setCorrection(tabD,0.3);
+tabC.listeners.window.storage({key:KEY,storageArea:storage});
+assert.strictEqual(tabC.context.window.AI3DFitCalibration.getCorrection("ASA"),0.3,"focused tab must still refresh the newly saved ASA calibration state");
+assert.strictEqual(tabC.elements.fitCorrection.value,"0.35","cross-tab refresh must not overwrite an in-progress focused calibration draft");
+tabC.context.document.activeElement=null;
+tabC.listeners.window.storage({key:KEY,storageArea:storage});
+assert.strictEqual(tabC.elements.fitCorrection.value,"0.3","once the draft is no longer focused, storage refresh may render the latest saved calibration into the field");
+
 console.log("fit calibration cross-tab regression: ok");
