@@ -18,7 +18,7 @@
  function defaultOption(e){const options=Array.from(e?.options||[]);return options.find(o=>o.defaultSelected)||options[0]||null}
  function resetControl(id){const e=$(id);if(!e)return;if(e.tagName==="SELECT"||e.options){const option=defaultOption(e);if(option)e.value=option.value;return}if("defaultValue"in e)e.value=e.defaultValue}
  function resetValues(type){for(const id of FIELD_IDS[type]||[])resetControl(id)}
- function captureValues(type){const out=[];for(const id of FIELD_IDS[type]||[]){const e=$(id);if(e&&"value"in e)out.push([e,e.value])}return out}
+ function captureValues(type){const out=[];for(const id of ["partType",...(FIELD_IDS[type]||[])]){const e=$(id);if(e&&"value"in e)out.push([e,e.value])}return out}
  function restoreValues(snapshot){for(const [e,value] of snapshot||[]){try{e.value=value}catch{}}}
  function install(){
   const api=window.AI3D,fn=api?.setPart;if(typeof fn!=="function")return false;if(fn.__ai3dProjectDefaults===true)return true;
