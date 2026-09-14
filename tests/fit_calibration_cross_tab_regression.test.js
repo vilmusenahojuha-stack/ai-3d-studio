@@ -116,6 +116,16 @@ assert.strictEqual(tabC.elements.fitCorrection.value,"0.4","blocked save should 
 tabC.elements.btnClearFitCalibration.handlers.click();
 assert.strictEqual(storage.getItem(KEY),futureRaw,"clearing the current material must also fail closed instead of overwriting unsupported storage");
 
+const unknownMaterialRaw=JSON.stringify({version:1,printer:"Elegoo Centauri Carbon 2 Combo",nozzle:0.4,corrections:{PLA:{correction:0.1,updatedAt:Date.now()},TPU:{correction:0.25,updatedAt:Date.now()}}});
+storage.setItem(KEY,unknownMaterialRaw);
+tabC.listeners.window.storage({key:KEY,storageArea:storage});
+assert.strictEqual(tabC.context.window.AI3DFitCalibration.getCorrection("PLA"),undefined,"a v1 record containing an unknown material must fail closed instead of partially loading known entries");
+assert.strictEqual(tabC.elements.fitCalibrationState.className,"printer-status fail","unknown material entries must surface the same explicit storage failure state");
+setCorrection(tabC,0.4);
+assert.strictEqual(storage.getItem(KEY),unknownMaterialRaw,"saving a supported material must not silently delete an unknown calibration entry");
+tabC.elements.btnClearFitCalibration.handlers.click();
+assert.strictEqual(storage.getItem(KEY),unknownMaterialRaw,"clearing a supported material must also preserve an unknown calibration entry");
+
 storage.removeItem(KEY);
 tabC.listeners.window.storage({key:KEY,storageArea:storage});
 setCorrection(tabC,0.4);
