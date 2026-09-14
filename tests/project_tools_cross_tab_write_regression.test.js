@@ -7,11 +7,12 @@ const vm=require("vm");
 const SOURCE=fs.readFileSync("project_tools.js","utf8");
 const KEY="ai3d:projects:v3";
 const ACTIVE=KEY+":active";
+const BACKUP=KEY+":backup";
 
 class MemoryStorage{
-  constructor(seed={}){this.map=new Map(Object.entries(seed));}
+  constructor(seed={},failKeys=[]){this.map=new Map(Object.entries(seed));this.failKeys=new Set(failKeys);}
   getItem(key){return this.map.has(key)?this.map.get(key):null;}
-  setItem(key,value){this.map.set(key,String(value));}
+  setItem(key,value){if(this.failKeys.has(key))throw Error("storage write failed");this.map.set(key,String(value));}
   removeItem(key){this.map.delete(key);}
 }
 
@@ -28,9 +29,9 @@ function makeElement(id,registry){
   return el;
 }
 
-function boot(hasConflict){
+function boot(hasConflict,failBackup=false){
   const project={id:"p1",name:"Testi",description:"",type:"sleeve",values:{sleeveID:20,sleeveWall:3,sleeveLength:30,material:"PETG"},created:1,updated:1};
-  const localStorage=new MemoryStorage({[KEY]:JSON.stringify([project]),[ACTIVE]:project.id});
+  const localStorage=new MemoryStorage({[KEY]:JSON.stringify([project]),[ACTIVE]:project.id},failBackup?[BACKUP]:[]);
   const elements={};
   makeElement("planSyncStatus",elements);
   const alerts=[];
@@ -65,5 +66,15 @@ normal.elements.btnDuplicateProject.onclick();
 const projects=JSON.parse(normal.localStorage.getItem(KEY));
 assert.strictEqual(projects.length,2,"normal duplicate must keep working when no conflict exists");
 assert.strictEqual(normal.getReloads(),1,"successful duplicate must retain the existing reload behavior");
+assert.ok(normal.localStorage.getItem(BACKUP),"successful project-tools write must preserve the previous project set as a backup");
+
+const backupFailure=boot(false,true);
+const beforeMain=backupFailure.localStorage.getItem(KEY);
+const beforeActive=backupFailure.localStorage.getItem(ACTIVE);
+backupFailure.elements.btnDuplicateProject.onclick();
+assert.strictEqual(backupFailure.localStorage.getItem(KEY),beforeMain,"failed backup write must roll the main project set back atomically");
+assert.strictEqual(backupFailure.localStorage.getItem(ACTIVE),beforeActive,"failed backup write must roll the active project id back atomically");
+assert.strictEqual(backupFailure.getReloads(),0,"failed backup verification must not reload into a partially committed state");
+assert.ok(backupFailure.alerts.some(x=>/tallennus epäonnistui/i.test(x)),"failed backup write must surface an explicit storage error");
 
 console.log("project tools cross-tab write regression: ok");
