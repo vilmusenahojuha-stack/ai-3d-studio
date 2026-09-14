@@ -41,6 +41,16 @@ function plan(partType, parameters) {
 
 assert.equal(validate(plan("mountingPlate", { length: 100, width: 60, thickness: 4, holes: [] })).ok, true,
   "valid mounting plate must remain accepted");
+assert.equal(validate(plan("mountingPlate", { width: 60, thickness: 4, holes: [] })).ok, false,
+  "missing mounting plate length must fail in the operation guard before CAD generation");
+assert.equal(validate(plan("mountingPlate", { length: 100, thickness: 4, holes: [] })).ok, false,
+  "missing mounting plate width must fail in the operation guard before CAD generation");
+assert.equal(validate(plan("mountingPlate", { length: "100", width: 60, thickness: 4, holes: [] })).ok, false,
+  "numeric-string mounting plate length must fail before CAD generation");
+assert.equal(validate(plan("mountingPlate", { length: 100, width: "60", thickness: 4, holes: [] })).ok, false,
+  "numeric-string mounting plate width must fail before CAD generation");
+assert.equal(validate(plan("mountingPlate", { length: 100, width: 60, thickness: "4", holes: [] })).ok, false,
+  "numeric-string mounting plate thickness must fail before CAD generation");
 assert.equal(validate(plan("mountingPlate", { length: 100, width: 60, holes: [] })).ok, false,
   "missing mounting plate thickness must fail in the operation guard before CAD generation");
 assert.equal(validate(plan("mountingPlate", { length: 100, width: 60, thickness: 0, holes: [] })).ok, false,
@@ -51,8 +61,12 @@ assert.equal(validate(plan("adapter", validAdapter)).ok, true,
   "valid adapter must remain accepted");
 assert.equal(validate(plan("adapter", { ...validAdapter, length: undefined })).ok, false,
   "missing adapter length must fail in the operation guard before CAD generation");
+assert.equal(validate(plan("adapter", { ...validAdapter, length: "30" })).ok, false,
+  "numeric-string adapter length must fail before CAD generation");
 assert.equal(validate(plan("adapter", { ...validAdapter, insideDiameter1: undefined })).ok, false,
   "missing adapter start inside diameter must fail in the operation guard");
+assert.equal(validate(plan("adapter", { ...validAdapter, insideDiameter1: "20" })).ok, false,
+  "numeric-string adapter start inside diameter must fail before CAD generation");
 assert.equal(validate(plan("adapter", { ...validAdapter, insideDiameter1: 0 })).ok, false,
   "zero adapter start inside diameter must fail in the operation guard");
 assert.equal(validate(plan("adapter", { ...validAdapter, insideDiameter2: 0 })).ok, false,
@@ -62,11 +76,21 @@ for (const key of ["outsideDiameter", "outsideDiameter1", "outsideDiameter2"]) {
   const base = { length: 30, insideDiameter1: 20, insideDiameter2: 24, wall: 3 };
   assert.equal(validate(plan("adapter", { ...base, [key]: "not-a-number" })).ok, false,
     `explicit non-numeric adapter ${key} must fail before CAD generation`);
+  assert.equal(validate(plan("adapter", { ...base, [key]: "30" })).ok, false,
+    `explicit numeric-string adapter ${key} must fail before CAD generation`);
   assert.equal(validate(plan("adapter", { ...base, [key]: null })).ok, false,
     `explicit null adapter ${key} must fail before CAD generation`);
 }
 
 assert.equal(validate(plan("adapter", { length: 30, insideDiameter1: 20, insideDiameter2: 24, wall: 3 })).ok, true,
   "adapter may still derive outer diameters from a valid wall when explicit outer diameters are omitted");
+
+const validEnclosure = { width: 100, length: 80, height: 40, wall: 2, floorThickness: 2 };
+assert.equal(validate(plan("enclosure", validEnclosure)).ok, true,
+  "valid enclosure must remain accepted");
+assert.equal(validate(plan("enclosure", { ...validEnclosure, width: "100" })).ok, false,
+  "numeric-string enclosure width must fail before CAD generation");
+assert.equal(validate(plan("enclosure", { ...validEnclosure, wall: "2" })).ok, false,
+  "numeric-string enclosure wall must fail before CAD generation");
 
 console.log("CAD Plan required parameter parity regression: OK");
