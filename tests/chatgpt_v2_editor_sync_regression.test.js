@@ -15,7 +15,8 @@ function fixture(withCore=true){
  };
  const partType={value:"plate",onchange:null,querySelector:()=>({}),appendChild(){}};
  const material={value:"PETG"};
- const elements=new Map(Object.entries({...roots,partType,material,btnGenerate:{onclick:null},btnFitTest:{style:{}},partTitle:{textContent:""},status:{textContent:""},validation:{innerHTML:""},dimensions:{textContent:""}}));
+ const fieldEntries=Object.fromEntries([...adapter,...enclosure].map(e=>[e.id,e]));
+ const elements=new Map(Object.entries({...roots,...fieldEntries,partType,material,btnGenerate:{onclick:null},btnFitTest:{style:{}},partTitle:{textContent:""},status:{textContent:""},validation:{innerHTML:""},dimensions:{textContent:""}}));
  const document={
   getElementById:id=>elements.get(id)||null,
   querySelectorAll:selector=>selector===".part-fields"?Object.values(roots):[],
