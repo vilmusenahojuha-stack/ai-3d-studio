@@ -5,7 +5,7 @@
  function validCorrection(x){return Number.isFinite(Number(x))&&Number(x)>=-1&&Number(x)<=1}
  function read(){
   try{
-   const raw=localStorage.getItem(KEY);if(!raw)return;
+   const raw=localStorage.getItem(KEY);if(!raw){state={...state,corrections:{}};return}
    const v=JSON.parse(raw);if(!v||v.version!==1||v.printer!==state.printer||Number(v.nozzle)!==NOZZLE||!v.corrections||typeof v.corrections!=="object"||Array.isArray(v.corrections))throw Error("Tuntematon kalibrointidata");
    const next={};for(const [mat,item] of Object.entries(v.corrections)){if(!MATERIALS.has(mat)||!item||!validCorrection(item.correction))continue;next[mat]={correction:Number(item.correction),updatedAt:Number(item.updatedAt)||0}}
    state={...state,corrections:next}
