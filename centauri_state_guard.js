@@ -34,9 +34,9 @@
  function geometryInput(target){return!!target&&!nonGeometryIds.has(target.id)&&!!(target.closest?.(".part-fields")||target.id==="partType")}
  function enforceDirtyExportLock(){const button=$("btnCentauriStl");if(dirty&&button&&!button.disabled)button.disabled=true}
  function guardExportClick(e){
-  const root=$("centauriStatus"),download=$("btnDownload");
+  const root=$("centauriStatus"),download=$("btnDownload"),button=$("btnCentauriStl");
   const statusOk=!!root&&/(?:^|\s)ok(?:\s|$)/.test(String(root.className||""));
-  if(!dirty&&download&&download.disabled===false&&statusOk)return true;
+  if(!dirty&&download&&download.disabled===false&&button&&button.disabled===false&&statusOk)return true;
   e?.preventDefault?.();
   e?.stopImmediatePropagation?.();
   failCheck();
