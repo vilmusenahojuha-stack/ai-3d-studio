@@ -26,7 +26,7 @@
   deterministicSetPart.__ai3dProjectDefaults=true;api.setPart=deterministicSetPart;return true
  }
  function read(){try{const raw=localStorage.getItem(KEY),a=JSON.parse(raw===null?"[]":raw);if(!Array.isArray(a)||!a.every(validProject))return null;const ids=new Set();for(const p of a){if(ids.has(p.id))return null;ids.add(p.id)}return a}catch{return null}}
- function failed(){const v=$("validation"),s=$("status")?.textContent||"";return!!v?.querySelector(".check.fail")||/^\s*Virhe\s*:/i.test(s)||/generointi epäonnistui|STL-lataus estetty/i.test(s)}
+ function failed(){const v=$("validation"),s=$("status")?.textContent||"";return!!v?.querySelector(".check.fail")||/^\s*Virhe\s*:/i.test(s)||/generointi epäonnistui|tarkistus epäonnistui|ei läpäissyt tarkistusta|STL-lataus estetty/i.test(s)}
  function apply(p){if(!validProject(p))throw Error("Projektidata ei läpäissyt rakennetarkistusta.");if(!install())throw Error("CAD-moottori ei ole vielä valmis.");const before=captureValues(p.type),rollback=()=>restoreValues(before),finish=()=>{if(failed())throw Error($("status")?.textContent||"CAD-malli ei läpäissyt tarkistusta.");return true};try{const result=window.AI3D.setPart(p.type,p.values||{});if(result&&typeof result.then==="function")return Promise.resolve(result).then(value=>{if(value===false)throw Error("CAD-moottori hylkäsi projektin.");return finish()}).catch(error=>{rollback();throw error});if(result===false)throw Error("CAD-moottori hylkäsi projektin.");return finish()}catch(error){rollback();throw error}}
  function message(text){const e=$("planSyncStatus");if(e){e.textContent=text;e.className="plan-sync-status warn"}}
  function conflictReason(){const g=window.AI3DStorageCommitGuard;return g?.hasConflict?(g.lastIssue||CROSS_TAB_WARNING):""}
