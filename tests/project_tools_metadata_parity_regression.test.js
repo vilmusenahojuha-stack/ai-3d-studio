@@ -57,6 +57,32 @@ for(const [label,invalid] of [
 }
 
 {
+  const legacy={...valid,id:"p-legacy-no-material",values:{sleeveID:20,sleeveWall:3,sleeveLength:30}};
+  const raw=JSON.stringify([legacy]);
+  const storage=new MemoryStorage({[KEY]:raw,[ACTIVE]:legacy.id,[BACKUP]:"[]"});
+  boot(storage);
+  assert.strictEqual(storage.getItem(KEY),raw,"legacy project without material must remain valid");
+  assert.strictEqual(storage.getItem(ACTIVE),legacy.id,"legacy project without material must remain active");
+}
+
+for(const material of ["PLA","PETG","ASA"]){
+  const supported={...valid,id:`p-${material}`,values:{...valid.values,material}};
+  const raw=JSON.stringify([supported]);
+  const storage=new MemoryStorage({[KEY]:raw,[ACTIVE]:supported.id,[BACKUP]:"[]"});
+  boot(storage);
+  assert.strictEqual(storage.getItem(KEY),raw,`${material}: supported material must remain valid`);
+}
+
+{
+  const unsupported={...valid,id:"p-abs",values:{...valid.values,material:"ABS"}};
+  const backupRaw=JSON.stringify([valid]);
+  const storage=new MemoryStorage({[KEY]:JSON.stringify([unsupported]),[ACTIVE]:unsupported.id,[BACKUP]:backupRaw});
+  boot(storage);
+  assert.strictEqual(storage.getItem(KEY),backupRaw,"unsupported explicit project material must fail closed and recover from valid backup");
+  assert.strictEqual(storage.getItem(ACTIVE),valid.id,"unsupported material recovery must repair active project id");
+}
+
+{
   const raw=JSON.stringify([valid]);
   const storage=new MemoryStorage({[KEY]:raw,[ACTIVE]:valid.id,[BACKUP]:"[]"});
   boot(storage);
