@@ -1,6 +1,6 @@
 "use strict";
 (()=>{
- const $=id=>document.getElementById(id),api=window.AI3D,HOLE_XY_MAX=2000,HOLE_D_MIN=.2,HOLE_D_MAX=500,MAX_OPS=200,MAX_HOLES=200;
+ const $=id=>document.getElementById(id),api=window.AI3D,HOLE_XY_MAX=2000,HOLE_D_MIN=.2,HOLE_D_MAX=500,MAX_OPS=200,MAX_HOLES=200,SUPPORTED_MATERIALS=new Set(["PLA","PETG","ASA"]);
  if(!api||typeof api.setPart!=="function"||api.__applyGuard)return;
  const original=api.setPart.bind(api);
  const finite=v=>typeof v==="number"&&Number.isFinite(v);
@@ -60,6 +60,11 @@
   if(type==="mountingPlate")for(const key of ["length","width","thickness","cornerRadius","chamfer","holeDiameter"])check(key);
   return true
  }
+ function validatePlanMaterial(plan){
+  if(!plan||plan.schemaVersion!==2||plan.material==null)return true;
+  if(typeof plan.material!=="string"||!SUPPORTED_MATERIALS.has(plan.material))throw Error("ChatGPT-suunnitelman tulostusmateriaalia ei tueta tässä versiossa.");
+  return true
+ }
  api.setPart=(type,values={})=>{
   try{
    const result=original(type,values);
@@ -76,6 +81,7 @@
   const originalApply=v2.apply.bind(v2);
   v2.apply=plan=>{
    try{
+    validatePlanMaterial(plan);
     validatePlanParameterTypes(plan);
     validatePlanHoleBounds(plan);
     const result=originalApply(plan);
@@ -105,5 +111,5 @@
  }
  const watching=watchV2Assignment();
  if(!watching&&!wrapV2()&&document.readyState==="loading")document.addEventListener?.("DOMContentLoaded",wrapV2,{once:true});
- window.AI3DCADApplyGuard={check:failureMessage,wrapV2,validatePlanHoleBounds,validatePlanParameterTypes};
+ window.AI3DCADApplyGuard={check:failureMessage,wrapV2,validatePlanHoleBounds,validatePlanParameterTypes,validatePlanMaterial};
 })();
