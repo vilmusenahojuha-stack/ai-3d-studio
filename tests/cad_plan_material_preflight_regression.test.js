@@ -3,8 +3,8 @@ const assert=require("node:assert/strict"),fs=require("node:fs"),path=require("n
 const ROOT=path.resolve(__dirname,"..");
 const elements={status:{textContent:"",disabled:false},validation:{querySelector(){return null}},btnDownload:{disabled:false},btnFitTest:{disabled:false},btnCentauriStl:{disabled:false},dimensions:{textContent:"100 × 50 × 4 mm"}};
 const document={readyState:"complete",getElementById:id=>elements[id]||null};
-let generated=0;
-const window={AI3D:{setPart(){return true}},AI3DPlanV2CAD:{apply(){generated++;return true}}};
+let generated=0,setPartGenerated=0;
+const window={AI3D:{setPart(){setPartGenerated++;return true}},AI3DPlanV2CAD:{apply(){generated++;return true}}};
 const context={window,document,console,Number,Math,Set,Error,currentMesh:{stale:true},currentFitMesh:{stale:true},draw(){}};
 vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(ROOT,"cad_apply_guard.js"),"utf8"),context,{filename:"cad_apply_guard.js"});
 assert.throws(()=>window.AI3DPlanV2CAD.apply({schemaVersion:2,partType:"adapter",material:"ABS",parameters:{length:30,insideDiameter:20,wall:3}}),/tulostusmateriaalia ei tueta/);
@@ -16,4 +16,14 @@ assert.equal(elements.btnCentauriStl.disabled,true,"rejected import must disable
 assert.equal(elements.dimensions.textContent,"–","rejected import must clear stale dimensions");
 assert.equal(window.AI3DPlanV2CAD.apply({schemaVersion:2,partType:"adapter",material:"PETG",parameters:{length:30,insideDiameter:20,wall:3}}),true);
 assert.equal(generated,1,"supported material must still reach CAD generation");
+elements.btnDownload.disabled=false;elements.btnFitTest.disabled=false;elements.btnCentauriStl.disabled=false;elements.dimensions.textContent="80 × 40 × 3 mm";context.currentMesh={stale:true};context.currentFitMesh={stale:true};
+assert.throws(()=>window.AI3D.setPart("adapter",{adapterLength:30,adapterID1:20,adapterID2:20,adapterOD1:26,adapterOD2:26,material:"ABS"}),/Tulostusmateriaalia ei tueta/);
+assert.equal(setPartGenerated,0,"unsupported saved/project material must be rejected before setPart CAD generation");
+assert.equal(context.currentMesh,null,"rejected setPart material must clear stale preview mesh");
+assert.equal(context.currentFitMesh,null,"rejected setPart material must clear stale fit mesh");
+assert.equal(elements.btnDownload.disabled,true,"rejected setPart material must disable STL export");
+assert.equal(elements.btnCentauriStl.disabled,true,"rejected setPart material must disable Centauri export");
+assert.equal(elements.dimensions.textContent,"–","rejected setPart material must clear stale dimensions");
+assert.equal(window.AI3D.setPart("adapter",{adapterLength:30,adapterID1:20,adapterID2:20,adapterOD1:26,adapterOD2:26,material:"ASA"}),true);
+assert.equal(setPartGenerated,1,"supported project material must still reach setPart CAD generation");
 console.log("CAD plan material preflight regression: ok");
