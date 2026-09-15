@@ -60,13 +60,18 @@
   if(type==="mountingPlate")for(const key of ["length","width","thickness","cornerRadius","chamfer","holeDiameter"])check(key);
   return true
  }
- function validatePlanMaterial(plan){
-  if(!plan||plan.schemaVersion!==2||plan.material==null)return true;
-  if(typeof plan.material!=="string"||!SUPPORTED_MATERIALS.has(plan.material))throw Error("ChatGPT-suunnitelman tulostusmateriaalia ei tueta tässä versiossa.");
+ function validateMaterial(material,message="Tulostusmateriaalia ei tueta tässä versiossa."){
+  if(material==null)return true;
+  if(typeof material!=="string"||!SUPPORTED_MATERIALS.has(material))throw Error(message);
   return true
+ }
+ function validatePlanMaterial(plan){
+  if(!plan||plan.schemaVersion!==2)return true;
+  return validateMaterial(plan.material,"ChatGPT-suunnitelman tulostusmateriaalia ei tueta tässä versiossa.")
  }
  api.setPart=(type,values={})=>{
   try{
+   validateMaterial(values?.material);
    const result=original(type,values);
    const error=failureMessage();
    if(error)throw Error(error);
@@ -111,5 +116,5 @@
  }
  const watching=watchV2Assignment();
  if(!watching&&!wrapV2()&&document.readyState==="loading")document.addEventListener?.("DOMContentLoaded",wrapV2,{once:true});
- window.AI3DCADApplyGuard={check:failureMessage,wrapV2,validatePlanHoleBounds,validatePlanParameterTypes,validatePlanMaterial};
+ window.AI3DCADApplyGuard={check:failureMessage,wrapV2,validatePlanHoleBounds,validatePlanParameterTypes,validatePlanMaterial,validateMaterial};
 })();
