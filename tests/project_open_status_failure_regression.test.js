@@ -41,7 +41,7 @@ assert.equal(elements.btnCentauriStl.disabled,true,"wrapped status failure must 
 (async()=>{
   let resolveFirst,resolveSecond;
   const raceElements={
-    validation:{querySelector:()=>null},status:{textContent:"Malli luotu ja tarkistettu."},planSyncStatus:{textContent:"",className:""},partType:{value:"sleeve",defaultValue:"spike"},adapterLength:{value:"12",defaultValue:"10"},material:{value:"PLA",defaultValue:"PLA"},btnDownload:{disabled:false},btnFitTest:{disabled:false},btnCentauriStl:{disabled:false}
+    validation:{querySelector:()=>null},status:{textContent:"Malli luotu ja tarkistettu."},planSyncStatus:{textContent:"",className:""},centauriStatus:{innerHTML:"<b>Centauri Carbon 2 Combo: OK</b>",className:"printer-status ok"},partType:{value:"sleeve",defaultValue:"spike"},adapterLength:{value:"12",defaultValue:"10"},material:{value:"PLA",defaultValue:"PLA"},btnDownload:{disabled:false},btnFitTest:{disabled:false},btnCentauriStl:{disabled:false}
   };
   let calls=0;
   const raceContext={console,Promise,localStorage:{getItem:()=>"[]"},document:{getElementById:id=>raceElements[id]||null,addEventListener:()=>{}},window:{AI3D:{setPart:()=>new Promise(resolve=>{calls++;if(calls===1)resolveFirst=resolve;else resolveSecond=resolve})}}};
@@ -56,5 +56,7 @@ assert.equal(elements.btnCentauriStl.disabled,true,"wrapped status failure must 
   assert.equal(raceElements.btnCentauriStl.disabled,true,"stale CAD completion must disable Centauri STL export");
   assert.match(raceElements.planSyncStatus.textContent,/vanhempi CAD-ajo.*STL-vienti lukittiin/i,"stale CAD completion must explain why export was locked");
   assert.equal(raceElements.planSyncStatus.className,"plan-sync-status warn","stale CAD warning must use existing warning styling");
+  assert.equal(raceElements.centauriStatus.className,"printer-status fail","stale CAD completion must invalidate previous Centauri OK status");
+  assert.match(raceElements.centauriStatus.innerHTML,/tarkistus vanheni.*vienti on estetty/i,"stale CAD completion must explain that Centauri compatibility needs a fresh check");
   console.log("Project open status failure regression: OK");
 })().catch(error=>{console.error(error);process.exitCode=1});
