@@ -106,30 +106,17 @@ const storage=new MemoryStorage({
 });
 
 const first=boot(storage,{fieldValues:{sleeveID:21.4,sleeveWall:3.2,sleeveLength:42}});
-assert.deepStrictEqual(
-  JSON.parse(JSON.stringify(first.context.window.AI3DProjects.active().values)),
-  originalProject.values,
-  "initial load must restore the stored parameter values"
-);
+assert.deepStrictEqual(JSON.parse(JSON.stringify(first.context.window.AI3DProjects.active().values)),originalProject.values,"initial load must restore the stored parameter values");
 assert.ok(first.listeners.window.pagehide,"projects.js must register pagehide autosave");
 first.listeners.window.pagehide();
-
 const saved=JSON.parse(storage.getItem(KEY));
 assert.strictEqual(saved.length,1,"autosave must keep exactly one project");
-assert.deepStrictEqual(
-  saved[0].values,
-  {sleeveID:21.4,sleeveWall:3.2,sleeveLength:42,material:"PETG"},
-  "autosave must persist the current parametric values"
-);
+assert.deepStrictEqual(saved[0].values,{sleeveID:21.4,sleeveWall:3.2,sleeveLength:42,material:"PETG"},"autosave must persist the current parametric values");
 assert.strictEqual(storage.getItem(ACTIVE),originalProject.id,"active project id must survive save");
 assert.deepStrictEqual(JSON.parse(storage.getItem(BACKUP)),[originalProject],"successful autosave must keep the immediately previous valid project state as backup");
 
 const second=boot(new MemoryStorage(storage.snapshot()),{fieldValues:{sleeveID:1,sleeveWall:1,sleeveLength:1}});
-assert.deepStrictEqual(
-  JSON.parse(JSON.stringify(second.context.window.AI3DProjects.active().values)),
-  saved[0].values,
-  "reload must reproduce the same stored parametric project"
-);
+assert.deepStrictEqual(JSON.parse(JSON.stringify(second.context.window.AI3DProjects.active().values)),saved[0].values,"reload must reproduce the same stored parametric project");
 
 const rollbackStorage=new MemoryStorage(storage.snapshot());
 const beforeRollback=rollbackStorage.getItem(KEY);
@@ -137,11 +124,7 @@ const rollback=boot(rollbackStorage,{fieldValues:{sleeveID:25,sleeveWall:4,sleev
 rollbackStorage.failOnceKey=ACTIVE;
 rollback.listeners.window.pagehide();
 assert.strictEqual(rollbackStorage.getItem(KEY),beforeRollback,"failed save must restore the previous project JSON");
-assert.deepStrictEqual(
-  JSON.parse(JSON.stringify(rollback.context.window.AI3DProjects.active().values)),
-  saved[0].values,
-  "failed autosave must restore the in-memory project parameters"
-);
+assert.deepStrictEqual(JSON.parse(JSON.stringify(rollback.context.window.AI3DProjects.active().values)),saved[0].values,"failed autosave must restore the in-memory project parameters");
 
 const backupRollbackStorage=new MemoryStorage(storage.snapshot());
 const beforeBackupFailure=backupRollbackStorage.snapshot();
@@ -149,38 +132,30 @@ const backupRollback=boot(backupRollbackStorage,{fieldValues:{sleeveID:26,sleeve
 backupRollbackStorage.failOnceKey=BACKUP;
 backupRollback.listeners.window.pagehide();
 assert.deepStrictEqual(backupRollbackStorage.snapshot(),beforeBackupFailure,"failed backup write must roll the main project JSON, active id and previous backup back atomically");
-assert.deepStrictEqual(
-  JSON.parse(JSON.stringify(backupRollback.context.window.AI3DProjects.active().values)),
-  saved[0].values,
-  "failed backup write must also restore the in-memory project parameters"
-);
+assert.deepStrictEqual(JSON.parse(JSON.stringify(backupRollback.context.window.AI3DProjects.active().values)),saved[0].values,"failed backup write must also restore the in-memory project parameters");
 
 const conflictStorage=new MemoryStorage(storage.snapshot());
 const beforeConflict=conflictStorage.snapshot();
 const conflict=boot(conflictStorage,{fieldValues:{sleeveID:30,sleeveWall:5,sleeveLength:60},conflict:true});
 conflict.listeners.window.pagehide();
-assert.deepStrictEqual(
-  conflictStorage.snapshot(),
-  beforeConflict,
-  "latched cross-tab conflict must block core project autosave from overwriting newer storage"
-);
-assert.deepStrictEqual(
-  JSON.parse(JSON.stringify(conflict.context.window.AI3DProjects.active().values)),
-  saved[0].values,
-  "blocked cross-tab autosave must restore the in-memory project values"
-);
+assert.deepStrictEqual(conflictStorage.snapshot(),beforeConflict,"latched cross-tab conflict must block core project autosave from overwriting newer storage");
+assert.deepStrictEqual(JSON.parse(JSON.stringify(conflict.context.window.AI3DProjects.active().values)),saved[0].values,"blocked cross-tab autosave must restore the in-memory project values");
 
-const metadataProject={
-  ...originalProject,
-  id:"p-metadata",
-  print:{printer:"Elegoo Centauri Carbon 2 Combo",nozzle:0.4,layer:"0.20 mm",walls:"4",infill:"25 %",notes:"Centauri-profiili"},
-  sourcePlan:"chatgpt-current",
-  sourceSchema:2,
-  created:200,
-  updated:201
-};
+const metadataProject={...originalProject,id:"p-metadata",print:{printer:"Elegoo Centauri Carbon 2 Combo",nozzle:0.4,layer:"0.20 mm",walls:"4",infill:"25 %",notes:"Centauri-profiili"},sourcePlan:"chatgpt-current",sourceSchema:2,created:200,updated:201};
 const metadataBoot=boot(new MemoryStorage({[KEY]:JSON.stringify([metadataProject]),[ACTIVE]:metadataProject.id}));
 assert.strictEqual(metadataBoot.context.window.AI3DProjects.active()?.id,metadataProject.id,"valid print and ChatGPT source metadata must remain loadable");
+
+for(const material of ["PLA","PETG","ASA"]){
+  const project={...originalProject,id:`p-material-${material}`,values:{...originalProject.values,material}};
+  const materialBoot=boot(new MemoryStorage({[KEY]:JSON.stringify([project]),[ACTIVE]:project.id}));
+  assert.strictEqual(materialBoot.context.window.AI3DProjects.active()?.id,project.id,`supported material must remain loadable: ${material}`);
+}
+const legacyProject={...originalProject,id:"p-material-legacy",values:{sleeveID:20,sleeveWall:3,sleeveLength:30}};
+const legacyBoot=boot(new MemoryStorage({[KEY]:JSON.stringify([legacyProject]),[ACTIVE]:legacyProject.id}));
+assert.strictEqual(legacyBoot.context.window.AI3DProjects.active()?.id,legacyProject.id,"legacy project without material must remain loadable");
+const unsupportedMaterialProject={...originalProject,id:"p-material-unsupported",values:{...originalProject.values,material:"ABS"}};
+const unsupportedMaterialBoot=boot(new MemoryStorage({[KEY]:JSON.stringify([unsupportedMaterialProject]),[ACTIVE]:unsupportedMaterialProject.id}));
+assert.strictEqual(unsupportedMaterialBoot.context.window.AI3DProjects.active(),undefined,"persisted project with unsupported explicit material must fail closed");
 
 const boundaryProject={...metadataProject,id:"p-date-boundary",created:MAX_DATE_MS,updated:MAX_DATE_MS};
 const boundaryBoot=boot(new MemoryStorage({[KEY]:JSON.stringify([boundaryProject]),[ACTIVE]:boundaryProject.id}));
