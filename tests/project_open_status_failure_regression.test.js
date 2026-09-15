@@ -9,7 +9,10 @@ const elements={
   status:{textContent:"Malli luotu ja tarkistettu."},
   partType:{value:"sleeve",defaultValue:"spike"},
   adapterLength:{value:"12",defaultValue:"10"},
-  material:{value:"PLA",defaultValue:"PLA"}
+  material:{value:"PLA",defaultValue:"PLA"},
+  btnDownload:{disabled:false},
+  btnFitTest:{disabled:false},
+  btnCentauriStl:{disabled:false}
 };
 const rawSetPart=()=>{elements.partType.value="adapter";elements.adapterLength.value="30";elements.material.value="PETG";elements.status.textContent="CAD-malli ei läpäissyt tarkistusta.";return true};
 const context={console,Promise,localStorage:{getItem:()=>"[]"},document:{getElementById:id=>elements[id]||null,addEventListener:()=>{}},window:{AI3D:{setPart:rawSetPart}}};
@@ -21,11 +24,18 @@ assert.throws(()=>context.window.AI3DProjectOpenGuard.check(project),/ei läpäi
 assert.equal(elements.partType.value,"sleeve","failed status must restore previous part type");
 assert.equal(elements.adapterLength.value,"12","failed status must restore previous parameter value");
 assert.equal(elements.material.value,"PLA","failed status must restore previous material");
+assert.equal(elements.btnDownload.disabled,true,"failed project CAD must disable generic STL export");
+assert.equal(elements.btnFitTest.disabled,true,"failed project CAD must disable fit-test export");
+assert.equal(elements.btnCentauriStl.disabled,true,"failed project CAD must disable Centauri STL export");
 
 elements.status.textContent="Malli luotu ja tarkistettu.";
+elements.btnDownload.disabled=false;elements.btnFitTest.disabled=false;elements.btnCentauriStl.disabled=false;
 assert.throws(()=>context.window.AI3D.setPart("adapter",project.values),/ei läpäissyt tarkistusta/i,"wrapped setPart must fail closed before projects.js can accept a status-only CAD failure");
 assert.equal(elements.partType.value,"sleeve","wrapped setPart status failure must restore previous part type");
 assert.equal(elements.adapterLength.value,"12","wrapped setPart status failure must restore previous parameter value");
 assert.equal(elements.material.value,"PLA","wrapped setPart status failure must restore previous material");
+assert.equal(elements.btnDownload.disabled,true,"wrapped status failure must disable generic STL export");
+assert.equal(elements.btnFitTest.disabled,true,"wrapped status failure must disable fit-test export");
+assert.equal(elements.btnCentauriStl.disabled,true,"wrapped status failure must disable Centauri STL export");
 
 console.log("Project open status failure regression: OK");
