@@ -10,7 +10,7 @@ assert(src.includes('target?.id==="partType"||target?.closest?.(".part-fields")'
 assert(src.includes('new Set(["material","filamentPriceKg","ledCost","powerCost","miscCost"])'),"material and cost-only fields must not invalidate unchanged geometry");
 assert(src.includes('NON_GEOMETRY_PART_FIELDS.has(target.id)'),"non-geometry part fields must bypass stale geometry invalidation");
 assert(src.includes('currentMesh||currentFitMesh'),"parameter edits should clear an existing generated mesh");
-assert(src.includes('hasStaleExport=download?.disabled===false||centauri?.disabled===false'),"preview guard must fail closed when an export control is stale-enabled after mesh state is lost");
+assert(src.includes('hasStaleExport=download?.disabled===false||fit?.disabled===false||centauri?.disabled===false'),"preview guard must fail closed when any STL or fit-test export control is stale-enabled after mesh state is lost");
 assert(src.includes('centauri=$("btnCentauriStl")'),"preview invalidation must include the Centauri export control in the immediate fail-safe lock");
 assert(src.includes('if(centauri)centauri.disabled=true'),"preview invalidation must disable Centauri STL export before deferred printer checks run");
 assert(src.includes("Mallin mittoja tai osatyyppiä muutettiin"),"stale preview must explain that geometry or part type changed");
