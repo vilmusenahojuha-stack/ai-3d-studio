@@ -57,7 +57,7 @@
   else if(!clearing){
    let hasMesh=false;
    try{hasMesh=!!(currentMesh||currentFitMesh)}catch{}
-   const download=$("btnDownload"),centauri=$("btnCentauriStl"),hasStaleExport=download?.disabled===false||centauri?.disabled===false;
+   const download=$("btnDownload"),fit=$("btnFitTest"),centauri=$("btnCentauriStl"),hasStaleExport=download?.disabled===false||fit?.disabled===false||centauri?.disabled===false;
    if(hasMesh||hasStaleExport)clearPreview(reason)
   }
  }
@@ -67,7 +67,7 @@
   if(!target.matches?.("input,select,textarea"))return;
   let hasMesh=false;
   try{hasMesh=!!(currentMesh||currentFitMesh)}catch{}
-  const download=$("btnDownload"),centauri=$("btnCentauriStl"),hasStaleExport=download?.disabled===false||centauri?.disabled===false;
+  const download=$("btnDownload"),fit=$("btnFitTest"),centauri=$("btnCentauriStl"),hasStaleExport=download?.disabled===false||fit?.disabled===false||centauri?.disabled===false;
   if(!hasMesh&&!hasStaleExport)return;
   clearPreview("Mallin mittoja tai osatyyppiä muutettiin. Luo ja tarkista 3D-malli uudelleen ennen STL-vientiä.")
  }
