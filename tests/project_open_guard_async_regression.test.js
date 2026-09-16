@@ -53,7 +53,9 @@ async function main() {
   resolvers[1](true);
   assert.strictEqual(await newer, true, "newer project CAD check must succeed");
   resolvers[0](true);
-  assert.strictEqual(await oldRun, false, "older async CAD completion must be rejected as stale");
+  await assert.rejects(oldRun, /CAD-moottori hylkäsi projektin/, "older async CAD completion must fail closed after being rejected as stale");
+  assert.strictEqual(stale.controls.btnDownload.disabled, true, "stale CAD completion must lock normal STL export");
+  assert.strictEqual(stale.controls.btnFitTest.disabled, true, "stale CAD completion must lock fit-test export");
   assert.strictEqual(stale.controls.btnCentauriStl.disabled, true, "stale CAD completion must keep Centauri export locked");
 
   console.log("Project open guard async regression: OK");
