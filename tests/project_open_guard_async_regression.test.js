@@ -13,46 +13,23 @@ function makeControl(value, defaultValue = value) {
 
 function makeHarness(setPart) {
   const controls = {
-    partType: makeControl("spike"),
-    nutAf: makeControl("17"),
-    clearance: makeControl("0.2"),
-    lockAmount: makeControl("0"),
-    lockZ: makeControl("0"),
-    wall: makeControl("2"),
-    baseHeight: makeControl("10"),
-    totalHeight: makeControl("60"),
-    tipRadius: makeControl("1"),
-    monogram: makeControl("M"),
-    monogramWidth: makeControl("10"),
-    monogramDepth: makeControl("1"),
-    monogramHeight: makeControl("1"),
-    material: makeControl("PLA"),
-    status: { textContent: "Malli luotu ja tarkistettu." },
-    validation: { querySelector: () => null },
-    btnDownload: { disabled: false },
-    btnFitTest: { disabled: false },
-    btnCentauriStl: { disabled: false },
-    planSyncStatus: { textContent: "", className: "" },
-    centauriStatus: { className: "", innerHTML: "" }
+    partType: makeControl("spike"), nutAf: makeControl("17"), clearance: makeControl("0.2"),
+    lockAmount: makeControl("0"), lockZ: makeControl("0"), wall: makeControl("2"),
+    baseHeight: makeControl("10"), totalHeight: makeControl("60"), tipRadius: makeControl("1"),
+    monogram: makeControl("M"), monogramWidth: makeControl("10"), monogramDepth: makeControl("1"),
+    monogramHeight: makeControl("1"), material: makeControl("PLA"),
+    status: { textContent: "Malli luotu ja tarkistettu." }, validation: { querySelector: () => null },
+    btnDownload: { disabled: false }, btnFitTest: { disabled: false }, btnCentauriStl: { disabled: false },
+    planSyncStatus: { textContent: "", className: "" }, centauriStatus: { className: "", innerHTML: "" }
   };
-  const document = {
-    getElementById(id) { return controls[id] || null; },
-    addEventListener() {}
-  };
+  const document = { getElementById(id) { return controls[id] || null; }, addEventListener() {} };
   const window = { AI3D: { setPart } };
   const localStorage = { getItem() { return null; } };
   vm.runInNewContext(source, { window, document, localStorage, Error, Object, String, Number, Array, Set, Promise });
   return { window, controls };
 }
 
-const project = {
-  id: "p-async",
-  name: "Async project",
-  type: "spike",
-  values: { nutAf: 19, material: "PLA" },
-  created: 1,
-  updated: 1
-};
+const project = { id: "p-async", name: "Async project", type: "spike", values: { nutAf: 19, material: "PLA" }, created: 1, updated: 1 };
 
 async function main() {
   let resolveCad;
@@ -68,21 +45,18 @@ async function main() {
   assert.strictEqual(rejected.controls.btnFitTest.disabled, true, "rejected async CAD must lock fit-test export");
   assert.strictEqual(rejected.controls.btnCentauriStl.disabled, true, "rejected async CAD must lock Centauri export");
 
-  let resolveOld;
-  const stale = makeHarness(() => new Promise(resolve => { resolveOld = resolve; }));
+  const resolvers = [];
+  const stale = makeHarness(() => new Promise(resolve => { resolvers.push(resolve); }));
   const oldRun = stale.window.AI3DProjectOpenGuard.check(project);
-  stale.window.AI3D.setPart = () => true;
-  stale.window.AI3DProjectOpenGuard.install();
-  const newer = stale.window.AI3DProjectOpenGuard.check({ ...project, id: "p-new" });
+  const newer = stale.window.AI3DProjectOpenGuard.check({ ...project, id: "p-new", values: { nutAf: 20, material: "PLA" } });
+  assert.strictEqual(resolvers.length, 2, "overlapping project checks must start two CAD operations");
+  resolvers[1](true);
   assert.strictEqual(await newer, true, "newer project CAD check must succeed");
-  resolveOld(true);
+  resolvers[0](true);
   assert.strictEqual(await oldRun, false, "older async CAD completion must be rejected as stale");
   assert.strictEqual(stale.controls.btnCentauriStl.disabled, true, "stale CAD completion must keep Centauri export locked");
 
   console.log("Project open guard async regression: OK");
 }
 
-main().catch(error => {
-  console.error(error);
-  process.exitCode = 1;
-});
+main().catch(error => { console.error(error); process.exitCode = 1; });
