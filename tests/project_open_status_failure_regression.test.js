@@ -14,11 +14,16 @@ const elements={
   btnFitTest:{disabled:false},
   btnCentauriStl:{disabled:false}
 };
-const rawSetPart=()=>{elements.partType.value="adapter";elements.adapterLength.value="30";elements.material.value="PETG";elements.status.textContent="CAD-malli ei läpäissyt tarkistusta.";return true};
+let rawCalls=0;
+const rawSetPart=()=>{rawCalls++;elements.partType.value="adapter";elements.adapterLength.value="30";elements.material.value="PETG";elements.status.textContent="CAD-malli ei läpäissyt tarkistusta.";return true};
 const context={console,Promise,localStorage:{getItem:()=>"[]"},document:{getElementById:id=>elements[id]||null,addEventListener:()=>{}},window:{AI3D:{setPart:rawSetPart}}};
 context.globalThis=context;
 vm.createContext(context);
 vm.runInContext(fs.readFileSync("project_open_guard.js","utf8"),context,{filename:"project_open_guard.js"});
+
+const unsupported={...project,values:{...project.values,material:"ABS"}};
+assert.throws(()=>context.window.AI3DProjectOpenGuard.check(unsupported),/rakennetarkistusta/i,"unsupported explicit project material must fail closed before CAD generation");
+assert.equal(rawCalls,0,"unsupported material must not reach the CAD generator");
 
 assert.throws(()=>context.window.AI3DProjectOpenGuard.check(project),/ei läpäissyt tarkistusta/i,"status-only CAD validation failure must fail closed even when validation markup is unavailable");
 assert.equal(elements.partType.value,"sleeve","failed status must restore previous part type");
