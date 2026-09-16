@@ -4,21 +4,22 @@ const fs=require("fs");
 const vm=require("vm");
 
 const project={id:"p1",name:"Adapteri",type:"adapter",values:{adapterLength:30,adapterID1:20,adapterID2:20,adapterOD1:26,adapterOD2:26,material:"PETG"},created:1,updated:2};
-const elements={
-  validation:{querySelector:()=>null},
-  status:{textContent:"Malli luotu ja tarkistettu."},
-  partType:{value:"sleeve",defaultValue:"spike"},
-  adapterLength:{value:"12",defaultValue:"10"},
-  material:{value:"PLA",defaultValue:"PLA"},
-  btnDownload:{disabled:false},
-  btnFitTest:{disabled:false},
-  btnCentauriStl:{disabled:false}
-};
-const rawSetPart=()=>{elements.partType.value="adapter";elements.adapterLength.value="30";elements.material.value="PETG";elements.status.textContent="CAD-malli ei läpäissyt tarkistusta.";return true};
+const elements={validation:{querySelector:()=>null},status:{textContent:"Malli luotu ja tarkistettu."},partType:{value:"sleeve",defaultValue:"spike"},adapterLength:{value:"12",defaultValue:"10"},material:{value:"PLA",defaultValue:"PLA"},btnDownload:{disabled:false},btnFitTest:{disabled:false},btnCentauriStl:{disabled:false}};
+let rawCalls=0;
+const rawSetPart=()=>{rawCalls++;elements.partType.value="adapter";elements.adapterLength.value="30";elements.material.value="PETG";elements.status.textContent="CAD-malli ei läpäissyt tarkistusta.";return true};
 const context={console,Promise,localStorage:{getItem:()=>"[]"},document:{getElementById:id=>elements[id]||null,addEventListener:()=>{}},window:{AI3D:{setPart:rawSetPart}}};
 context.globalThis=context;
 vm.createContext(context);
 vm.runInContext(fs.readFileSync("project_open_guard.js","utf8"),context,{filename:"project_open_guard.js"});
+
+const unsupported={...project,values:{...project.values,material:"ABS"}};
+assert.throws(()=>context.window.AI3DProjectOpenGuard.check(unsupported),/rakennetarkistusta/i,"unsupported explicit project material must fail closed before CAD generation");
+assert.equal(rawCalls,0,"unsupported material must not reach the CAD generator");
+const legacy={...project,values:{...project.values}};delete legacy.values.material;
+elements.status.textContent="Malli luotu ja tarkistettu.";
+context.window.AI3D.setPart=()=>true;
+assert.equal(context.window.AI3DProjectOpenGuard.check(legacy),true,"legacy project without material must remain loadable");
+context.window.AI3D.setPart=rawSetPart;context.window.AI3DProjectOpenGuard.install();
 
 assert.throws(()=>context.window.AI3DProjectOpenGuard.check(project),/ei läpäissyt tarkistusta/i,"status-only CAD validation failure must fail closed even when validation markup is unavailable");
 assert.equal(elements.partType.value,"sleeve","failed status must restore previous part type");
@@ -28,8 +29,7 @@ assert.equal(elements.btnDownload.disabled,true,"failed project CAD must disable
 assert.equal(elements.btnFitTest.disabled,true,"failed project CAD must disable fit-test export");
 assert.equal(elements.btnCentauriStl.disabled,true,"failed project CAD must disable Centauri STL export");
 
-elements.status.textContent="Malli luotu ja tarkistettu.";
-elements.btnDownload.disabled=false;elements.btnFitTest.disabled=false;elements.btnCentauriStl.disabled=false;
+elements.status.textContent="Malli luotu ja tarkistettu.";elements.btnDownload.disabled=false;elements.btnFitTest.disabled=false;elements.btnCentauriStl.disabled=false;
 assert.throws(()=>context.window.AI3D.setPart("adapter",project.values),/ei läpäissyt tarkistusta/i,"wrapped setPart must fail closed before projects.js can accept a status-only CAD failure");
 assert.equal(elements.partType.value,"sleeve","wrapped setPart status failure must restore previous part type");
 assert.equal(elements.adapterLength.value,"12","wrapped setPart status failure must restore previous parameter value");
@@ -39,24 +39,7 @@ assert.equal(elements.btnFitTest.disabled,true,"wrapped status failure must disa
 assert.equal(elements.btnCentauriStl.disabled,true,"wrapped status failure must disable Centauri STL export");
 
 (async()=>{
-  let resolveFirst,resolveSecond;
-  const raceElements={
-    validation:{querySelector:()=>null},status:{textContent:"Malli luotu ja tarkistettu."},planSyncStatus:{textContent:"",className:""},centauriStatus:{innerHTML:"<b>Centauri Carbon 2 Combo: OK</b>",className:"printer-status ok"},partType:{value:"sleeve",defaultValue:"spike"},adapterLength:{value:"12",defaultValue:"10"},material:{value:"PLA",defaultValue:"PLA"},btnDownload:{disabled:false},btnFitTest:{disabled:false},btnCentauriStl:{disabled:false}
-  };
-  let calls=0;
-  const raceContext={console,Promise,localStorage:{getItem:()=>"[]"},document:{getElementById:id=>raceElements[id]||null,addEventListener:()=>{}},window:{AI3D:{setPart:()=>new Promise(resolve=>{calls++;if(calls===1)resolveFirst=resolve;else resolveSecond=resolve})}}};
-  raceContext.globalThis=raceContext;vm.createContext(raceContext);vm.runInContext(fs.readFileSync("project_open_guard.js","utf8"),raceContext,{filename:"project_open_guard.js"});
-  const first=raceContext.window.AI3D.setPart("adapter",project.values);
-  const second=raceContext.window.AI3D.setPart("adapter",project.values);
-  resolveSecond(true);assert.equal(await second,true,"newest async CAD result must remain usable");
-  raceElements.btnDownload.disabled=false;raceElements.btnFitTest.disabled=false;raceElements.btnCentauriStl.disabled=false;
-  resolveFirst(true);assert.equal(await first,false,"older async CAD completion must be rejected as stale");
-  assert.equal(raceElements.btnDownload.disabled,true,"stale CAD completion must disable generic STL export");
-  assert.equal(raceElements.btnFitTest.disabled,true,"stale CAD completion must disable fit-test export");
-  assert.equal(raceElements.btnCentauriStl.disabled,true,"stale CAD completion must disable Centauri STL export");
-  assert.match(raceElements.planSyncStatus.textContent,/vanhempi CAD-ajo.*STL-vienti lukittiin/i,"stale CAD completion must explain why export was locked");
-  assert.equal(raceElements.planSyncStatus.className,"plan-sync-status warn","stale CAD warning must use existing warning styling");
-  assert.equal(raceElements.centauriStatus.className,"printer-status fail","stale CAD completion must invalidate previous Centauri OK status");
-  assert.match(raceElements.centauriStatus.innerHTML,/tarkistus vanheni.*vienti on estetty/i,"stale CAD completion must explain that Centauri compatibility needs a fresh check");
-  console.log("Project open status failure regression: OK");
+ let resolveFirst,resolveSecond;const raceElements={validation:{querySelector:()=>null},status:{textContent:"Malli luotu ja tarkistettu."},planSyncStatus:{textContent:"",className:""},centauriStatus:{innerHTML:"<b>Centauri Carbon 2 Combo: OK</b>",className:"printer-status ok"},partType:{value:"sleeve",defaultValue:"spike"},adapterLength:{value:"12",defaultValue:"10"},material:{value:"PLA",defaultValue:"PLA"},btnDownload:{disabled:false},btnFitTest:{disabled:false},btnCentauriStl:{disabled:false}};
+ let calls=0;const raceContext={console,Promise,localStorage:{getItem:()=>"[]"},document:{getElementById:id=>raceElements[id]||null,addEventListener:()=>{}},window:{AI3D:{setPart:()=>new Promise(resolve=>{calls++;if(calls===1)resolveFirst=resolve;else resolveSecond=resolve})}}};raceContext.globalThis=raceContext;vm.createContext(raceContext);vm.runInContext(fs.readFileSync("project_open_guard.js","utf8"),raceContext,{filename:"project_open_guard.js"});
+ const first=raceContext.window.AI3D.setPart("adapter",project.values);const second=raceContext.window.AI3D.setPart("adapter",project.values);resolveSecond(true);assert.equal(await second,true,"newest async CAD result must remain usable");raceElements.btnDownload.disabled=false;raceElements.btnFitTest.disabled=false;raceElements.btnCentauriStl.disabled=false;resolveFirst(true);assert.equal(await first,false,"older async CAD completion must be rejected as stale");assert.equal(raceElements.btnDownload.disabled,true,"stale CAD completion must disable generic STL export");assert.equal(raceElements.btnFitTest.disabled,true,"stale CAD completion must disable fit-test export");assert.equal(raceElements.btnCentauriStl.disabled,true,"stale CAD completion must disable Centauri STL export");assert.match(raceElements.planSyncStatus.textContent,/vanhempi CAD-ajo.*STL-vienti lukittiin/i,"stale CAD completion must explain why export was locked");assert.equal(raceElements.planSyncStatus.className,"plan-sync-status warn","stale CAD warning must use existing warning styling");assert.equal(raceElements.centauriStatus.className,"printer-status fail","stale CAD completion must invalidate previous Centauri OK status");assert.match(raceElements.centauriStatus.innerHTML,/tarkistus vanheni.*vienti on estetty/i,"stale CAD completion must explain that Centauri compatibility needs a fresh check");console.log("Project open status failure regression: OK");
 })().catch(error=>{console.error(error);process.exitCode=1});
