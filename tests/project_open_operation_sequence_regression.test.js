@@ -2,11 +2,11 @@
 const fs=require("fs"),path=require("path"),assert=require("assert");
 const source=fs.readFileSync(path.join(__dirname,"..","projects.js"),"utf8");
 
-// Issue #191: overlapping async project/plan opens must be owned by the latest request.
+// Issues #191/#196: overlapping async project/plan/import opens must be owned by the latest request.
 // Keep this as a structural regression lock: production behavior is implemented separately.
 assert(/open(?:Operation|Request)Seq/.test(source),"projects.js must keep a monotonic open-operation sequence");
 const claims=source.match(/\+\+open(?:Operation|Request)Seq/g)||[];
-assert(claims.length>=2,"openProject and openPlan must each claim a new operation token");
+assert(claims.length>=3,"openProject, openPlan and importProject must each claim a new operation token");
 
 function checkOpen(body,label){
  assert(/await applyProject\(p\)/.test(body),`${label} must still await CAD validation`);
@@ -26,5 +26,9 @@ checkOpen(openProject[1],"openProject");
 const openPlan=source.match(/async function openPlan\(id\)\{([\s\S]*?)\n function newProject/);
 assert(openPlan,"openPlan source not found");
 checkOpen(openPlan[1],"openPlan");
+
+const importProject=source.match(/function importProject\(file\)\{([\s\S]*?)\n function injectTools/);
+assert(importProject,"importProject source not found");
+checkOpen(importProject[1],"importProject");
 
 console.log("project open operation-sequence regression: ok");
