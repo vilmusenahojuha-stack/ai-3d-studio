@@ -29,6 +29,12 @@ checkOpen(openPlan[1],"openPlan");
 
 const importProject=source.match(/function importProject\(file\)\{([\s\S]*?)\n function injectTools/);
 assert(importProject,"importProject source not found");
-checkOpen(importProject[1],"importProject");
+const importBody=importProject[1];
+const claimPos=importBody.search(/(?:operation|request)Token\s*=\s*\+\+open(?:Operation|Request)Seq/i);
+const readerPos=importBody.indexOf("new FileReader()");
+assert(claimPos>=0,"importProject must claim an operation token");
+assert(readerPos>=0,"importProject FileReader setup not found");
+assert(claimPos<readerPos,"importProject must claim ownership before asynchronous FileReader work starts");
+checkOpen(importBody,"importProject");
 
 console.log("project open operation-sequence regression: ok");
