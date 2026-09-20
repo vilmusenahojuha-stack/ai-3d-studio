@@ -41,8 +41,13 @@ assert(claimPos<readerPos,"importProject must claim ownership before asynchronou
 const onloadStart=importBody.match(/r\.onload\s*=\s*async\(\)\s*=>\s*\{([\s\S]*?)await applyProject\(p\)/);
 assert(onloadStart,"importProject FileReader onload handler not found");
 const staleRe=/(?:operation|request)Token\s*!==\s*open(?:Operation|Request)Seq/i;
-assert(staleRe.test(onloadStart[1]),
+const onloadPrefix=onloadStart[1];
+const stalePos=onloadPrefix.search(staleRe);
+const autosavePos=onloadPrefix.search(/autosaveTimer|flushAutosave\(/);
+assert(stalePos>=0,
  "importProject must reject a stale FileReader completion before CAD validation/state mutation");
+assert(autosavePos<0||stalePos<autosavePos,
+ "importProject must reject stale FileReader completion before autosave flushing can mutate the current project");
 checkOpen(importBody,"importProject");
 
 // FileReader itself is asynchronous too. A read failure from an older import must not
