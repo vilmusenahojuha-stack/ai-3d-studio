@@ -37,4 +37,11 @@ assert(readerPos>=0,"importProject FileReader setup not found");
 assert(claimPos<readerPos,"importProject must claim ownership before asynchronous FileReader work starts");
 checkOpen(importBody,"importProject");
 
+// FileReader itself is asynchronous too. A read failure from an older import must not
+// surface an obsolete alert after the user has already opened something else.
+const readerError=importBody.match(/r\.onerror\s*=\s*\(\)\s*=>\s*([^;]+);/);
+assert(readerError,"importProject FileReader error handler not found");
+assert(/(?:operation|request)Token\s*!==\s*open(?:Operation|Request)Seq/i.test(readerError[1]),
+ "importProject FileReader error handler must ignore stale read failures");
+
 console.log("project open operation-sequence regression: ok");
