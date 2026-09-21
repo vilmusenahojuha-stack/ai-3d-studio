@@ -2,11 +2,11 @@
 const fs=require("fs"),path=require("path"),assert=require("assert");
 const source=fs.readFileSync(path.join(__dirname,"..","projects.js"),"utf8");
 
-// Issue #191: overlapping async project/plan opens must be owned by the latest request.
+// Issues #191/#196: overlapping async project/plan/import opens must be owned by the latest request.
 // Keep this as a structural regression lock: production behavior is implemented separately.
 assert(/open(?:Operation|Request)Seq/.test(source),"projects.js must keep a monotonic open-operation sequence");
 const claims=source.match(/\+\+open(?:Operation|Request)Seq/g)||[];
-assert(claims.length>=2,"openProject and openPlan must each claim a new operation token");
+assert(claims.length>=3,"openProject, openPlan and importProject must each claim a new operation token");
 
 function checkOpen(body,label){
  assert(/await applyProject\(p\)/.test(body),`${label} must still await CAD validation`);
@@ -26,5 +26,35 @@ checkOpen(openProject[1],"openProject");
 const openPlan=source.match(/async function openPlan\(id\)\{([\s\S]*?)\n function newProject/);
 assert(openPlan,"openPlan source not found");
 checkOpen(openPlan[1],"openPlan");
+
+const importProject=source.match(/function importProject\(file\)\{([\s\S]*?)\n function injectTools/);
+assert(importProject,"importProject source not found");
+const importBody=importProject[1];
+const claimPos=importBody.search(/(?:operation|request)Token\s*=\s*\+\+open(?:Operation|Request)Seq/i);
+const readerPos=importBody.indexOf("new FileReader()");
+assert(claimPos>=0,"importProject must claim an operation token");
+assert(readerPos>=0,"importProject FileReader setup not found");
+assert(claimPos<readerPos,"importProject must claim ownership before asynchronous FileReader work starts");
+
+// The file read can finish after a newer project/plan open. Reject that stale import at
+// the beginning of onload, before autosave flushing or applyProject can mutate current UI/CAD state.
+const onloadStart=importBody.match(/r\.onload\s*=\s*async\(\)\s*=>\s*\{([\s\S]*?)await applyProject\(p\)/);
+assert(onloadStart,"importProject FileReader onload handler not found");
+const staleRe=/(?:operation|request)Token\s*!==\s*open(?:Operation|Request)Seq/i;
+const onloadPrefix=onloadStart[1];
+const stalePos=onloadPrefix.search(staleRe);
+const autosavePos=onloadPrefix.search(/autosaveTimer|flushAutosave\(/);
+assert(stalePos>=0,
+ "importProject must reject a stale FileReader completion before CAD validation/state mutation");
+assert(autosavePos<0||stalePos<autosavePos,
+ "importProject must reject stale FileReader completion before autosave flushing can mutate the current project");
+checkOpen(importBody,"importProject");
+
+// FileReader itself is asynchronous too. A read failure from an older import must not
+// surface an obsolete alert after the user has already opened something else.
+const readerError=importBody.match(/r\.onerror\s*=\s*\(\)\s*=>\s*([^;]+);/);
+assert(readerError,"importProject FileReader error handler not found");
+assert(staleRe.test(readerError[1]),
+ "importProject FileReader error handler must ignore stale read failures");
 
 console.log("project open operation-sequence regression: ok");
