@@ -17,8 +17,8 @@ assert.match(source,/(?:async\s+)?function openPlan\([^\n]+autosaveTimer&&!flush
   "plan-to-project switching must flush pending edits first");
 assert.match(source,/function newProject\([^\n]+autosaveTimer&&!flushAutosave\(\)/,
   "new project creation must flush pending edits first");
-assert.match(source,/function importProject\([^\n]+r\.onload=(?:async)?\(\)=>\{if\(autosaveTimer&&!flushAutosave\(\)\)/,
-  "project import must flush pending edits before replacing the active project");
+assert.match(source,/function importProject\([^\n]+r\.onload=(?:async)?\(\)=>\{if\(operationToken!==openOperationSeq\)return;if\(autosaveTimer&&!flushAutosave\(\)\)/,
+  "project import must reject stale file reads, then flush pending edits before replacing the active project");
 assert.match(source,/function downloadProject\([^\n]+autosaveTimer\?flushAutosave\(\):autosave\(\)/,
   "project export must not leave a stale delayed autosave behind");
 assert.match(source,/window\.addEventListener\("pagehide",\(\)=>\{clearTimeout\(autosaveTimer\);autosaveTimer=0;autosave\(\)\}\)/,
