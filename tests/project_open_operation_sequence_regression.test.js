@@ -20,13 +20,27 @@ function checkOpen(body,label){
 function checkRollback(body,label){
  const catchPos=body.indexOf("catch(e)");
  const catchBody=body.slice(catchPos);
- const restorePos=catchBody.indexOf("await restoreProject(previous)");
- assert(restorePos>=0,`${label} rollback restore not found`);
- const afterRestore=catchBody.slice(restorePos+"await restoreProject(previous)".length);
+ const restoreMatch=catchBody.match(/await restoreProject\(previous\s*,\s*(?:operation|request)Token\)/i);
+ assert(restoreMatch,`${label} rollback must pass its ownership token into restoreProject`);
+ const restorePos=restoreMatch.index;
+ const afterRestore=catchBody.slice(restorePos+restoreMatch[0].length);
  const stalePos=afterRestore.search(staleRe);
  assert(stalePos>=0,`${label} must re-check ownership after async rollback restore`);
  const renderPos=afterRestore.search(/renderProjects\(\)|showInfo\(/);
  assert(renderPos<0||stalePos<renderPos,`${label} must reject stale rollback before rendering project UI`);
+}
+
+const restoreProject=source.match(/async function restoreProject\(p\s*,\s*(?:operation|request)Token\)\{([\s\S]*?)\n async function openProject/);
+assert(restoreProject,"restoreProject must receive the owning operation token");
+const restoreBody=restoreProject[1];
+const setPartPos=restoreBody.search(/AI3D\?\.setPart|AI3D\.setPart/);
+assert(setPartPos>=0,"restoreProject CAD restore not found");
+const preSetPart=restoreBody.slice(0,setPartPos);
+assert(staleRe.test(preSetPart),"restoreProject must reject stale ownership before mutating CAD state");
+const awaitResultPos=restoreBody.search(/await result/);
+if(awaitResultPos>=0){
+ const afterResult=restoreBody.slice(awaitResultPos+"await result".length);
+ assert(staleRe.test(afterResult),"restoreProject must re-check ownership after asynchronous CAD restore before scheduling follow-up checks");
 }
 
 const openProject=source.match(/async function openProject\(id\)\{([\s\S]*?)\n function snapshotValues/);
