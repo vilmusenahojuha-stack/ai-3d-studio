@@ -2,30 +2,56 @@
 const fs=require("fs"),path=require("path"),assert=require("assert");
 const source=fs.readFileSync(path.join(__dirname,"..","projects.js"),"utf8");
 
-// Issues #191/#196: overlapping async project/plan/import opens must be owned by the latest request.
-// Keep this as a structural regression lock: production behavior is implemented separately.
+// Issues #191/#196/#205: overlapping async project/plan/import opens must be owned by the latest request.
 assert(/open(?:Operation|Request)Seq/.test(source),"projects.js must keep a monotonic open-operation sequence");
 const claims=source.match(/\+\+open(?:Operation|Request)Seq/g)||[];
 assert(claims.length>=3,"openProject, openPlan and importProject must each claim a new operation token");
+const staleRe=/(?:operation|request)Token\s*!==\s*open(?:Operation|Request)Seq/i;
 
 function checkOpen(body,label){
  assert(/await applyProject\(p\)/.test(body),`${label} must still await CAD validation`);
  const awaitPos=body.indexOf("await applyProject(p)");
- const staleRe=/(?:operation|request)Token\s*!==\s*open(?:Operation|Request)Seq/i;
  const afterAwait=body.slice(awaitPos+"await applyProject(p)".length);
  assert(staleRe.test(afterAwait),`${label} must reject stale completion after CAD validation and before state commit`);
  const catchPos=body.indexOf("catch(e)");
  assert(catchPos>=0,`${label} catch path not found`);
  assert(staleRe.test(body.slice(catchPos)),`${label} catch path must reject stale rollback/error UI`);
 }
+function checkRollback(body,label){
+ const catchPos=body.indexOf("catch(e)");
+ const catchBody=body.slice(catchPos);
+ const restoreMatch=catchBody.match(/await restoreProject\(previous\s*,\s*(?:operation|request)Token\)/i);
+ assert(restoreMatch,`${label} rollback must pass its ownership token into restoreProject`);
+ const restorePos=restoreMatch.index;
+ const afterRestore=catchBody.slice(restorePos+restoreMatch[0].length);
+ const stalePos=afterRestore.search(staleRe);
+ assert(stalePos>=0,`${label} must re-check ownership after async rollback restore`);
+ const renderPos=afterRestore.search(/renderProjects\(\)|showInfo\(/);
+ assert(renderPos<0||stalePos<renderPos,`${label} must reject stale rollback before rendering project UI`);
+}
+
+const restoreProject=source.match(/async function restoreProject\(p\s*,\s*(?:operation|request)Token\)\{([\s\S]*?)\n async function openProject/);
+assert(restoreProject,"restoreProject must receive the owning operation token");
+const restoreBody=restoreProject[1];
+const setPartPos=restoreBody.search(/AI3D\?\.setPart|AI3D\.setPart/);
+assert(setPartPos>=0,"restoreProject CAD restore not found");
+const preSetPart=restoreBody.slice(0,setPartPos);
+assert(staleRe.test(preSetPart),"restoreProject must reject stale ownership before mutating CAD state");
+const awaitResultPos=restoreBody.search(/await result/);
+if(awaitResultPos>=0){
+ const afterResult=restoreBody.slice(awaitResultPos+"await result".length);
+ assert(staleRe.test(afterResult),"restoreProject must re-check ownership after asynchronous CAD restore before scheduling follow-up checks");
+}
 
 const openProject=source.match(/async function openProject\(id\)\{([\s\S]*?)\n function snapshotValues/);
 assert(openProject,"openProject source not found");
 checkOpen(openProject[1],"openProject");
+checkRollback(openProject[1],"openProject");
 
 const openPlan=source.match(/async function openPlan\(id\)\{([\s\S]*?)\n function newProject/);
 assert(openPlan,"openPlan source not found");
 checkOpen(openPlan[1],"openPlan");
+checkRollback(openPlan[1],"openPlan");
 
 const importProject=source.match(/function importProject\(file\)\{([\s\S]*?)\n function injectTools/);
 assert(importProject,"importProject source not found");
@@ -35,26 +61,17 @@ const readerPos=importBody.indexOf("new FileReader()");
 assert(claimPos>=0,"importProject must claim an operation token");
 assert(readerPos>=0,"importProject FileReader setup not found");
 assert(claimPos<readerPos,"importProject must claim ownership before asynchronous FileReader work starts");
-
-// The file read can finish after a newer project/plan open. Reject that stale import at
-// the beginning of onload, before autosave flushing or applyProject can mutate current UI/CAD state.
 const onloadStart=importBody.match(/r\.onload\s*=\s*async\(\)\s*=>\s*\{([\s\S]*?)await applyProject\(p\)/);
 assert(onloadStart,"importProject FileReader onload handler not found");
-const staleRe=/(?:operation|request)Token\s*!==\s*open(?:Operation|Request)Seq/i;
 const onloadPrefix=onloadStart[1];
 const stalePos=onloadPrefix.search(staleRe);
 const autosavePos=onloadPrefix.search(/autosaveTimer|flushAutosave\(/);
-assert(stalePos>=0,
- "importProject must reject a stale FileReader completion before CAD validation/state mutation");
-assert(autosavePos<0||stalePos<autosavePos,
- "importProject must reject stale FileReader completion before autosave flushing can mutate the current project");
+assert(stalePos>=0,"importProject must reject a stale FileReader completion before CAD validation/state mutation");
+assert(autosavePos<0||stalePos<autosavePos,"importProject must reject stale FileReader completion before autosave flushing can mutate the current project");
 checkOpen(importBody,"importProject");
-
-// FileReader itself is asynchronous too. A read failure from an older import must not
-// surface an obsolete alert after the user has already opened something else.
+checkRollback(importBody,"importProject");
 const readerError=importBody.match(/r\.onerror\s*=\s*\(\)\s*=>\s*([^;]+);/);
 assert(readerError,"importProject FileReader error handler not found");
-assert(staleRe.test(readerError[1]),
- "importProject FileReader error handler must ignore stale read failures");
+assert(staleRe.test(readerError[1]),"importProject FileReader error handler must ignore stale read failures");
 
 console.log("project open operation-sequence regression: ok");
