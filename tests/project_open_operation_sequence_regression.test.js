@@ -69,6 +69,7 @@ const autosavePos=onloadPrefix.search(/autosaveTimer|flushAutosave\(/);
 assert(stalePos>=0,"importProject must reject a stale FileReader completion before CAD validation/state mutation");
 assert(autosavePos<0||stalePos<autosavePos,"importProject must reject stale FileReader completion before autosave flushing can mutate the current project");
 checkOpen(importBody,"importProject");
+checkRollback(importBody,"importProject");
 const readerError=importBody.match(/r\.onerror\s*=\s*\(\)\s*=>\s*([^;]+);/);
 assert(readerError,"importProject FileReader error handler not found");
 assert(staleRe.test(readerError[1]),"importProject FileReader error handler must ignore stale read failures");
